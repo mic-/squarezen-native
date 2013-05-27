@@ -1,0 +1,108 @@
+#include "SN76489.h"
+
+
+const uint16_t SnChip::SN76489_VOL_TB[16] = {
+		0x52,0x3A,0x29,0x1D,
+		0x14,0x0E,0x0A,0x07,
+		0x05,0x03,0x02,0x01,
+		0x01,0x00,0x00,0x00
+};
+
+
+void SnChannel::Reset()
+{
+	mPhase = 0;
+	mLfsr = 0x01;
+}
+
+
+void SnChannel::Step()
+{
+	mPos++;
+	if (mIndex < 3) {
+		// Tone
+		if (mPos >= mPeriod*16) {
+			mPos = 0;
+			mPhase ^= 1;
+		}
+	} else {
+		// Noise
+		bool change = false;
+		uint32_t period = 0x10 << (mPeriod & NOISE_PERIOD_MASK);
+		if ((mPeriod & NOISE_PERIOD_MASK) == NOISE_PERIOD_TONE2) {
+			period = mChip->mChannels[2].mPeriod;
+		}
+		period <<= 4;
+
+		if (mPos >= period) {
+			mPos -= period;
+			mPhase  = mLfsr & 1;
+			if ((mPeriod & NOISE_TYPE_MASK) == NOISE_TYPE_WHITE) {
+				mLfsr = (mLfsr >> 1) | ((uint32_t)(mPhase ^ ((mLfsr >> 3) & 1)) << 15);
+			} else {
+				mLfsr = (mLfsr >> 1) | ((mLfsr & 1) << 15);
+			}
+		}
+	}
+}
+
+
+void SnChannel::Write(uint8_t addr, uint8_t val)
+{
+	AppLog("Writing %#x to PSG", val);
+
+	switch (addr) {
+	case 0x06:
+		break;
+
+	case 0x7F:
+		if (val & SnChip::CMD_LATCH_MASK) {
+			if ((val & SnChip::CMD_TYPE_MASK) == SnChip::CMD_TYPE_FREQ) {
+				mPeriod &= 0x3F0;
+				mPeriod |= (val & 0x0F);
+			} else {
+				mVol &= 0x3F0;
+				mVol |= (val & 0x0F);
+			}
+		} else {
+			if ((mChip->mLatchedByte & SnChip::CMD_TYPE_MASK) == SnChip::CMD_TYPE_FREQ) {
+				mPeriod &= 0x00F;
+				mPeriod |= (uint16_t)(val & 0x3F) << 4;
+			} else {
+				mVol &= 0x00F;
+				mVol |= (uint16_t)(val & 0x3F) << 4;
+			}
+		}
+		break;
+	}
+}
+
+
+
+void SnChip::Reset()
+{
+	for (int i = 0; i < 4; i++) {
+		mChannels[i].SetChip(this);
+		mChannels[i].SetIndex(i);
+		mChannels[i].Reset();
+	}
+}
+
+
+void SnChip::Step()
+{
+	for (int i = 0; i < 4; i++) {
+		mChannels[i].Step();
+	}
+}
+
+
+void SnChip::Write(uint8_t addr, uint8_t val)
+{
+	if (val & CMD_LATCH_MASK) {
+		mChannels[(val >> 5) & 3].Write(addr, val);
+		mLatchedByte = val;
+	} else {
+		mChannels[(mLatchedByte >> 5) & 3].Write(addr, val);
+	}
+}
