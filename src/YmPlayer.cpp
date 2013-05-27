@@ -35,6 +35,8 @@ YmPlayer::YmPlayer() :
 
 result YmPlayer::Reset()
 {
+	AppLog("YmPlayer::Reset");
+
 	if (mYmData) delete [] mYmData;
 	if (mTempBuffer) delete [] mTempBuffer;
 	mYmData = NULL;

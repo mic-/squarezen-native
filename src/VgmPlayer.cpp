@@ -29,6 +29,8 @@ VgmPlayer::VgmPlayer() :
 
 result VgmPlayer::Reset()
 {
+	AppLog("VgmPlayer::Reset");
+
 	if (mSN76489) delete mSN76489;
 	mSN76489 = NULL;
 	if (mBlipBuf) delete mBlipBuf;

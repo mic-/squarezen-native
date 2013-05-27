@@ -17,9 +17,11 @@
 
 #include "Squarezen.h"
 #include "SquarezenFrame.h"
+#include "AppResourceId.h"
 
 using namespace Tizen::App;
 using namespace Tizen::Base;
+using namespace Tizen::Io;
 using namespace Tizen::Media;
 using namespace Tizen::System;
 using namespace Tizen::Ui;
@@ -27,8 +29,7 @@ using namespace Tizen::Ui::Controls;
 using namespace Tizen::Ui::Scenes;
 
 
-SquarezenApp::SquarezenApp(void) :
-		mPlayer(NULL)
+SquarezenApp::SquarezenApp(void)
 {
 }
 
@@ -56,49 +57,7 @@ SquarezenApp::OnAppInitializing(AppRegistry& appRegistry)
 	// Uncomment the following statement to listen to the screen on/off events.
 	//PowerManager::SetScreenEventListener(*this);
 
-	result r;
-
-    r = mAudioOut.Construct(*this);
-    if (IsFailed(r)) {
-        return false;
-    }
-    mAudioOut.Prepare(AUDIO_TYPE_PCM_S16_LE, AUDIO_CHANNEL_TYPE_STEREO, 44100);
-    mMinBufferSize = mAudioOut.GetMinBufferSize() * 4;
-
-    mBuffers[0].Construct(mMinBufferSize);
-    mBuffers[1].Construct(mMinBufferSize);
-
-    Tizen::Base::String extStoragePath = Tizen::System::Environment::GetExternalStoragePath();
-    extStoragePath += L"Stork2.vgm";
-
-    mPlayer = new VgmPlayer();
-
-    AppLog("Preparing file %S", extStoragePath.GetPointer());
-    if (IsFailed(mPlayer->Prepare(extStoragePath))) {
-    	AppLog("Prepare failed");
-    	return false;
-    }
-
-    // Fill up both buffers with audio data and send the first one to the audio hw
-	mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[0].GetPointer());
-	mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[1].GetPointer());
-	mAudioOut.WriteBuffer(mBuffers[0]);
-	mCurPlayingBuffer = 0;
-
-	if (IsFailed(mAudioOut.Start())) {
-		return false;
-    }
-
 	return true;
-}
-
-
-void SquarezenApp::OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src)
-{
-	// Switch buffers and fill up with new audio data
-    mAudioOut.WriteBuffer(mBuffers[mCurPlayingBuffer ^ 1]);
-    mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[mCurPlayingBuffer].GetPointer());
-    mCurPlayingBuffer ^= 1;
 }
 
 
@@ -131,12 +90,6 @@ SquarezenApp::OnAppTerminating(AppRegistry& appRegistry, bool forcedTermination)
 	// TODO:
 	// Deallocate resources allocated by this App for termination.
 	// The App's permanent data and context can be saved via appRegistry.
-
-	mAudioOut.Stop();
-	mAudioOut.Unprepare();
-	mPlayer->Reset();
-	delete mPlayer;
-	mPlayer = NULL;
 
 	return true;
 }
