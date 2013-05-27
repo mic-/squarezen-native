@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<BuildInfo>
+<BcVersionInfo>
+<XmlVersion>1.0</XmlVersion>
+<SDKVersion>2.0.0</SDKVersion>
+<OspVersion>2.0</OspVersion>
+<PlatformVersion>2.0</PlatformVersion>
+<LLVMVersion>3.1</LLVMVersion>
+</BcVersionInfo>
+<BcProject>
+<ProjectName>Squarezen</ProjectName>
+<FileName>Squarezen.bc</FileName>
+<OutputType>Executable</OutputType>
+<CompileOption>-I"C:\Users\Michael\workspace\tizen\Squarezen\inc" -O3 -g -Wall -fmessage-length=0      </CompileOption>
+<LinkOption>-L"C:\Users\Michael\workspace\tizen\Squarezen\lib"  -Xlinker -rpath="/opt/usr/apps/0sM1rnfdHV/lib" -Xlinker -rpath="/home/developer/sdk_tools/lib"  -L"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/lib" -L"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/lib/osp"                         </LinkOption>
+</BcProject>
+</BuildInfo>
