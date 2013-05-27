@@ -117,7 +117,7 @@ void YmEnvelopeGenerator::Write(uint8_t *regs)
 			 mChip->mChannels[1].mMode |
 			 mChip->mChannels[2].mMode) ^ 0x10;
 
-	AppLog("EG output = %d, attack = %d, cycle = %d", mOut, mAttack, mCycle);
+	//AppLog("EG output = %d, attack = %d, cycle = %d", mOut, mAttack, mCycle);
 
 }
 

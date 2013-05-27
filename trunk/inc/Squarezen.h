@@ -35,7 +35,6 @@
 class SquarezenApp
 	: public Tizen::App::UiApp
 	, public Tizen::System::IScreenEventListener
-	, public Tizen::Media::IAudioOutEventListener
 {
 public:
 	/**
@@ -77,20 +76,6 @@ public:
 
 	// Called when the screen turns off.
 	virtual void OnScreenOff(void);
-
-protected:
-    virtual void OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src);
-    virtual void OnAudioOutErrorOccurred(Tizen::Media::AudioOut& src, result r) {}
-    virtual void OnAudioOutInterrupted(Tizen::Media::AudioOut& src) {}
-    virtual void OnAudioOutReleased(Tizen::Media::AudioOut& src) {}
-    virtual void OnAudioOutAudioFocusChanged(Tizen::Media::AudioOut& src) {}
-
-private:
-    Tizen::Media::AudioOut mAudioOut;
-    MusicPlayer *mPlayer;
-    Tizen::Base::ByteBuffer mBuffers[2];
-    int mCurPlayingBuffer;
-    int mMinBufferSize;
 };
 
 #endif // _SQUAREZEN_H_
