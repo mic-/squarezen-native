@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Mic
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include <FBase.h>
 #include <FIo.h>
 #include <FApp.h>
@@ -41,7 +57,6 @@ result YmPlayer::Prepare(Tizen::Base::String fileName)
 	uint32_t sampleBytes;
     size_t fileSize, readBytes;
     uint16_t  numDigiDrums;
-    static char temp[256];
     Tizen::Io::File ymFile;
     result r = E_SUCCESS;
 
@@ -167,7 +182,6 @@ void YmPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 
 result YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
-    static char temp[128];
 	int32_t i, k;
     int16_t *writebuf;
     int16_t out;

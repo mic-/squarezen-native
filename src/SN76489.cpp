@@ -1,3 +1,19 @@
+/*
+ * Copyright 2013 Mic
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "SN76489.h"
 
 
@@ -27,7 +43,6 @@ void SnChannel::Step()
 		}
 	} else {
 		// Noise
-		bool change = false;
 		uint32_t period = 0x10 << (mPeriod & NOISE_PERIOD_MASK);
 		if ((mPeriod & NOISE_PERIOD_MASK) == NOISE_PERIOD_TONE2) {
 			period = mChip->mChannels[2].mPeriod;
@@ -49,7 +64,7 @@ void SnChannel::Step()
 
 void SnChannel::Write(uint8_t addr, uint8_t val)
 {
-	AppLog("Writing %#x to PSG", val);
+	//AppLog("Writing %#x to PSG", val);
 
 	switch (addr) {
 	case 0x06:
