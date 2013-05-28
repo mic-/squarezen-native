@@ -55,9 +55,8 @@ int YmPlayer::Prepare(std::wstring fileName)
 {
 	uint32_t  i;
 	uint32_t sampleBytes;
-    size_t fileSize, readBytes;
+    size_t fileSize;
     uint16_t  numDigiDrums;
-    int retVal = 0;
 
     if (MusicPlayer::STATE_CREATED != GetState()) {
     	Reset();

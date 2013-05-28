@@ -25,7 +25,7 @@
 #include <FUiIme.h>
 #include <FGraphics.h>
 #include <gl.h>
-#include "MusicPlayer.h"
+#include "../../emu-players/MusicPlayer.h"
 
 
 class SquarezenMainForm

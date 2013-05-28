@@ -17,8 +17,8 @@
 #include "SquarezenMainForm.h"
 #include "AppResourceId.h"
 #include <FIo.h>
-#include "VgmPlayer.h"
-#include "YmPlayer.h"
+#include "../../emu-players/VgmPlayer.h"
+#include "../../emu-players/YmPlayer.h"
 
 using namespace Tizen::Base;
 using namespace Tizen::App;

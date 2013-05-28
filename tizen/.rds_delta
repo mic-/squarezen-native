@@ -1,0 +1,15 @@
+#delete
+#add
+author-signature.xml
+signature1.xml
+bin/tizen.exe
+data/
+lib/
+info/manifest.xml
+res/.workflow
+res/screen-size-normal/IDF_FORM.xml
+res/screen-size-normal/workflow.xml
+shared/data/
+shared/res/screen-density-xhigh/mainmenu.png
+shared/trusted/
+#modify
