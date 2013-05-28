@@ -165,7 +165,8 @@ result SquarezenMainForm::PlayFile(String *fileName) {
 		return E_FAILURE;
 	}
 
-	if (IsFailed(mPlayer->Prepare(path))) {
+	std::wstring ws = std::wstring(path.GetPointer());
+	if ( IsFailed(mPlayer->Prepare(ws)) ) {
     	AppLog("Prepare failed");
     	return E_FAILURE;
     }

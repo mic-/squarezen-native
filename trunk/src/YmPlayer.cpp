@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-#include <FBase.h>
-#include <FIo.h>
-#include <FApp.h>
-#include <FMedia.h>
+#include <iostream>
+#include <fstream>
 #include <stddef.h>
 #include "YmPlayer.h"
 
@@ -33,9 +31,9 @@ YmPlayer::YmPlayer() :
 }
 
 
-result YmPlayer::Reset()
+int YmPlayer::Reset()
 {
-	AppLog("YmPlayer::Reset");
+	//AppLog("YmPlayer::Reset");
 
 	if (mYmData) delete [] mYmData;
 	if (mTempBuffer) delete [] mTempBuffer;
@@ -49,48 +47,54 @@ result YmPlayer::Reset()
 
 	mState = MusicPlayer::STATE_CREATED;
 
-	return E_SUCCESS;
+	return 0;
 }
 
 
-result YmPlayer::Prepare(Tizen::Base::String fileName)
+int YmPlayer::Prepare(std::wstring fileName)
 {
 	uint32_t  i;
 	uint32_t sampleBytes;
     size_t fileSize, readBytes;
     uint16_t  numDigiDrums;
-    Tizen::Io::File ymFile;
-    result r = E_SUCCESS;
+    int retVal = 0;
 
     if (MusicPlayer::STATE_CREATED != GetState()) {
     	Reset();
     }
 
-    ymFile.Construct(fileName, L"rb");
-    TryReturn(r == E_SUCCESS, r, "Failed to open file %ws", fileName.GetPointer());
-
-    ymFile.Seek(Tizen::Io::FILESEEKPOSITION_END, 0L);
-    fileSize = ymFile.Tell();
-    ymFile.Seek(Tizen::Io::FILESEEKPOSITION_BEGIN, 0L);
+    std::ifstream musicFile(std::string(fileName.begin(), fileName.end()).c_str(),
+    		std::ios::in | std::ios::binary);
+    if (!musicFile) {
+    	// AppLog("Failed to open file %S", fileName.c_str());
+    	return -1;
+    }
+    musicFile.seekg(0, musicFile.end);
+    fileSize = musicFile.tellg();
+    musicFile.seekg(0, musicFile.beg);
 
 #ifdef LOG_PCM
     pcmFile = fopen("/sdcard/log.pcm", "wb");
     loggedBuffers = 0;
 #endif
 
-    AppLog("Trying to allocate %d bytes", fileSize);
+    //AppLog("Trying to allocate %d bytes", fileSize);
 
     mYmData = new unsigned char[fileSize];
     if (!mYmData) {
-    	AppLog("Failed to allocate memory");
-		return E_FAILURE;
+    	//AppLog("Failed to allocate memory");
+		return -1;
     }
 
-	AppLog("Allocation ok");
+	//AppLog("Allocation ok");
 
-	readBytes = ymFile.Read(mYmData, fileSize);
-
-	AppLog("Read %d bytes from file", fileSize);
+	musicFile.read((char*)mYmData, fileSize);
+	if (!musicFile) {
+		//AppLog("Failed to read data from file");
+		musicFile.close();
+		return -1;
+	}
+	musicFile.close();
 
 	numDigiDrums = ((uint16_t)mYmData[0x14]) << 8;
 	numDigiDrums |= mYmData[0x15];
@@ -113,11 +117,11 @@ result YmPlayer::Prepare(Tizen::Base::String fileName)
 		numDigiDrums--;
 	}
 
-	mSongName = (char*)mYmRegStream;
+	//mSongName = (char*)mYmRegStream;
 	while (*mYmRegStream++);		// Skip song name
-	mAuthorName = (char*)mYmRegStream;
+	//mAuthorName = (char*)mYmRegStream;
 	while (*mYmRegStream++);		// Skip author name
-	mSongComment = (char*)mYmRegStream;
+	//mSongComment = (char*)mYmRegStream;
 	while (*mYmRegStream++);		// Skip song comment
 
 	mChip.mEG.mEnvTable  = (uint16_t*)YmChip::YM2149_ENVE_TB;
@@ -128,8 +132,8 @@ result YmPlayer::Prepare(Tizen::Base::String fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[3];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-    	AppLog("Failed to set blipbuffer sample rate");
-		return E_FAILURE;
+    	//AppLog("Failed to set blipbuffer sample rate");
+		return -1;
 	}
 	mBlipBuf->clock_rate(2000000);
 
@@ -165,7 +169,7 @@ result YmPlayer::Prepare(Tizen::Base::String fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 
-	return E_SUCCESS;
+	return 0;
 }
 
 
@@ -182,14 +186,14 @@ void YmPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 }
 
 
-result YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
+int YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
     int16_t *writebuf;
     int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
-    	return E_FAILURE;
+    	return -1;
     }
 
     if (!mTempBuffer) {
@@ -243,6 +247,6 @@ result YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	}
 #endif
 
-	return E_SUCCESS;
+	return 0;
 }
 

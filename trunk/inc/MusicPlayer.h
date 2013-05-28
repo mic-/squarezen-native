@@ -21,9 +21,23 @@
 #ifndef MUSICPLAYER_H_
 #define MUSICPLAYER_H_
 
-#include <FBase.h>
+#include <string>
 #include <stdint.h>
 #include "Blip_Buffer.h"
+
+
+class MetaData
+{
+public:
+	MetaData() :
+		mTitle("Unknown"), mAuthor("Unknown"), mComment("Unknown") {}
+
+	const std::string& GetTitle() const { return mTitle; }
+	const std::string& GetAuthor() const { return mAuthor; }
+	const std::string& GetComment() const { return mComment; }
+
+	std::string mTitle, mAuthor, mComment;
+};
 
 
 class MusicPlayer
@@ -38,9 +52,9 @@ public:
 		if (mSynth) { delete [] mSynth; mSynth = NULL; }
 	}
 
-	virtual result Prepare(Tizen::Base::String fileName) = 0;
-	virtual result Run(uint32_t numSample, int16_t *buffer) = 0;
-	virtual result Reset() = 0;
+	virtual int Prepare(std::wstring fileName) = 0;
+	virtual int Run(uint32_t numSample, int16_t *buffer) = 0;
+	virtual int Reset() = 0;
 
 	virtual int GetState() const { return mState; }
 
@@ -54,6 +68,7 @@ public:
 protected:
 	Blip_Buffer *mBlipBuf;
 	Blip_Synth<blip_low_quality,82> *mSynth;
+	MetaData mMetaData;
 	int mState;
 };
 

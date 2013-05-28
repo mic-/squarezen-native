@@ -21,7 +21,6 @@
 #ifndef VGMPLAYER_H_
 #define VGMPLAYER_H_
 
-#include <FBase.h>
 #include "SN76489.h"
 #include "Blip_Buffer.h"
 #include "MusicPlayer.h"
@@ -34,9 +33,9 @@ class VgmPlayer : public MusicPlayer
 public:
 	VgmPlayer();
 
-	virtual result Prepare(Tizen::Base::String fileName);
-	virtual result Run(uint32_t numSample, int16_t *buffer);
-	virtual result Reset();
+	virtual int Prepare(std::wstring fileName);
+	virtual int Run(uint32_t numSample, int16_t *buffer);
+	virtual int Reset();
 
 private:
 	void PresentBuffer(int16_t *out, Blip_Buffer *in);
@@ -46,7 +45,7 @@ private:
 	uint32_t mWait;
 	uint32_t mCycleCount, mSampleCycles;
 	uint32_t mDataPos, mDataLen;
-	Tizen::Base::ByteBuffer mVgmData;
+	uint8_t *mVgmData;
 	int16_t *mTempBuffer;
 	SnChip *mSN76489;
 };

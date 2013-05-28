@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include <FBase.h>
-#include <FIo.h>
+#include <iostream>
+#include <fstream>
+#include <string.h>
 #include "VgmPlayer.h"
 
 
@@ -27,9 +28,9 @@ VgmPlayer::VgmPlayer() :
 {
 }
 
-result VgmPlayer::Reset()
+int VgmPlayer::Reset()
 {
-	AppLog("VgmPlayer::Reset");
+	//AppLog("VgmPlayer::Reset");
 
 	if (mSN76489) delete mSN76489;
 	mSN76489 = NULL;
@@ -40,45 +41,49 @@ result VgmPlayer::Reset()
 
 	mState = MusicPlayer::STATE_CREATED;
 
-	return E_SUCCESS;
+	return 0;
 }
 
 
-result VgmPlayer::Prepare(Tizen::Base::String fileName)
+int VgmPlayer::Prepare(std::wstring fileName)
 {
 	uint32_t  i;
     size_t fileSize, readBytes;
-    Tizen::Io::File vgmFile;
-    result r = E_SUCCESS;
+    int retVal = 0;
 
     if (MusicPlayer::STATE_CREATED != GetState()) {
-    	//Stop();
     	Reset();
     }
 
-    vgmFile.Construct(fileName, L"rb");
-    TryReturn(r == E_SUCCESS, r, "Failed to open file %ws", fileName.GetPointer());
-
-    vgmFile.Seek(Tizen::Io::FILESEEKPOSITION_END, 0L);
-    fileSize = vgmFile.Tell();
-    vgmFile.Seek(Tizen::Io::FILESEEKPOSITION_BEGIN, 0L);
+    std::ifstream musicFile(std::string(fileName.begin(), fileName.end()).c_str(),
+    		std::ios::in | std::ios::binary);
+    if (!musicFile) {
+    	// AppLog("Failed to open file %S", fileName.c_str());
+    	return -1;
+    }
+    musicFile.seekg(0, musicFile.end);
+    fileSize = musicFile.tellg();
+    musicFile.seekg(0, musicFile.beg);
 
 #ifdef LOG_PCM
     pcmFile = fopen("/sdcard/log.pcm", "wb");
     loggedBuffers = 0;
 #endif
 
-    AppLog("Trying to allocate %d bytes", fileSize);
+    //AppLog("Trying to allocate %d bytes", fileSize);
 
-    byte *buf = new byte[fileSize];
-	readBytes = vgmFile.Read(buf, fileSize);
-	if (readBytes < fileSize) {
-		AppLog("Read failed");
-		return E_FAILURE;
+    char *buf = new char[fileSize];
+	musicFile.read(buf, fileSize);
+	if (!musicFile) {
+		//AppLog("Read failed");
+		musicFile.close();
+		return -1;
 	}
 
-	Tizen::Base::ByteBuffer bbuf;
-	bbuf.Construct(buf, 0, fileSize, fileSize);
+	musicFile.close();
+
+	//Tizen::Base::ByteBuffer bbuf;
+	//bbuf.Construct(buf, 0, fileSize, fileSize);
 #if 0
 	// TODO: handle zipped VGMs
 	Tizen::Base::ByteBuffer *inflatedBuf = Tizen::Base::Utility::Inflator::InflateN(bbuf);
@@ -90,9 +95,8 @@ result VgmPlayer::Prepare(Tizen::Base::String fileName)
 	mVgmData.Clear();
 	mVgmData.CopyFrom(*inflatedBuf);
 #else
-	mVgmData.Clear();
-	mVgmData.Construct(fileSize);
-	mVgmData.CopyFrom(bbuf);
+	mVgmData = new uint8_t[fileSize];
+	memcpy(mVgmData, buf, fileSize);
 #endif
 
 	mDataPos = 0x40;
@@ -102,8 +106,8 @@ result VgmPlayer::Prepare(Tizen::Base::String fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[4];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-    	AppLog("Failed to set blipbuffer sample rate");
-		return E_FAILURE;
+    	//AppLog("Failed to set blipbuffer sample rate");
+		return -1;
 	}
 	mBlipBuf->clock_rate(3579545);
 
@@ -119,10 +123,10 @@ result VgmPlayer::Prepare(Tizen::Base::String fileName)
 	mSN76489 = new SnChip();
 	mSN76489->Reset();
 
-	AppLog("Prepare done");
+	//AppLog("Prepare done");
 	mState = MusicPlayer::STATE_PREPARED;
 
-	return E_SUCCESS;
+	return 0;
 }
 
 
@@ -202,14 +206,14 @@ void VgmPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 }
 
 
-result VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
+int VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
     int16_t *writebuf;
     int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
-    	return E_FAILURE;
+    	return -1;
     }
 
     if (!mTempBuffer) {
@@ -255,5 +259,5 @@ result VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	}
 #endif
 
-	return E_SUCCESS;
+	return 0;
 }
