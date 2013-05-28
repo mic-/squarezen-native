@@ -48,8 +48,7 @@ int VgmPlayer::Reset()
 int VgmPlayer::Prepare(std::wstring fileName)
 {
 	uint32_t  i;
-    size_t fileSize, readBytes;
-    int retVal = 0;
+    size_t fileSize;
 
     if (MusicPlayer::STATE_CREATED != GetState()) {
     	Reset();

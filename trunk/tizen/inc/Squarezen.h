@@ -25,8 +25,8 @@
 #include <FUiIme.h>
 #include <FGraphics.h>
 #include <gl.h>
-#include "VgmPlayer.h"
-#include "YmPlayer.h"
+#include "../../emu-players/VgmPlayer.h"
+#include "../../emu-players/YmPlayer.h"
 
 /**
  * [SquarezenApp] UiApp must inherit from UiApp class
