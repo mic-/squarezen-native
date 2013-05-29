@@ -231,7 +231,9 @@ int exec_count[512];
 int exec_samples = 1000000;
 FILE *log;
 
-int cpu_reset() {
+
+int cpu_reset()
+{
 	int i;
 
 	if (MACH_TYPE & 0x80) {
@@ -251,13 +253,13 @@ int cpu_reset() {
 
 	speedShift = 0;
 
-	for (i=0; i<512; i++)
+	/*for (i=0; i<512; i++)
 	{
 	    exec_count[i] = 0;
 	}
 	exec_samples = 1000000;
 
-	log = (FILE*)fopen("./gbz80.txt","w");
+	log = (FILE*)fopen("./gbz80.txt","w");*/
 
 	cpu.halted = cpu.stopped = 0;
 	pendingDI = pendingEI = 0;
@@ -265,7 +267,8 @@ int cpu_reset() {
 }
 
 
-void cpu_rst(unsigned short address) {
+void cpu_rst(unsigned short address)
+{
 	cpu.halted = 0;
 	cpu.regs.SP -= 2;
 	mem_write_16(cpu.regs.SP, cpu.regs.PC);
@@ -289,7 +292,7 @@ void cpu_close()
      }
      fclose(fp);*/
 
-    fclose(log);
+    //fclose(log);
 }
 
 void cpu_execute(unsigned int max) {
