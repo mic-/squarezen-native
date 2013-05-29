@@ -117,6 +117,8 @@ SquarezenMainForm::OnInitializing(void)
     mAudioOut.Prepare(AUDIO_TYPE_PCM_S16_LE, AUDIO_CHANNEL_TYPE_STEREO, 44100);
     mMinBufferSize = mAudioOut.GetMinBufferSize() * 4;
 
+    AppLog("Buffer size: %d bytes", mMinBufferSize);
+
     mBuffers[0].Construct(mMinBufferSize);
     mBuffers[1].Construct(mMinBufferSize);
 
