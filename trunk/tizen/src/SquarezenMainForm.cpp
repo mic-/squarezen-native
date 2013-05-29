@@ -17,6 +17,7 @@
 #include "SquarezenMainForm.h"
 #include "AppResourceId.h"
 #include <FIo.h>
+#include "../../emu-players/GbsPlayer.h"
 #include "../../emu-players/VgmPlayer.h"
 #include "../../emu-players/YmPlayer.h"
 
@@ -85,10 +86,11 @@ SquarezenMainForm::OnInitializing(void)
 		DirEntry entry = dirEnum->GetCurrentDirEntry();
 		String s;
 		entry.GetName().ToUpper(s);
-		if (s.EndsWith(".YM") || s.EndsWith(".VGM")) {
+		if (s.EndsWith(".YM") ||
+				s.EndsWith(".VGM") ||
+				s.EndsWith(".GBS")) {
 			String *temp = new String(entry.GetName());
 			mFileList->Add(temp);
-			//AppLog("Found file %S", temp->GetPointer());
 		}
     }
 
@@ -162,6 +164,8 @@ result SquarezenMainForm::PlayFile(String *fileName) {
 		mPlayer = new VgmPlayer;
 	} else if (fileName->EndsWith(".YM") || fileName->EndsWith(".ym")) {
 		mPlayer = new YmPlayer;
+	} else if (fileName->EndsWith(".GBS") || fileName->EndsWith(".gbs")) {
+		mPlayer = new GbsPlayer;
 	} else {
 		AppLog("Unrecognized file type: %S", fileName->GetPointer());
 		return E_FAILURE;

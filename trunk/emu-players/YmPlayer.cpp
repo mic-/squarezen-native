@@ -116,11 +116,11 @@ int YmPlayer::Prepare(std::wstring fileName)
 		numDigiDrums--;
 	}
 
-	//mSongName = (char*)mYmRegStream;
+	mMetaData.SetTitle((char*)mYmRegStream);
 	while (*mYmRegStream++);		// Skip song name
-	//mAuthorName = (char*)mYmRegStream;
+	mMetaData.SetAuthor((char*)mYmRegStream);
 	while (*mYmRegStream++);		// Skip author name
-	//mSongComment = (char*)mYmRegStream;
+	mMetaData.SetComment((char*)mYmRegStream);
 	while (*mYmRegStream++);		// Skip song comment
 
 	mChip.mEG.mEnvTable  = (uint16_t*)YmChip::YM2149_ENVE_TB;
