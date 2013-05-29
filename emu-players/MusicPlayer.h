@@ -36,6 +36,10 @@ public:
 	const std::string& GetAuthor() const { return mAuthor; }
 	const std::string& GetComment() const { return mComment; }
 
+	void SetTitle(char *str) { mTitle = str; }
+	void SetAuthor(char *str) { mAuthor = str; }
+	void SetComment(char *str) { mComment = str; }
+
 	std::string mTitle, mAuthor, mComment;
 };
 
@@ -53,7 +57,7 @@ public:
 	}
 
 	virtual int Prepare(std::wstring fileName) = 0;
-	virtual int Run(uint32_t numSample, int16_t *buffer) = 0;
+	virtual int Run(uint32_t numSamples, int16_t *buffer) = 0;
 	virtual int Reset() = 0;
 
 	virtual int GetState() const { return mState; }

@@ -1,7 +1,7 @@
 /*
- * VgmPlayer.h
+ * GbsPlayer.h
  *
- *  Created on: May 23, 2013
+ *  Created on: May 29, 2013
  *
  * Copyright 2013 Mic
  *
@@ -18,36 +18,41 @@
  * limitations under the License.
  */
 
-#ifndef VGMPLAYER_H_
-#define VGMPLAYER_H_
+#ifndef GBSPLAYER_H_
+#define GBSPLAYER_H_
 
-#include "SN76489.h"
-#include "Blip_Buffer.h"
+#include <string>
+#include <stdint.h>
 #include "MusicPlayer.h"
 
-class SnChip;
-
-
-class VgmPlayer : public MusicPlayer
+class GbsPlayer : public MusicPlayer
 {
 public:
-	VgmPlayer();
+	GbsPlayer();
+
+	typedef struct __attribute__ ((__packed__))
+	{
+		char ID[3];
+		uint8_t version;
+		uint8_t numSongs;
+		uint8_t firstSong;
+		uint16_t loadAddress;
+		uint16_t initAddress;
+		uint16_t playAddress;
+		uint16_t SP;
+		uint8_t timerMod;
+		uint8_t timerCtrl;
+		char title[32];
+		char author[32];
+		char copyright[32];
+	}  GbsFileHeader;
 
 	virtual int Prepare(std::wstring fileName);
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
-private:
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
-	uint8_t GetData();
-	void Step();
-
-	uint32_t mWait;
-	uint32_t mCycleCount, mSampleCycles;
-	uint32_t mDataPos, mDataLen;
-	uint8_t *mVgmData;
-	int16_t *mTempBuffer;
-	SnChip *mSN76489;
+protected:
+	GbsFileHeader mFileHeader;
 };
 
-#endif /* VGMPLAYER_H_ */
+#endif /* GBSPLAYER_H_ */

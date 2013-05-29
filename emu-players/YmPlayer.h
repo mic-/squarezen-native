@@ -33,7 +33,7 @@ public:
 	YmPlayer();
 
 	virtual int Prepare(std::wstring fileName);
-	virtual int Run(uint32_t numSample, int16_t *buffer);
+	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
 	YmChip mChip;
