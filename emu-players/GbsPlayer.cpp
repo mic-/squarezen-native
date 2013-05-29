@@ -20,6 +20,8 @@
 #include <string>
 #include "GbsPlayer.h"
 #include "GbCommon.h"
+#include "GbMemory.h"
+#include "GbZ80.h"
 
 
 GbsPlayer::GbsPlayer()
@@ -82,12 +84,66 @@ int GbsPlayer::Prepare(std::wstring fileName)
 	}
 
 	musicFile.close();
+
+	mBlipBuf = new Blip_Buffer();
+	mSynth = new Blip_Synth<blip_low_quality,82>[4];
+
+	if (mBlipBuf->set_sample_rate(44100)) {
+    	//AppLog("Failed to set blipbuffer sample rate");
+		return -1;
+	}
+	mBlipBuf->clock_rate(4194304);
+
+	for (i = 0; i < 4; i++) {
+		mSynth[i].volume(0.22);
+		mSynth[i].output(mBlipBuf);
+	}
+
+	mFrameCycles = 4194304 / 60;
+	mCycleCount = 0;
+
+	mem_reset();
+	cpu_reset();
+	mPapu.Reset();
+
+	mState = MusicPlayer::STATE_PREPARED;
+
 	return 0;
+}
+
+
+void GbsPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
+{
+	int count = in->samples_avail();
+
+	in->read_samples(out, count, 1);
+
+	// Copy each left channel sample to the right channel
+	for (int i = 0; i < count*2; i += 2) {
+		out[i+1] = out[i];
+	}
 }
 
 
 int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
-	memset(buffer, 0, numSamples*2*2);
+	int k;
+	int blipLen = mBlipBuf->count_clocks(numSamples);
+
+	for (k = 0; k < blipLen; k++) {
+		if (mCycleCount == 0) {
+			cpu.cycles = 0;
+			cpu_execute(mFrameCycles);
+		}
+
+		mCycleCount++;
+		if (mCycleCount == mFrameCycles) {
+			mCycleCount = 0;
+		}
+	}
+
+	mBlipBuf->end_frame(blipLen);
+	PresentBuffer(buffer, mBlipBuf);
+
 	return 0;
 }

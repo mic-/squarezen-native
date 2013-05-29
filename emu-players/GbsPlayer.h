@@ -24,6 +24,8 @@
 #include <string>
 #include <stdint.h>
 #include "MusicPlayer.h"
+#include "GbPapu.h"
+
 
 class GbsPlayer : public MusicPlayer
 {
@@ -51,8 +53,12 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
-protected:
+private:
+	void PresentBuffer(int16_t *out, Blip_Buffer *in);
+
 	GbsFileHeader mFileHeader;
+	GbPapuChip mPapu;
+	uint32_t mCycleCount, mFrameCycles;
 };
 
 #endif /* GBSPLAYER_H_ */
