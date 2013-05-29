@@ -89,7 +89,7 @@
 		<link>
 			<name>emu-players</name>
 			<type>2</type>
-			<location>C:/Work/squarezen-native/emu-players</location>
+			<locationURI>$%7BPARENT-1-PROJECT_LOC%7D/emu-players</locationURI>
 		</link>
 	</linkedResources>
 	<filteredResources>
