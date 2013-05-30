@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef SAILFISH_OS
 #include <FBase.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -65,21 +67,27 @@ int GbsPlayer::Prepare(std::wstring fileName)
     fileSize = musicFile.tellg();
     musicFile.seekg(0, musicFile.beg);
 
-    AppLog("Reading GBS header");
     musicFile.read((char*)&mFileHeader, 0x70);
+#ifndef SAILFISH_OS
+    AppLog("Reading GBS header");
     AppLog("ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
     AppLog("Load: %#x\nInit: %#x\nPlay: %#x",
     		mFileHeader.loadAddress, mFileHeader.initAddress, mFileHeader.playAddress);
+#endif
 
     numBanks = ((fileSize + mFileHeader.loadAddress - 0x70) + 0x3fff) >> 14;
 
+#ifndef SAILFISH_OS
     AppLog("Trying to allocate %d bytes", (uint32_t)numBanks << 14);
+#endif
 
     cart = new unsigned char[(uint32_t)numBanks << 14];
 	musicFile.read((char*)cart + mFileHeader.loadAddress, fileSize-0x70);
 	if (!musicFile) {
-		AppLog("Read failed");
-		musicFile.close();
+#ifndef SAILFISH_OS
+        AppLog("Read failed");
+#endif
+        musicFile.close();
 		return -1;
 	}
 
@@ -105,6 +113,10 @@ int GbsPlayer::Prepare(std::wstring fileName)
 	mem_reset();
 	cpu_reset();
 	mPapu.Reset();
+
+	cpu.regs.PC = mFileHeader.initAddress;
+	cpu.cycles = 0;
+	cpu_execute(mFrameCycles);
 
 	mState = MusicPlayer::STATE_PREPARED;
 
@@ -132,6 +144,7 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
+			cpu.regs.PC = mFileHeader.playAddress;
 			cpu.cycles = 0;
 			cpu_execute(mFrameCycles);
 		}

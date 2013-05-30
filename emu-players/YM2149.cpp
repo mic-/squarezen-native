@@ -19,8 +19,11 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <FBase.h>
 #include "YM2149.h"
+
+#ifndef SAILFISH_OS
+#include <FBase.h>
+#endif
 
 
 //#define LOG_PCM 1
