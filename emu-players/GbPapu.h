@@ -41,7 +41,7 @@ public:
 	GbPapuChip *mChip;
 	uint8_t mIndex;
 	uint8_t mWaveStep;
-	uint16_t mVol;
+	uint16_t mVol, mCurVol;
 	uint8_t mDuty;
 	uint8_t mPhase;
 };
