@@ -234,8 +234,6 @@ FILE *log;
 
 int cpu_reset()
 {
-	int i;
-
 	if (MACH_TYPE & 0x80) {
 		cpu.regs.A = 0x11;
 	} else {
@@ -253,7 +251,7 @@ int cpu_reset()
 
 	speedShift = 0;
 
-	/*for (i=0; i<512; i++)
+	/*for (int i=0; i<512; i++)
 	{
 	    exec_count[i] = 0;
 	}
