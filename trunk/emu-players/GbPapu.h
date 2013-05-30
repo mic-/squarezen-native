@@ -33,13 +33,17 @@ public:
 
 	virtual void Reset();
 	virtual void Step();
-	virtual void Write(uint8_t addr, uint8_t val);
+	virtual void Write(uint32_t addr, uint8_t val);
 
 	void SetChip(GbPapuChip *chip) { mChip = chip; }
 	void SetIndex(uint8_t index) { mIndex = index; }
 
 	GbPapuChip *mChip;
 	uint8_t mIndex;
+	uint8_t mWaveStep;
+	uint16_t mVol;
+	uint8_t mDuty;
+	uint8_t mPhase;
 };
 
 
@@ -48,7 +52,7 @@ class GbPapuChip
 public:
 	void Reset();
 	void Step();
-	void Write(uint8_t addr, uint8_t val);
+	void Write(uint32_t addr, uint8_t val);
 
 	static const uint8_t SQUARE_WAVES[4][32];
 

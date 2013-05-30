@@ -30,7 +30,7 @@ public:
 
 	virtual void Reset() = 0;
 	virtual void Step() = 0;
-	virtual void Write(uint8_t addr, uint8_t val) {}
+	virtual void Write(uint32_t addr, uint8_t val) {}
 	virtual void Write(uint8_t val) {}
 	virtual void Write(uint8_t *regs) {}
 

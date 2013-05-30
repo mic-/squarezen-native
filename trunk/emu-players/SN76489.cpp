@@ -62,7 +62,7 @@ void SnChannel::Step()
 }
 
 
-void SnChannel::Write(uint8_t addr, uint8_t val)
+void SnChannel::Write(uint32_t addr, uint8_t val)
 {
 	//AppLog("Writing %#x to PSG", val);
 
