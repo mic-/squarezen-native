@@ -34,18 +34,40 @@ void GbPapuChannel::Reset()
 	mWaveStep = 0;
 	mPhase = 0;
 	mDuty = 0;
+	mVol = mCurVol = 0;
 }
 
 
 void GbPapuChannel::Step()
 {
-	// TODO: fill out
+	mPos++;
+	if (mIndex <= 1) {
+		// Square wave channels
+		if (mPos >= (2048 - mPeriod)) {
+			mPos = 0;
+			if (mWaveStep == 32) {
+				mWaveStep = 0;
+			}
+			mPhase = GbPapuChip::SQUARE_WAVES[mDuty][mWaveStep++];
+		}
+	}
 }
 
 
 void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 {
-	// TODO: fill out
+	if (0xFF13 == addr || 0xFF18 == addr) {
+		mPeriod = (mPeriod & 0x700) | val;
+
+	} else if (0xFF14 == addr || 0xFF19 == addr) {
+		mPeriod = (mPeriod & 0xFF) | (uint16_t)(val & 7) << 8;
+
+		if (val & 0x80) {
+			// Restart
+			mWaveStep = 0;
+			mCurVol = mVol;
+		}
+	}
 }
 
 
