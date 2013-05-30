@@ -31,6 +31,9 @@ const uint8_t GbPapuChip::SQUARE_WAVES[4][32] =
 void GbPapuChannel::Reset()
 {
 	// TODO: fill out
+	mWaveStep = 0;
+	mPhase = 0;
+	mDuty = 0;
 }
 
 
@@ -40,7 +43,7 @@ void GbPapuChannel::Step()
 }
 
 
-void GbPapuChannel::Write(uint8_t addr, uint8_t val)
+void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 {
 	// TODO: fill out
 }
@@ -54,3 +57,20 @@ void GbPapuChip::Reset()
 		mChannels[i].Reset();
 	}
 }
+
+void GbPapuChip::Write(uint32_t addr, uint8_t val)
+{
+	if (addr >= 0xFF10 && addr <= 0xFF14) {
+		mChannels[0].Write(addr, val);
+
+	} else if (addr >= 0xFF16 && addr <= 0xFF19) {
+		mChannels[1].Write(addr, val);
+
+	} else if (addr >= 0xFF1A && addr <= 0xFF1E) {
+		mChannels[2].Write(addr, val);
+
+	} else if (addr >= 0xFF20 && addr <= 0xFF23) {
+		mChannels[3].Write(addr, val);
+	}
+}
+

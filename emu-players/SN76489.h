@@ -36,7 +36,7 @@ public:
 
 	virtual void Reset();
 	virtual void Step();
-	virtual void Write(uint8_t addr, uint8_t val);
+	virtual void Write(uint32_t addr, uint8_t val);
 
 	void SetChip(SnChip *chip) { mChip = chip; }
 	void SetIndex(uint8_t index) { mIndex = index; }
