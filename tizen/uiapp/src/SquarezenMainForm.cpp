@@ -18,15 +18,11 @@
 #include "SquarezenServiceProxy.h"
 #include "AppResourceId.h"
 #include <FIo.h>
-#include "../../../emu-players/GbsPlayer.h"
-#include "../../../emu-players/VgmPlayer.h"
-#include "../../../emu-players/YmPlayer.h"
 
 using namespace Tizen::Base;
 using namespace Tizen::Base::Collection;
 using namespace Tizen::App;
 using namespace Tizen::Io;
-using namespace Tizen::Media;
 using namespace Tizen::Ui;
 using namespace Tizen::Ui::Controls;
 using namespace Tizen::Ui::Scenes;
@@ -36,8 +32,7 @@ SquarezenMainForm::SquarezenMainForm(void) :
 		mItemContext(NULL),
 		mFileList(NULL),
 		mMessageArgList(NULL),
-		mNumFiles(0),
-		mPlayer(NULL)
+		mNumFiles(0)
 {
 }
 
@@ -70,7 +65,6 @@ SquarezenMainForm::OnInitializing(void)
 	// Setup back event listener
 	SetFormBackEventListener(this);
 
-	mPlayerMutex.Create();
 	mFileListMutex.Create();
 
 	mExtStoragePath = Tizen::System::Environment::GetExternalStoragePath();
@@ -134,87 +128,10 @@ SquarezenMainForm::OnInitializing(void)
 		pButtonOk->AddActionEventListener(*this);
 	}
 
-    /*r = mAudioOut.Construct(*this);
-    if (IsFailed(r)) {
-        return r;
-    }
-    mAudioOut.Prepare(AUDIO_TYPE_PCM_S16_LE, AUDIO_CHANNEL_TYPE_STEREO, 44100);
-    mMinBufferSize = mAudioOut.GetMinBufferSize() * 4;
-
-    AppLog("Buffer size: %d bytes", mMinBufferSize);
-
-    mBuffers[0].Construct(mMinBufferSize);
-    mBuffers[1].Construct(mMinBufferSize);*/
-
     AppLog("Form initialized");
 
 	return r;
 }
-
-
-void SquarezenMainForm::OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src)
-{
-	mPlayerMutex.Acquire();
-
-	// Switch buffers and fill up with new audio data
-    mAudioOut.WriteBuffer(mBuffers[mCurPlayingBuffer ^ 1]);
-    mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[mCurPlayingBuffer].GetPointer());
-    mCurPlayingBuffer ^= 1;
-
-    mPlayerMutex.Release();
-}
-
-
-result SquarezenMainForm::PlayFile(String *fileName) {
-	String path = String(mExtStoragePath) + *fileName;
-
-	mPlayerMutex.Acquire();
-
-	if (AUDIOOUT_STATE_PLAYING == mAudioOut.GetState()) {
-		if (IsFailed(mAudioOut.Stop())) {
-			AppLog("AudioOut::Stop failed");
-		}
-		mAudioOut.Reset();
-	}
-
-	if (mPlayer) {
-		mPlayer->Reset();
-		delete mPlayer;
-	}
-
-	if (fileName->EndsWith(".VGM") || fileName->EndsWith(".vgm")) {
-		mPlayer = new VgmPlayer;
-	} else if (fileName->EndsWith(".YM") || fileName->EndsWith(".ym")) {
-		mPlayer = new YmPlayer;
-	} else if (fileName->EndsWith(".GBS") || fileName->EndsWith(".gbs")) {
-		mPlayer = new GbsPlayer;
-	} else {
-		AppLog("Unrecognized file type: %S", fileName->GetPointer());
-		return E_FAILURE;
-	}
-
-	std::wstring ws = std::wstring(path.GetPointer());
-	if ( IsFailed(mPlayer->Prepare(ws)) ) {
-    	AppLog("Prepare failed");
-    	return E_FAILURE;
-    }
-
-    // Fill up both buffers with audio data and send the first one to the audio hw
-	mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[0].GetPointer());
-	mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[1].GetPointer());
-	mAudioOut.WriteBuffer(mBuffers[0]);
-	mCurPlayingBuffer = 0;
-
-	if (IsFailed(mAudioOut.Start())) {
-		AppLog("AudioOut::Start failed");
-		return E_FAILURE;
-    }
-
-	mPlayerMutex.Release();
-
-	return E_SUCCESS;
-}
-
 
 result
 SquarezenMainForm::OnTerminating(void)
@@ -225,14 +142,6 @@ SquarezenMainForm::OnTerminating(void)
 		delete mItemContext;
 		mItemContext = NULL;
 	}
-
-	/*mAudioOut.Stop();
-	mAudioOut.Unprepare();
-	if (mPlayer) {
-		mPlayer->Reset();
-		delete mPlayer;
-		mPlayer = NULL;
-	}*/
 
 	return r;
 }

@@ -10,7 +10,8 @@ CPP_SRCS += \
 ../src/SquarezenFormFactory.cpp \
 ../src/SquarezenFrame.cpp \
 ../src/SquarezenMainForm.cpp \
-../src/SquarezenPanelFactory.cpp 
+../src/SquarezenPanelFactory.cpp \
+../src/SquarezenServiceProxy.cpp 
 
 OBJS += \
 ./src/AppResourceId.o \
@@ -19,7 +20,8 @@ OBJS += \
 ./src/SquarezenFormFactory.o \
 ./src/SquarezenFrame.o \
 ./src/SquarezenMainForm.o \
-./src/SquarezenPanelFactory.o 
+./src/SquarezenPanelFactory.o \
+./src/SquarezenServiceProxy.o 
 
 CPP_DEPS += \
 ./src/AppResourceId.d \
@@ -28,14 +30,15 @@ CPP_DEPS += \
 ./src/SquarezenFormFactory.d \
 ./src/SquarezenFrame.d \
 ./src/SquarezenMainForm.d \
-./src/SquarezenPanelFactory.d 
+./src/SquarezenPanelFactory.d \
+./src/SquarezenServiceProxy.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
 src/%.o: ../src/%.cpp
 	@echo 'Building file: $<'
 	@echo 'Invoking: C++ Compiler'
-	clang++.exe -I"pch" -I"C:\Users\Michael\sqzworkspace\tizen\inc" -O3 -g -Wall -c -fmessage-length=0 -target i386-tizen-linux-gnueabi -gcc-toolchain "C:/tizen-sdk/tools/smart-build-interface/../i386-linux-gnueabi-gcc-4.5/" -ccc-gcc-name i386-linux-gnueabi-g++ -march=i386 -Wno-gnu -fPIE --sysroot="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native" -I"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/libxml2" -I"C:\tizen-sdk\library" -I"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include" -I"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/osp" -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
+	clang++.exe -I"pch" -I"C:\Users\Michael\sqzworkspace\tizen\uiapp\inc" -O3 -g -Wall -c -fmessage-length=0 -target i386-tizen-linux-gnueabi -gcc-toolchain "C:/tizen-sdk/tools/smart-build-interface/../i386-linux-gnueabi-gcc-4.5/" -ccc-gcc-name i386-linux-gnueabi-g++ -march=i386 -Wno-gnu -fPIE --sysroot="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native" -I"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/libxml2" -I"C:\tizen-sdk\library" -I"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include" -I"C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/osp" -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 
