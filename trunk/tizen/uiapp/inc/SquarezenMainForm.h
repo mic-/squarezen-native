@@ -19,13 +19,11 @@
 
 #include <FApp.h>
 #include <FBase.h>
-#include <FMedia.h>
 #include <FSystem.h>
 #include <FUi.h>
 #include <FUiIme.h>
 #include <FGraphics.h>
 #include <gl.h>
-#include "../../../emu-players/MusicPlayer.h"
 
 class SquarezenMainForm;
 
@@ -34,7 +32,7 @@ class FileScannerThread : public Tizen::Base::Runtime::Thread
 {
 public:
 	FileScannerThread()
-		: mForm(NULL), mDone(false)
+		: mForm(NULL)
 	{
 	}
 
@@ -52,7 +50,6 @@ public:
 
 	Object* Run(void);
 
-	bool mDone;
    private:
 	SquarezenMainForm *mForm;
  };
@@ -65,7 +62,6 @@ class SquarezenMainForm
  	, public Tizen::Ui::Scenes::ISceneEventListener
     , public Tizen::Ui::Controls::IListViewItemEventListener
     , public Tizen::Ui::Controls::IListViewItemProvider
-	, public Tizen::Media::IAudioOutEventListener
 {
 public:
 	SquarezenMainForm(void);
@@ -98,30 +94,14 @@ public:
     Tizen::Base::Collection::ArrayList *mFileList;
     Tizen::Base::Collection::ArrayList *mMessageArgList;
     Tizen::Base::String mExtStoragePath;
-    Tizen::Base::Runtime::Mutex mPlayerMutex, mFileListMutex;
+    Tizen::Base::Runtime::Mutex mFileListMutex;
     int mNumFiles;
 
 protected:
-    result PlayFile(Tizen::Base::String *fileName);
-
     FileScannerThread mFileScanner;
 
     static const int ID_FORMAT_STRING = 100;
 	static const int ID_BUTTON_OK = 101;
-
-protected:
-    virtual void OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src);
-    virtual void OnAudioOutErrorOccurred(Tizen::Media::AudioOut& src, result r) {}
-    virtual void OnAudioOutInterrupted(Tizen::Media::AudioOut& src) {}
-    virtual void OnAudioOutReleased(Tizen::Media::AudioOut& src) {}
-    virtual void OnAudioOutAudioFocusChanged(Tizen::Media::AudioOut& src) {}
-
-private:
-    Tizen::Media::AudioOut mAudioOut;
-    MusicPlayer *mPlayer;
-    Tizen::Base::ByteBuffer mBuffers[2];
-    int mCurPlayingBuffer;
-    int mMinBufferSize;
 };
 
 #endif	//_SQUAREZEN_MAIN_FORM_H_
