@@ -30,7 +30,10 @@ class MetaData
 {
 public:
 	MetaData() :
-		mTitle("Unknown"), mAuthor("Unknown"), mComment("Unknown") {}
+		mTitle("Unknown"),
+		mAuthor("Unknown"),
+		mComment("Unknown"),
+		mLengthMs(0) {}
 
 	const std::string& GetTitle() const { return mTitle; }
 	const std::string& GetAuthor() const { return mAuthor; }
@@ -41,6 +44,7 @@ public:
 	void SetComment(char *str) { mComment = str; }
 
 	std::string mTitle, mAuthor, mComment;
+	int mLengthMs;
 };
 
 

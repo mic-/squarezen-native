@@ -124,7 +124,7 @@ SquarezenMainForm::OnInitializing(void)
     mItemContext = new ListContextItem();
 	mItemContext->Construct();
 
-	mMessageArgList = new ArrayList(NoOpDeleter);
+	mMessageArgList = new ArrayList(SingleObjectDeleter);
 	mMessageArgList->Construct();
 
 	// Get a button via resource ID
@@ -134,7 +134,7 @@ SquarezenMainForm::OnInitializing(void)
 		pButtonOk->AddActionEventListener(*this);
 	}
 
-    r = mAudioOut.Construct(*this);
+    /*r = mAudioOut.Construct(*this);
     if (IsFailed(r)) {
         return r;
     }
@@ -144,7 +144,7 @@ SquarezenMainForm::OnInitializing(void)
     AppLog("Buffer size: %d bytes", mMinBufferSize);
 
     mBuffers[0].Construct(mMinBufferSize);
-    mBuffers[1].Construct(mMinBufferSize);
+    mBuffers[1].Construct(mMinBufferSize);*/
 
     AppLog("Form initialized");
 
@@ -226,13 +226,13 @@ SquarezenMainForm::OnTerminating(void)
 		mItemContext = NULL;
 	}
 
-	mAudioOut.Stop();
+	/*mAudioOut.Stop();
 	mAudioOut.Unprepare();
 	if (mPlayer) {
 		mPlayer->Reset();
 		delete mPlayer;
 		mPlayer = NULL;
-	}
+	}*/
 
 	return r;
 }
@@ -248,11 +248,12 @@ SquarezenMainForm::OnListViewItemStateChanged(ListView &listView, int index, int
 		UiApp* app = UiApp::GetInstance();
 		AppAssert(app);
 		mMessageArgList->RemoveAll();
-		mMessageArgList->Add(mFileList->GetAt(index));
+		String *path = new String(String(mExtStoragePath) + *(String*)(mFileList->GetAt(index)));
+		mMessageArgList->Add(path);
 		app->SendUserEvent(STATE_PLAYBACK_REQUEST, mMessageArgList);
 
 		AppLog("Clicked %S", ((String*)mFileList->GetAt(index))->GetPointer());
-		PlayFile((String*)mFileList->GetAt(index));
+		//PlayFile((String*)mFileList->GetAt(index));
 	}
 
 	mFileListMutex.Release();

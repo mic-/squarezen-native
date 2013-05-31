@@ -15,15 +15,20 @@
  */
 
 #include "serviceapp.h"
+#include "../../../emu-players/GbsPlayer.h"
+#include "../../../emu-players/VgmPlayer.h"
+#include "../../../emu-players/YmPlayer.h"
 
 using namespace Tizen::App;
 using namespace Tizen::Base;
 using namespace Tizen::Base::Collection;
+using namespace Tizen::Media;
 using namespace Tizen::System;
 
 static const wchar_t* LOCAL_MESSAGE_PORT_NAME = L"SQZSERVICE_PORT";
 
 serviceappApp::serviceappApp(void)
+	: mPlayer(NULL)
 {
 }
 
@@ -53,6 +58,20 @@ serviceappApp::OnAppInitializing(AppRegistry& appRegistry)
 	TryReturn(IsFailed(r) != true, r, "SquarezenService: [%s] Failed to construct MessagePort", GetErrorMessage(r));
 	AppLog("SquarezenService: MessagePort has been constructed.");
 
+	mPlayerMutex.Create();
+
+    r = mAudioOut.Construct(*this);
+    if (IsFailed(r)) {
+        return r;
+    }
+    mAudioOut.Prepare(AUDIO_TYPE_PCM_S16_LE, AUDIO_CHANNEL_TYPE_STEREO, 44100);
+    mMinBufferSize = mAudioOut.GetMinBufferSize() * 4;
+
+    AppLog("Buffer size: %d bytes", mMinBufferSize);
+
+    mBuffers[0].Construct(mMinBufferSize);
+    mBuffers[1].Construct(mMinBufferSize);
+
 	return true;
 }
 
@@ -78,11 +97,13 @@ serviceappApp::OnAppWillTerminate(void)
 bool
 serviceappApp::OnAppTerminating(AppRegistry& appRegistry, bool forcedTermination)
 {
-	// TODO:
-	// Deallocate resources allocated by this App for termination.
-	// The App's permanent data and context can be saved via appRegistry.
-
-	// TODO: Add your termination code here
+	mAudioOut.Stop();
+	mAudioOut.Unprepare();
+	if (mPlayer) {
+		mPlayer->Reset();
+		delete mPlayer;
+		mPlayer = NULL;
+	}
 
 	return true;
 }
@@ -102,6 +123,69 @@ serviceappApp::OnBatteryLevelChanged(BatteryLevel batteryLevel)
 	// Stop using multimedia features(camera, mp3 etc.) if the battery level is CRITICAL.
 }
 
+
+void serviceappApp::OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src)
+{
+	mPlayerMutex.Acquire();
+
+	// Switch buffers and fill up with new audio data
+    mAudioOut.WriteBuffer(mBuffers[mCurPlayingBuffer ^ 1]);
+    mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[mCurPlayingBuffer].GetPointer());
+    mCurPlayingBuffer ^= 1;
+
+    mPlayerMutex.Release();
+}
+
+
+result serviceappApp::PlayFile(String *filePath) {
+	mPlayerMutex.Acquire();
+
+	if (AUDIOOUT_STATE_PLAYING == mAudioOut.GetState()) {
+		if (IsFailed(mAudioOut.Stop())) {
+			AppLog("AudioOut::Stop failed");
+		}
+		mAudioOut.Reset();
+	}
+
+	if (mPlayer) {
+		mPlayer->Reset();
+		delete mPlayer;
+	}
+
+	if (filePath->EndsWith(".VGM") || filePath->EndsWith(".vgm")) {
+		mPlayer = new VgmPlayer;
+	} else if (filePath->EndsWith(".YM") || filePath->EndsWith(".ym")) {
+		mPlayer = new YmPlayer;
+	} else if (filePath->EndsWith(".GBS") || filePath->EndsWith(".gbs")) {
+		mPlayer = new GbsPlayer;
+	} else {
+		AppLog("Unrecognized file type: %S", filePath->GetPointer());
+		return E_FAILURE;
+	}
+
+	std::wstring ws = std::wstring(filePath->GetPointer());
+	if (IsFailed(mPlayer->Prepare(ws))) {
+    	AppLog("Prepare failed");
+    	return E_FAILURE;
+    }
+
+    // Fill up both buffers with audio data and send the first one to the audio hw
+	mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[0].GetPointer());
+	mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[1].GetPointer());
+	mAudioOut.WriteBuffer(mBuffers[0]);
+	mCurPlayingBuffer = 0;
+
+	if (IsFailed(mAudioOut.Start())) {
+		AppLog("AudioOut::Start failed");
+		return E_FAILURE;
+    }
+
+	mPlayerMutex.Release();
+
+	return E_SUCCESS;
+}
+
+
 void
 serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 {
@@ -109,6 +193,9 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 
 	switch (requestId) {
 	case PLAYBACK_REQUEST:
+		if (pArgs && pArgs->GetCount() >= 1) {
+			PlayFile(static_cast<String *>(pArgs->GetAt(0)));
+		}
 		break;
 
 	case PAUSE_UNPAUSE_REQUEST:

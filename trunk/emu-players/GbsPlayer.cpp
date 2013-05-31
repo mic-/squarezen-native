@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#ifndef SAILFISH_OS
+#ifdef __TIZEN__
 #include <FBase.h>
 #endif
 #include <iostream>
@@ -68,7 +68,7 @@ int GbsPlayer::Prepare(std::wstring fileName)
     musicFile.seekg(0, musicFile.beg);
 
     musicFile.read((char*)&mFileHeader, 0x70);
-#ifndef SAILFISH_OS
+#ifdef __TIZEN__
     AppLog("Reading GBS header");
     AppLog("ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
     AppLog("Load: %#x\nInit: %#x\nPlay: %#x",
@@ -77,14 +77,14 @@ int GbsPlayer::Prepare(std::wstring fileName)
 
     numBanks = ((fileSize + mFileHeader.loadAddress - 0x70) + 0x3fff) >> 14;
 
-#ifndef SAILFISH_OS
+#ifdef __TIZEN__
     AppLog("Trying to allocate %d bytes", (uint32_t)numBanks << 14);
 #endif
 
     cart = new unsigned char[(uint32_t)numBanks << 14];
 	musicFile.read((char*)cart + mFileHeader.loadAddress, fileSize-0x70);
 	if (!musicFile) {
-#ifndef SAILFISH_OS
+#ifdef __TIZEN__
         AppLog("Read failed");
 #endif
         musicFile.close();

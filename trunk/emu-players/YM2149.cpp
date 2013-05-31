@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include "YM2149.h"
 
-#ifndef SAILFISH_OS
+#ifdef __TIZEN__
 #include <FBase.h>
 #endif
 

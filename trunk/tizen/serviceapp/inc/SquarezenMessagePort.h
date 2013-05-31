@@ -48,6 +48,7 @@ public :
 private :
 	Tizen::Io::LocalMessagePort *mLocalMessagePort;
 	Tizen::Io::RemoteMessagePort *mRemoteMessagePort;
+	Tizen::Base::Collection::ArrayList *mMessageArgList;
 };
 
 
