@@ -35,8 +35,7 @@ SquarezenServiceProxy::~SquarezenServiceProxy()
 {
 }
 
-result
-SquarezenServiceProxy::Construct(const AppId& appId, const String& remotePortName)
+result SquarezenServiceProxy::Construct(const AppId& appId, const String& remotePortName)
 {
 	result r = E_FAILURE;
 
@@ -75,8 +74,7 @@ SquarezenServiceProxy::Construct(const AppId& appId, const String& remotePortNam
 	return E_SUCCESS;
 }
 
-result
-SquarezenServiceProxy::SendMessage(const IMap* message)
+result SquarezenServiceProxy::SendMessage(const IMap* message)
 {
 	result r = E_SUCCESS;
 
@@ -89,8 +87,7 @@ SquarezenServiceProxy::SendMessage(const IMap* message)
 	return r;
 }
 
-void
-SquarezenServiceProxy::OnMessageReceivedN(RemoteMessagePort* remoteMessagePort, IMap* message)
+void SquarezenServiceProxy::OnMessageReceivedN(RemoteMessagePort* remoteMessagePort, IMap* message)
 {
 	AppLog("Squarezen: Received a message from the service");
 
@@ -104,19 +101,16 @@ SquarezenServiceProxy::OnMessageReceivedN(RemoteMessagePort* remoteMessagePort, 
 		AppLog("Squarezen: Received data : %S", data->GetPointer());
 
 		if (data->CompareTo(L"ready") == 0) {
-			//app->SendUserEvent(STATE_CONNECTED, null);
+			app->SendUserEvent(STATE_CONNECTED, null);
 
-		} else if (data->CompareTo(L"started") == 0) {
-			//app->SendUserEvent(STATE_TIMER_STARTED, null);
+		} else if (data->CompareTo(L"play_started") == 0) {
+			app->SendUserEvent(STATE_PLAYBACK_STARTED, null);
 
-		} else if (data->CompareTo(L"timer expired") == 0) {
-			//app->SendUserEvent(STATE_TIMER_EXPIRED, null);
-
-		} else if (data->CompareTo(L"stopped") == 0) {
-			//app->SendUserEvent(STATE_TIMER_STOPPED, null);
+		} else if (data->CompareTo(L"play_finished") == 0) {
+			app->SendUserEvent(STATE_PLAYBACK_FINISHED, null);
 
 		} else if (data->CompareTo(L"exit") == 0) {
-			//app->SendUserEvent(STATE_EXIT, null);
+			app->SendUserEvent(STATE_EXIT, null);
 		}
 	}
 

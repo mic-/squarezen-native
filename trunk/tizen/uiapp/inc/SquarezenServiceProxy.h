@@ -23,6 +23,18 @@
 #include <FBase.h>
 #include <FIo.h>
 
+static const RequestId STATE_INIT = 0;
+static const RequestId STATE_READY = 1;
+static const RequestId STATE_CONNECT_REQUEST = 2;
+static const RequestId STATE_CONNECTED = 3;
+static const RequestId STATE_PLAYBACK_REQUEST = 4;
+static const RequestId STATE_PLAYBACK_STARTED = 5;
+static const RequestId STATE_PLAYBACK_FINISHED = 6;
+static const RequestId STATE_PAUSE_UNPAUSE_REQUEST = 7;
+static const RequestId STATE_PAUSED_UNPAUSED = 8;
+static const RequestId STATE_EXIT = 9;
+static const RequestId STATE_FAIL = 10;
+
 class SquarezenServiceProxy
 	: public Tizen::Io::IMessagePortListener
 {

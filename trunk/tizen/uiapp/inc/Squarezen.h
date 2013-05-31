@@ -25,8 +25,8 @@
 #include <FUiIme.h>
 #include <FGraphics.h>
 #include <gl.h>
-#include "../../../emu-players/VgmPlayer.h"
-#include "../../../emu-players/YmPlayer.h"
+#include "SquarezenServiceProxy.h"
+
 
 /**
  * [SquarezenApp] UiApp must inherit from UiApp class
@@ -76,6 +76,13 @@ public:
 
 	// Called when the screen turns off.
 	virtual void OnScreenOff(void);
+
+	virtual void OnUserEventReceivedN(RequestId requestId, Tizen::Base::Collection::IList* pArgs);
+
+private:
+	Tizen::Ui::Controls::Form *mForm;
+	bool mServiceReady;
+	SquarezenServiceProxy *mServiceProxy;
 };
 
 #endif // _SQUAREZEN_H_
