@@ -39,9 +39,10 @@ public:
 	void SetIndex(uint8_t index) { mIndex = index; }
 
 	GbPapuChip *mChip;
+	uint16_t mOut;
+	uint16_t mVol, mCurVol;
 	uint8_t mIndex;
 	uint8_t mWaveStep;
-	uint16_t mVol, mCurVol;
 	uint8_t mDuty;
 	uint8_t mPhase;
 };
@@ -55,6 +56,7 @@ public:
 	void Write(uint32_t addr, uint8_t val);
 
 	static const uint8_t SQUARE_WAVES[4][32];
+	static const uint16_t VOL_TB[];
 
 	GbPapuChannel mChannels[4];
 };

@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define __TIZEN__
+
 #ifdef __TIZEN__
 #include <FBase.h>
 #endif
@@ -78,7 +80,7 @@ int GbsPlayer::Prepare(std::wstring fileName)
     numBanks = ((fileSize + mFileHeader.loadAddress - 0x70) + 0x3fff) >> 14;
 
 #ifdef __TIZEN__
-    AppLog("Trying to allocate %d bytes", (uint32_t)numBanks << 14);
+    AppLog("Trying to allocate %d bytes (filesize = %d)", (uint32_t)numBanks << 14, fileSize);
 #endif
 
     cart = new unsigned char[(uint32_t)numBanks << 14];
@@ -90,6 +92,8 @@ int GbsPlayer::Prepare(std::wstring fileName)
         musicFile.close();
 		return -1;
 	}
+
+	AppLog("File read done");
 
 	musicFile.close();
 
@@ -110,13 +114,25 @@ int GbsPlayer::Prepare(std::wstring fileName)
 	mFrameCycles = 4194304 / 60;
 	mCycleCount = 0;
 
+	mem_set_papu(&mPapu);
 	mem_reset();
 	cpu_reset();
 	mPapu.Reset();
 
-	cpu.regs.PC = mFileHeader.initAddress;
+	AppLog("Reset done");
+
+	cart[0x400] = 0xCD;
+	cart[0x401] = mFileHeader.initAddress & 0xFF;
+	cart[0x402] = mFileHeader.initAddress >> 8;
+	cart[0x403] = 0x18;
+	cart[0x404] = 0xFE;
+	cpu.regs.PC = 0x400;
+	cpu.regs.SP = mFileHeader.SP;
+	cpu.regs.A = 1; // song number
 	cpu.cycles = 0;
 	cpu_execute(mFrameCycles);
+
+	AppLog("Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 
@@ -141,12 +157,36 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int k;
 	int blipLen = mBlipBuf->count_clocks(numSamples);
+	int16_t out;
+
+    if (MusicPlayer::STATE_PREPARED != GetState()) {
+    	return -1;
+    }
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
-			cpu.regs.PC = mFileHeader.playAddress;
+#ifdef __TIZEN__
+			//AppLog("Running GBZ80 %d cycles", mFrameCycles);
+#endif
+			cart[0x400] = 0xCD;
+			cart[0x401] = mFileHeader.playAddress & 0xFF;
+			cart[0x402] = mFileHeader.playAddress >> 8;
+			cart[0x403] = 0x18;
+			cart[0x404] = 0xFE;
+			cpu.regs.PC = 0x400;
 			cpu.cycles = 0;
 			cpu_execute(mFrameCycles);
+		}
+
+		mPapu.Step();
+
+		for (int i = 0; i < 4; i++) {
+			out = (-mPapu.mChannels[i].mPhase) & GbPapuChip::VOL_TB[mPapu.mChannels[i].mCurVol & 0x0F];
+
+			if (out != mPapu.mChannels[i].mOut) {
+				mSynth[i].update(k, out);
+				mPapu.mChannels[i].mOut = out;
+			}
 		}
 
 		mCycleCount++;
