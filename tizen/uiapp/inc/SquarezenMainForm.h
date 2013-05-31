@@ -27,6 +27,36 @@
 #include <gl.h>
 #include "../../../emu-players/MusicPlayer.h"
 
+class SquarezenMainForm;
+
+
+class FileScannerThread : public Tizen::Base::Runtime::Thread
+{
+public:
+	FileScannerThread()
+		: mForm(NULL), mDone(false)
+	{
+	}
+
+	void SetParent(SquarezenMainForm *form) { mForm = form; }
+
+	virtual ~FileScannerThread(void)
+	{
+	}
+
+	/*result FileScannerThread(void)
+	{
+		return Thread::Construct();
+	}*/
+
+
+	Object* Run(void);
+
+	bool mDone;
+   private:
+	SquarezenMainForm *mForm;
+ };
+
 
 class SquarezenMainForm
 	: public Tizen::Ui::Controls::Form
@@ -52,6 +82,8 @@ public:
 	virtual void OnSceneDeactivated(const Tizen::Ui::Scenes::SceneId& currentSceneId,
 									const Tizen::Ui::Scenes::SceneId& nextSceneId);
 
+	virtual void OnUserEventReceivedN(RequestId requestId, Tizen::Base::Collection::IList* args);
+
     // IListViewItemEventListener
     virtual void OnListViewContextItemStateChanged(Tizen::Ui::Controls::ListView &listView, int index, int elementId, Tizen::Ui::Controls::ListContextItemStatus state);
     virtual void OnListViewItemStateChanged(Tizen::Ui::Controls::ListView &listView, int index, int elementId, Tizen::Ui::Controls::ListItemStatus status);
@@ -62,14 +94,17 @@ public:
     virtual bool DeleteItem(int index, Tizen::Ui::Controls::ListItemBase* pItem, int itemWidth);
     virtual int GetItemCount(void);
 
+    Tizen::Ui::Controls::ListContextItem *mItemContext;
+    Tizen::Base::Collection::ArrayList *mFileList;
+    Tizen::Base::Collection::ArrayList *mMessageArgList;
+    Tizen::Base::String mExtStoragePath;
+    Tizen::Base::Runtime::Mutex mPlayerMutex, mFileListMutex;
+    int mNumFiles;
+
 protected:
     result PlayFile(Tizen::Base::String *fileName);
 
-    Tizen::Ui::Controls::ListContextItem *mItemContext;
-    Tizen::Base::Collection::ArrayList *mFileList;
-    Tizen::Base::String mExtStoragePath;
-    Tizen::Base::Runtime::Mutex mPlayerMutex;
-    int mNumFiles;
+    FileScannerThread mFileScanner;
 
     static const int ID_FORMAT_STRING = 100;
 	static const int ID_BUTTON_OK = 101;

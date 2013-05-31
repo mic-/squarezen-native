@@ -18,6 +18,7 @@
 
 using namespace Tizen::App;
 using namespace Tizen::Base;
+using namespace Tizen::Base::Collection;
 using namespace Tizen::System;
 
 static const wchar_t* LOCAL_MESSAGE_PORT_NAME = L"SQZSERVICE_PORT";
@@ -99,4 +100,24 @@ serviceappApp::OnBatteryLevelChanged(BatteryLevel batteryLevel)
 	// TODO:
 	// Handle any changes in battery level here.
 	// Stop using multimedia features(camera, mp3 etc.) if the battery level is CRITICAL.
+}
+
+void
+serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
+{
+	AppLog("SquarezenService: OnUserEventReceivedN called. requestId is %d", requestId);
+
+	switch (requestId) {
+	case PLAYBACK_REQUEST:
+		break;
+
+	case PAUSE_UNPAUSE_REQUEST:
+		break;
+
+	/*case EXIT :
+		Terminate();
+		break;*/
+	default:
+		break;
+	}
 }

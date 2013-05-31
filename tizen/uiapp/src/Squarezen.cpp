@@ -21,6 +21,7 @@
 
 using namespace Tizen::App;
 using namespace Tizen::Base;
+using namespace Tizen::Base::Collection;
 using namespace Tizen::Io;
 using namespace Tizen::Media;
 using namespace Tizen::System;
@@ -29,12 +30,17 @@ using namespace Tizen::Ui::Controls;
 using namespace Tizen::Ui::Scenes;
 
 
+static const wchar_t* REMOTE_PORT_NAME = L"SQZSERVICE_PORT";
+
+
 SquarezenApp::SquarezenApp(void)
+	: mForm(NULL), mServiceProxy(NULL), mServiceReady(false)
 {
 }
 
 SquarezenApp::~SquarezenApp(void)
 {
+	delete mServiceProxy;
 }
 
 UiApp*
@@ -64,14 +70,33 @@ SquarezenApp::OnAppInitializing(AppRegistry& appRegistry)
 bool
 SquarezenApp::OnAppInitialized(void)
 {
-	// TODO:
-	// Comment.
-
 	// Create a Frame
-	SquarezenFrame* pSquarezenFrame = new SquarezenFrame();
-	pSquarezenFrame->Construct();
-	pSquarezenFrame->SetName(L"Squarezen");
-	AddFrame(*pSquarezenFrame);
+	SquarezenFrame* squarezenFrame = new SquarezenFrame();
+	squarezenFrame->Construct();
+	squarezenFrame->SetName(L"Squarezen");
+	AddFrame(*squarezenFrame);
+
+	mForm = squarezenFrame->GetCurrentForm();
+	AppAssert(mForm != null);
+	mForm->SendUserEvent(STATE_READY, null);
+
+	String serviceName(L".SquarezenService");
+	String repAppId(15);
+
+	GetAppId().SubString(0, 10, repAppId);
+	AppId serviceId(repAppId+serviceName);
+	AppLog("Squarezen : Service Id is %S", serviceId.GetPointer());
+
+	result r = E_SUCCESS;
+	mServiceProxy = new (std::nothrow) SquarezenServiceProxy();
+	TryReturn(mServiceProxy != null, false, "Squarezen: [%s] SeviceProxy creation failed.", GetErrorMessage(r));
+	r = mServiceProxy->Construct(serviceId, REMOTE_PORT_NAME);
+	if (IsFailed(r)) {
+		AppLog("Squarezen: [%s] SeviceProxy creation failed.", GetErrorMessage(r));
+		mForm->SendUserEvent(STATE_FAIL, null);
+	} else {
+		mServiceReady = true;
+	}
 
 	return true;
 }
@@ -93,6 +118,73 @@ SquarezenApp::OnAppTerminating(AppRegistry& appRegistry, bool forcedTermination)
 
 	return true;
 }
+
+
+void
+SquarezenApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
+{
+	AppLog("SquarezenApp: OnUserEventReceivedN is called. requestId is %d", requestId);
+
+	result r = E_SUCCESS;
+
+	switch (requestId) {
+	case STATE_CONNECT_REQUEST :
+		if (mServiceReady) {
+			HashMap *map =	new HashMap(SingleObjectDeleter);
+			map->Construct();
+			map->Add(new String(L"Squarezen"), new String(L"connect"));
+
+			r = mServiceProxy->SendMessage(map);
+
+			delete map;
+
+			TryReturnVoid(!IsFailed(r), "SquarezenApp: [%s] MessagePort Operation Failed", GetErrorMessage(r));
+		}
+		break;
+	case STATE_CONNECTED :
+		if (mServiceReady) {
+			mForm->SendUserEvent(STATE_CONNECTED, null);
+		}
+		break;
+
+	case STATE_PLAYBACK_REQUEST :
+		if (mServiceReady) {
+			HashMap *map =	new HashMap(SingleObjectDeleter);
+			map->Construct();
+			map->Add(new String(L"Squarezen"), new String(L"play"));
+			if (pArgs != null) {
+				AppLog("pArgs length = %d", pArgs->GetCount());
+				map->Add(new String(L"SqzFilename"), (String*)(pArgs->GetAt(0)));
+			}
+
+			r = mServiceProxy->SendMessage(map);
+
+			delete map;
+
+			TryReturnVoid(!IsFailed(r), "SquarezenApp: [%s] MessagePort Operation Failed", GetErrorMessage(r));
+		}
+		break;
+
+	case STATE_PLAYBACK_STARTED :
+		if (mServiceReady) {
+			mForm->SendUserEvent(STATE_PLAYBACK_STARTED, null);
+		}
+		break;
+
+	case STATE_PLAYBACK_FINISHED :
+		if (mServiceReady) {
+			mForm->SendUserEvent(STATE_PLAYBACK_FINISHED, null);
+		}
+		break;
+
+	case STATE_EXIT :
+		Terminate();
+		break;
+	default:
+		break;
+	}
+}
+
 
 void
 SquarezenApp::OnForeground(void)

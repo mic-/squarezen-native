@@ -25,7 +25,11 @@
 #include <FBase.h>
 #include <FIo.h>
 
-//#include "SampleType.h"
+static const RequestId PLAYBACK_REQUEST = 4;
+static const RequestId PLAYBACK_STARTED = 5;
+static const RequestId PLAYBACK_FINISHED = 6;
+static const RequestId PAUSE_UNPAUSE_REQUEST = 7;
+static const RequestId PAUSED_UNPAUSED = 8;
 
 class SquarezenMessagePort
 	: public Tizen::Io::IMessagePortListener

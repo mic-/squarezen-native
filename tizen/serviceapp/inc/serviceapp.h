@@ -66,6 +66,8 @@ public:
 	// Called when the battery level changes.
 	void OnBatteryLevelChanged(Tizen::System::BatteryLevel batteryLevel);
 
+	virtual void OnUserEventReceivedN(RequestId requestId, Tizen::Base::Collection::IList* pArgs);
+
 private:
 	SquarezenMessagePort *mMessagePort;
 };

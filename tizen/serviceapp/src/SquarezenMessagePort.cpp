@@ -43,19 +43,17 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		mRemoteMessagePort = remoteMessagePort;
 		map->Add(new String(L"SquarezenService"), new String(L"ready"));
 
-	} else if (data->CompareTo(L"start") == 0) {
+	} else if (data->CompareTo(L"play") == 0) {
 		App* app = App::GetInstance();
-		//app->SendUserEvent(TIMER_START, null);
-		map->Add(new String(L"SquarezenService"), new String(L"started"));
+		String *arg = static_cast<String *>(message->GetValue(String(L"SqzFilename")));
+		AppLog("SquarezenService: With argument: %S", arg->GetPointer());
 
-	} else if (data->CompareTo(L"stop") == 0) {
-		App* app = App::GetInstance();
-		//app->SendUserEvent(TIMER_STOP, null);
-		map->Add(new String(L"SquarezenService"), new String(L"stopped"));
+		app->SendUserEvent(PLAYBACK_REQUEST, null);
+		map->Add(new String(L"SquarezenService"), new String(L"play_started"));
 
 	} else if (data->CompareTo(L"exit") == 0) {
 		App* app = App::GetInstance();
-		//app->SendUserEvent(TIMER_EXIT, null);
+		//app->SendUserEvent(EXIT, null);
 		map->Add(new String(L"SquarezenService"), new String(L"exit"));
 
 	} else {

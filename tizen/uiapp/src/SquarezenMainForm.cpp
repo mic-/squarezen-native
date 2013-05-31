@@ -15,6 +15,7 @@
  */
 
 #include "SquarezenMainForm.h"
+#include "SquarezenServiceProxy.h"
 #include "AppResourceId.h"
 #include <FIo.h>
 #include "../../../emu-players/GbsPlayer.h"
@@ -22,6 +23,7 @@
 #include "../../../emu-players/YmPlayer.h"
 
 using namespace Tizen::Base;
+using namespace Tizen::Base::Collection;
 using namespace Tizen::App;
 using namespace Tizen::Io;
 using namespace Tizen::Media;
@@ -31,12 +33,18 @@ using namespace Tizen::Ui::Scenes;
 
 
 SquarezenMainForm::SquarezenMainForm(void) :
-		mItemContext(NULL), mFileList(NULL), mNumFiles(0), mPlayer(NULL)
+		mItemContext(NULL),
+		mFileList(NULL),
+		mMessageArgList(NULL),
+		mNumFiles(0),
+		mPlayer(NULL)
 {
 }
 
 SquarezenMainForm::~SquarezenMainForm(void)
 {
+	//delete mFileList;
+	delete mMessageArgList;
 }
 
 bool
@@ -47,6 +55,13 @@ SquarezenMainForm::Initialize(void)
 	return true;
 }
 
+
+Object *FileScannerThread::Run()
+{
+	return null;
+ }
+
+
 result
 SquarezenMainForm::OnInitializing(void)
 {
@@ -56,30 +71,35 @@ SquarezenMainForm::OnInitializing(void)
 	SetFormBackEventListener(this);
 
 	mPlayerMutex.Create();
+	mFileListMutex.Create();
+
+	mExtStoragePath = Tizen::System::Environment::GetExternalStoragePath();
+
+	mFileScanner.Construct();
+	mFileScanner.Start();
 
 	Directory* dir;
 	DirEnumerator* dirEnum;
 	String dirName;
 
-	mExtStoragePath = Tizen::System::Environment::GetExternalStoragePath();
+	AppLog("FileScannerThread started");
+
 	dir = new Directory;
 
 	// Open the directory
 	r = dir->Construct(mExtStoragePath);
 	if (IsFailed(r)) {
 		// TODO: handle error
-	    //goto CATCH;
 	}
 
 	// Reads all the directory entries
 	dirEnum = dir->ReadN();
 	if (!dirEnum) {
 		// TODO: handle error
-		//goto CATCH;
 	}
 
-    mFileList = new Tizen::Base::Collection::ArrayList(Tizen::Base::Collection::SingleObjectDeleter);
-    mFileList->Construct();
+	mFileList = new Tizen::Base::Collection::ArrayList(Tizen::Base::Collection::SingleObjectDeleter);
+	mFileList->Construct();
 
 	// Loops through all the directory entries
 	while (dirEnum->MoveNext() == E_SUCCESS) {
@@ -92,7 +112,10 @@ SquarezenMainForm::OnInitializing(void)
 			String *temp = new String(entry.GetName());
 			mFileList->Add(temp);
 		}
-    }
+	}
+
+	delete dir;
+	dir = null;
 
 	ListView *listView = static_cast< ListView* >(GetControl(IDC_LISTVIEW1));
     listView->SetItemProvider(*this);
@@ -101,13 +124,12 @@ SquarezenMainForm::OnInitializing(void)
     mItemContext = new ListContextItem();
 	mItemContext->Construct();
 
-	delete dir;
-	dir = null;
+	mMessageArgList = new ArrayList(NoOpDeleter);
+	mMessageArgList->Construct();
 
 	// Get a button via resource ID
 	Tizen::Ui::Controls::Button *pButtonOk = static_cast<Button*>(GetControl(IDC_BUTTON_OK));
-	if (pButtonOk != null)
-	{
+	if (pButtonOk != null) {
 		pButtonOk->SetActionId(ID_BUTTON_OK);
 		pButtonOk->AddActionEventListener(*this);
 	}
@@ -152,8 +174,8 @@ result SquarezenMainForm::PlayFile(String *fileName) {
 		if (IsFailed(mAudioOut.Stop())) {
 			AppLog("AudioOut::Stop failed");
 		}
+		mAudioOut.Reset();
 	}
-	mAudioOut.Reset();
 
 	if (mPlayer) {
 		mPlayer->Reset();
@@ -220,11 +242,20 @@ SquarezenMainForm::OnTerminating(void)
 void
 SquarezenMainForm::OnListViewItemStateChanged(ListView &listView, int index, int elementId, ListItemStatus status)
 {
+	mFileListMutex.Acquire();
+
 	if (mFileList && elementId >= 0 && elementId < mFileList->GetCount()) {
+		UiApp* app = UiApp::GetInstance();
+		AppAssert(app);
+		mMessageArgList->RemoveAll();
+		mMessageArgList->Add(mFileList->GetAt(index));
+		app->SendUserEvent(STATE_PLAYBACK_REQUEST, mMessageArgList);
+
 		AppLog("Clicked %S", ((String*)mFileList->GetAt(index))->GetPointer());
 		PlayFile((String*)mFileList->GetAt(index));
-
 	}
+
+	mFileListMutex.Release();
 }
 
 void
@@ -246,11 +277,15 @@ SquarezenMainForm::CreateItem(int index, int itemWidth)
     CustomItem* pItem = new CustomItem();
     ListAnnexStyle style = LIST_ANNEX_STYLE_NORMAL;
 
+    mFileListMutex.Acquire();
+
     if (mFileList && index >= 0 && index < mFileList->GetCount()) {
     	style = LIST_ANNEX_STYLE_NORMAL;
         pItem->Construct(Tizen::Graphics::Dimension(itemWidth, 112), style);
         pItem->AddElement(Tizen::Graphics::Rectangle(0, 25, itemWidth, 50), index, ((String*)mFileList->GetAt(index))->GetPointer(), true);
     }
+
+    mFileListMutex.Release();
 
     pItem->SetContextItem(mItemContext);
 
@@ -268,10 +303,17 @@ SquarezenMainForm::DeleteItem(int index, ListItemBase* pItem, int itemWidth)
 int
 SquarezenMainForm::GetItemCount(void)
 {
+	int count = 0;
+
+	mFileListMutex.Acquire();
+
 	if (mFileList) {
-		return mFileList->GetCount();
+		count = mFileList->GetCount();
 	}
-    return 0;
+
+	mFileListMutex.Release();
+
+    return count;
 }
 
 
@@ -292,6 +334,23 @@ SquarezenMainForm::OnActionPerformed(const Tizen::Ui::Control& source, int actio
 	default: {
 		break;
 	}
+	}
+}
+
+void
+SquarezenMainForm::OnUserEventReceivedN(RequestId requestId, IList* args)
+{
+	AppLog("SquarezenMainForm: OnUserEventReceivedN is called. requestId is %d", requestId);
+
+	switch (requestId) {
+	case STATE_READY :
+		break;
+
+	case STATE_PLAYBACK_STARTED :
+		break;
+
+	default:
+		break;
 	}
 }
 

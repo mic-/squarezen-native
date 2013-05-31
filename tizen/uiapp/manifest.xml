@@ -5,10 +5,13 @@
     <Type>C++App</Type>
     <Requirements>
         <Feature Name="http://tizen.org/feature/platform.core.cpu.arch.armv7">true</Feature>
+        <Feature Name="http://tizen.org/feature/platform.core.fpu.arch.vfpv3">true</Feature>
     </Requirements>
     <Apps>
         <ApiVersion>2.1</ApiVersion>
-        <Privileges/>
+        <Privileges>
+            <Privilege>http://tizen.org/privilege/application.launch</Privilege>
+        </Privileges>
         <UiApp LaunchingHistoryVisible="True" Main="True" MenuIconVisible="True" Name="Squarezen">
             <UiScalability BaseScreenSize="Normal" CoordinateSystem="Logical" LogicalCoordinate="720"/>
             <UiTheme SystemTheme="White"/>
