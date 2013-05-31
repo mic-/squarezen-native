@@ -24,6 +24,9 @@ result SquarezenMessagePort::Construct(const String& localPortName)
 
 	mLocalMessagePort->AddMessagePortListener(*this);
 
+	mMessageArgList = new ArrayList(SingleObjectDeleter);
+	mMessageArgList->Construct();
+
 	AppLog("SquarezenService: LocalMessagePort is ready.");
 
 	return r;
@@ -47,8 +50,10 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		App* app = App::GetInstance();
 		String *arg = static_cast<String *>(message->GetValue(String(L"SqzFilename")));
 		AppLog("SquarezenService: With argument: %S", arg->GetPointer());
+		mMessageArgList->RemoveAll();
+		mMessageArgList->Add(new String(*arg));
 
-		app->SendUserEvent(PLAYBACK_REQUEST, null);
+		app->SendUserEvent(PLAYBACK_REQUEST, mMessageArgList);
 		map->Add(new String(L"SquarezenService"), new String(L"play_started"));
 
 	} else if (data->CompareTo(L"exit") == 0) {

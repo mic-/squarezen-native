@@ -19,12 +19,14 @@
 
 #include <FApp.h>
 #include <FBase.h>
+#include <FMedia.h>
 #include <FSystem.h>
 #include <FUi.h>
 #include <FUiIme.h>
 #include <FGraphics.h>
 #include <gl.h>
 #include "SquarezenMessagePort.h"
+#include "../../../emu-players/MusicPlayer.h"
 
 
 /**
@@ -33,6 +35,7 @@
  */
 class serviceappApp
 	: public Tizen::App::ServiceApp
+	, public Tizen::Media::IAudioOutEventListener
 {
 public:
 
@@ -67,6 +70,23 @@ public:
 	void OnBatteryLevelChanged(Tizen::System::BatteryLevel batteryLevel);
 
 	virtual void OnUserEventReceivedN(RequestId requestId, Tizen::Base::Collection::IList* pArgs);
+
+protected:
+    virtual void OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src);
+    virtual void OnAudioOutErrorOccurred(Tizen::Media::AudioOut& src, result r) {}
+    virtual void OnAudioOutInterrupted(Tizen::Media::AudioOut& src) {}
+    virtual void OnAudioOutReleased(Tizen::Media::AudioOut& src) {}
+    virtual void OnAudioOutAudioFocusChanged(Tizen::Media::AudioOut& src) {}
+
+    result PlayFile(Tizen::Base::String *fileName);
+
+private:
+    Tizen::Base::Runtime::Mutex mPlayerMutex;
+    Tizen::Media::AudioOut mAudioOut;
+    MusicPlayer *mPlayer;
+    Tizen::Base::ByteBuffer mBuffers[2];
+    int mCurPlayingBuffer;
+    int mMinBufferSize;
 
 private:
 	SquarezenMessagePort *mMessagePort;
