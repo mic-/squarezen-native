@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
+#include <FBase.h>
 #include "GbMemory.h"
 #include "GbZ80.h"
+#include "GbPapu.h"
 
 typedef unsigned char (*read_8_func)(unsigned short);
 typedef void (*write_8_func)(unsigned short,unsigned char);
 
-//extern void cpu_rst(unsigned short);
-
+// Not needed for GBS playback; return a dummy value
 #define color16(r,g,b) 0
 
 unsigned char	RAM[0x2000],VRAM[0x2000*2],OAM[0xA0],IOREGS[0x50],HIRAM[0x80],EXRAM[128*1024],MBC2RAM[512],WRAM[28*1024];
@@ -32,6 +33,7 @@ unsigned char	IME,REG_IE,romSelect,ramSelect,ramSelectLatch,keys,numBanks,divcnt
 int				tmcnt,tmrld;
 read_8_func read_8_tbl[16];
 write_8_func write_8_tbl[16];
+GbPapuChip		*papu;
 
 unsigned char cgbBgp[64],cgbObp[64];
 unsigned short cgbBgpRgb[32],cgbObpRgb[32];
@@ -161,15 +163,18 @@ void mem_write_8_A000_mbc2(unsigned short address,unsigned char data) {
 }
 
 
-void mem_write_8_C000(unsigned short address,unsigned char data) {
+void mem_write_8_C000(unsigned short address,unsigned char data)
+{
 	RAM[address&0x1FFF] = data;
 }
 
-void mem_write_8_D000(unsigned short address,unsigned char data) {
+void mem_write_8_D000(unsigned short address,unsigned char data)
+{
 	WRAM1[address&0x0FFF] = data;
 }
 
-void mem_write_8_F000(unsigned short address,unsigned char data) {
+void mem_write_8_F000(unsigned short address,unsigned char data)
+{
 	int i;
 
 	if (address < 0xFE00) {
@@ -207,6 +212,9 @@ void mem_write_8_F000(unsigned short address,unsigned char data) {
 		} else if ((address==0xFF4F)&&(MACH_TYPE&0x80)) {
 			VRAM0 = &VRAM[(data & 1) * 0x2000];
 			//fprintf(stderr,"[%04X] = 0x%02x\n",address,data);
+		}
+		if (address >= 0xFF10 && address <= 0xFF40) {
+			papu->Write(address, data);
 		}
 
 	} else if ((address>=0xFF51)&&(address<=0xFF55)) {
@@ -266,6 +274,7 @@ void mem_write_8_F000(unsigned short address,unsigned char data) {
 		//fprintf(stderr,"[FF70] = 0x%02x\n",data);
 		
 	} else if ((address>=0xFF80)&&(address<0xFFFF)) {
+		//AppLog("HIRAM[%#x] = %#x", address-0xFF80, data);
 		HIRAM[address-0xFF80] = data;
 
 	} else if (address==0xFFFF) {
@@ -350,7 +359,8 @@ unsigned char mem_read_8_F000(unsigned short address) {
 }
 
 
-int mem_reset() {
+int mem_reset()
+{
 	keys = 0xff;
 	IME = 0;
 	romSelect = 1;
@@ -524,25 +534,32 @@ int mem_reset() {
 }
 
 
+void mem_set_papu(GbPapuChip *p)
+{
+	papu = p;
+}
 
-
-unsigned char mem_read_8(unsigned short address) {
+unsigned char mem_read_8(unsigned short address)
+{
 	return read_8_tbl[address>>12](address);
 }
 
 
-unsigned short mem_read_16(unsigned short address) {
+unsigned short mem_read_16(unsigned short address)
+{
 	return mem_read_8(address) + ((unsigned short)mem_read_8(address+1)<<8);
 }
 
 
 
-void mem_write_8(unsigned short address,unsigned char data) {
+void mem_write_8(unsigned short address,unsigned char data)
+{
 	write_8_tbl[address>>12](address,data);
 }
 
 
-void mem_write_16(unsigned short address,unsigned short data) {
+void mem_write_16(unsigned short address,unsigned short data)
+{
 	mem_write_8(address,data&0xFF);
 	mem_write_8(address+1,data>>8);
 }

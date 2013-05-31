@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <FBase.h>
 #include "GbMemory.h"
 #include "GbZ80.h"
 
@@ -229,7 +230,7 @@ tag_cpu		cpu;
 
 int exec_count[512];
 int exec_samples = 1000000;
-FILE *log;
+//FILE *log;
 
 
 int cpu_reset()
@@ -334,6 +335,8 @@ void cpu_execute(unsigned int max) {
         oldPC = cpu.regs.PC;
 
 		if (debg>0) {
+			AppLog("PC=%#x, A=%#x, B=%#x, SP=%#x, opcode=%#x", cpu.regs.PC, cpu.regs.A, cpu.regs.B, cpu.regs.SP, opcode);
+
 			/*fprintf(stderr,"PC=%04X: A=%02X, B=%02X, C=%02X, D=%02X, E=%02X, H=%02X, L=%02X, F=%02X, SP=%02X, opcode=%02X\n",
 					cpu.regs.PC,cpu.regs.A,cpu.regs.B,cpu.regs.C,cpu.regs.D,cpu.regs.E,cpu.regs.H,cpu.regs.L,cpu.regs.F,
 					cpu.regs.SP,opcode);*/
