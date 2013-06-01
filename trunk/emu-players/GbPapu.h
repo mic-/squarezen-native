@@ -23,7 +23,40 @@
 
 #include "Oscillator.h"
 
+class GbPapuChannel;
 class GbPapuChip;
+
+
+class GbPapuLengthCounter : public Oscillator
+{
+public:
+	virtual ~GbPapuLengthCounter() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	int GetMask() const;
+
+	uint32_t mMax;
+	bool mUse;
+};
+
+
+class GbPapuEnvelopeGenerator : public Oscillator
+{
+public:
+	virtual ~GbPapuEnvelopeGenerator() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	void SetChannel(GbPapuChannel *channel) { mChannel = channel; }
+
+	GbPapuChannel *mChannel;
+	uint32_t mMax;
+	int16_t mDirection;
+	bool mUse;
+};
 
 
 class GbPapuChannel : public Oscillator
@@ -39,6 +72,8 @@ public:
 	void SetIndex(uint8_t index) { mIndex = index; }
 
 	GbPapuChip *mChip;
+	GbPapuLengthCounter mLC;
+	GbPapuEnvelopeGenerator mEG;
 	uint16_t mOut;
 	uint16_t mVol, mCurVol;
 	uint8_t mIndex;
