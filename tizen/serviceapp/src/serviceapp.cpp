@@ -201,6 +201,12 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 	case PAUSE_UNPAUSE_REQUEST:
 		break;
 
+	case STOP_REQUEST:
+		mPlayerMutex.Acquire();
+		mAudioOut.Stop();
+		mPlayerMutex.Release();
+		break;
+
 	/*case EXIT :
 		Terminate();
 		break;*/

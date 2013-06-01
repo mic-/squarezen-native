@@ -109,6 +109,9 @@ void SquarezenServiceProxy::OnMessageReceivedN(RemoteMessagePort* remoteMessageP
 		} else if (data->CompareTo(L"play_finished") == 0) {
 			app->SendUserEvent(STATE_PLAYBACK_FINISHED, null);
 
+		} else if (data->CompareTo(L"play_stopped") == 0) {
+			app->SendUserEvent(STATE_STOPPED, null);
+
 		} else if (data->CompareTo(L"exit") == 0) {
 			app->SendUserEvent(STATE_EXIT, null);
 		}

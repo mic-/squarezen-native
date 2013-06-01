@@ -177,6 +177,23 @@ SquarezenApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 		}
 		break;
 
+	case STATE_STOP_REQUEST :
+		if (mServiceReady) {
+			HashMap *map =	new HashMap(SingleObjectDeleter);
+			map->Construct();
+			map->Add(new String(L"Squarezen"), new String(L"stop"));
+			r = mServiceProxy->SendMessage(map);
+			delete map;
+			TryReturnVoid(!IsFailed(r), "SquarezenApp: [%s] MessagePort Operation Failed", GetErrorMessage(r));
+		}
+		break;
+
+	case STATE_STOPPED:
+		if (mServiceReady) {
+			mForm->SendUserEvent(STATE_STOPPED, null);
+		}
+		break;
+
 	case STATE_EXIT :
 		Terminate();
 		break;

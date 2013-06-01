@@ -32,8 +32,10 @@ static const RequestId STATE_PLAYBACK_STARTED = 5;
 static const RequestId STATE_PLAYBACK_FINISHED = 6;
 static const RequestId STATE_PAUSE_UNPAUSE_REQUEST = 7;
 static const RequestId STATE_PAUSED_UNPAUSED = 8;
-static const RequestId STATE_EXIT = 9;
-static const RequestId STATE_FAIL = 10;
+static const RequestId STATE_STOP_REQUEST = 9;
+static const RequestId STATE_STOPPED = 10;
+static const RequestId STATE_EXIT = 11;
+static const RequestId STATE_FAIL = 12;
 
 class SquarezenServiceProxy
 	: public Tizen::Io::IMessagePortListener

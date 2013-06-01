@@ -56,6 +56,11 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		app->SendUserEvent(PLAYBACK_REQUEST, mMessageArgList);
 		map->Add(new String(L"SquarezenService"), new String(L"play_started"));
 
+	} else if (data->CompareTo(L"stop") == 0) {
+		App* app = App::GetInstance();
+		app->SendUserEvent(STOP_REQUEST, null);
+		map->Add(new String(L"SquarezenService"), new String(L"play_stopped"));
+
 	} else if (data->CompareTo(L"exit") == 0) {
 		App* app = App::GetInstance();
 		//app->SendUserEvent(EXIT, null);

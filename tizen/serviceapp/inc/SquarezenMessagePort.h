@@ -30,6 +30,8 @@ static const RequestId PLAYBACK_STARTED = 5;
 static const RequestId PLAYBACK_FINISHED = 6;
 static const RequestId PAUSE_UNPAUSE_REQUEST = 7;
 static const RequestId PAUSED_UNPAUSED = 8;
+static const RequestId STOP_REQUEST = 9;
+static const RequestId STOPPED = 10;
 
 class SquarezenMessagePort
 	: public Tizen::Io::IMessagePortListener
