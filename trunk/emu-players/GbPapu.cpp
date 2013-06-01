@@ -32,14 +32,19 @@ const uint8_t GbPapuChip::SQUARE_WAVES[4][32] =
 };
 
 const uint16_t GbPapuChip::VOL_TB[] = {
-		0,5,10,15,
-		20,25,30,35,
-		40,45,50,55,
-		60,65,72,82
-		/*	0x0000,0x0000,0x0000,0x0001,
+	0,5,10,15,
+	20,25,30,35,
+	41,47,53,59,
+	65,71,77,82
+	/*0x0000,0x0000,0x0000,0x0001,
 	0x0001,0x0002,0x0003,0x0005,
 	0x0007,0x000A,0x000E,0x0014,
 	0x001D,0x0029,0x003A,0x0052*/
+};
+
+const uint16_t GbPapuChip::NOISE_PERIODS[] = {
+		8, 16, 32, 48,
+		64, 80, 96, 112
 };
 
 
@@ -77,13 +82,11 @@ void GbPapuEnvelopeGenerator::Step()
 	if (mMax) mPos++;
 	if (mPos >= mPeriod*mMax) {
 		mPos -= mPeriod*mMax;
-		if (mStep < mMax) {
-			mStep++;
-			if (-1 == mDirection && mChannel->mCurVol > 0) {
-				mChannel->mCurVol--;
-			} else if (1 == mDirection && mChannel->mCurVol < 0x0F) {
-				mChannel->mCurVol++;
-			}
+		mStep++;
+		if (-1 == mDirection && mChannel->mCurVol > 0) {
+			mChannel->mCurVol--;
+		} else if (1 == mDirection && mChannel->mCurVol < 0x0F) {
+			mChannel->mCurVol++;
 		}
 	}
 }
@@ -106,7 +109,7 @@ void GbPapuChannel::Reset()
 	mDuty = 0;
 	mOut = -1;
 	mVol = mCurVol = 0;
-	mLfsr = 1;
+	mLfsr = 0x7FFF;
 	mLfsrWidth = 15;
 }
 
@@ -188,6 +191,9 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		} else if ((mEG.mDirection != prevDirection) && (mEG.mMax != 0)) {
 			mCurVol = (16 - mCurVol) & 0x0F;
 		}
+		if (addr==0xFF21) {
+			AppLog("Noise: mVol %d, direction %d, steps %d", mVol, mEG.mDirection, val&7);
+		}
 		mEG.mMax = val & 7;
 		break;
 
@@ -202,9 +208,10 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		break;
 
 	case 0xFF22:
-		mPeriod = 8 * (val & 7);
-		mPeriod = (mPeriod == 0) ? 4 : mPeriod;
+		mPeriod = GbPapuChip::NOISE_PERIODS[val & 7]; //8 * (val & 7);
+		//mPeriod = (mPeriod == 0) ? 4 : mPeriod;
 		mPeriod *= ((val >> 4) < 14) ? (1 << ((val >> 4) + 1)) : 0;
+		AppLog("Noise period = %d [s %d, r %d] (%d Hz)", mPeriod, val&7, val>>4, (DMG_CLOCK/mPeriod));
 		mLfsrWidth = (val & 8) ? 7 : 15;
 		break;
 
@@ -225,6 +232,9 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 			mCurVol = mVol;
 			mLC.Reset();
 			mEG.Reset();
+			if (0xFF23 == addr) {
+				mLfsr = 0x7FFF;
+			}
 		}
 		break;
 

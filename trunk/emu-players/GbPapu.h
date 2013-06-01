@@ -95,6 +95,7 @@ public:
 
 	static const uint8_t SQUARE_WAVES[4][32];
 	static const uint16_t VOL_TB[];
+	static const uint16_t NOISE_PERIODS[];
 
 	GbPapuChannel mChannels[4];
 	uint8_t mWaveformRAM[16];

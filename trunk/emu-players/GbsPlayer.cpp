@@ -128,7 +128,7 @@ int GbsPlayer::Prepare(std::wstring fileName)
 	cart[0xF4] = 0xFE;
 	cpu.regs.PC = 0xF0;
 	cpu.regs.SP = mFileHeader.SP;
-	cpu.regs.A = 1; // song number
+	cpu.regs.A = 2; // song number
 	cpu.cycles = 0;
 	cpu_execute(mFrameCycles);
 
