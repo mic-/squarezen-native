@@ -106,6 +106,8 @@ void GbPapuChannel::Reset()
 	mDuty = 0;
 	mOut = -1;
 	mVol = mCurVol = 0;
+	mLfsr = 1;
+	mLfsrWidth = 15;
 }
 
 
@@ -139,6 +141,15 @@ void GbPapuChannel::Step()
 			else if (2 == mVol) mCurVol >>= 1;
 			else if (3 == mVol) mCurVol >>= 2;
 		}
+
+	} else if (mIndex == 3) {
+		mLC.Step();
+		mEG.Step();
+		if (mPos >= mPeriod) {
+			mPos = 0;
+			mPhase = mLfsr & 1;
+			mLfsr = (mLfsr >> 1) | (((mPhase ^ (mLfsr >> 1)) & 1) << (mLfsrWidth-1));
+		}
 	}
 }
 
@@ -147,14 +158,21 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 {
 	//AppLog("mChannel[%d].Write(%#x, %#x)", mIndex, addr, val);
 
-	if (0xFF11 == addr || 0xFF16 == addr) {
+	switch (addr) {
+	case 0xFF11:
+	case 0xFF16:
+	case 0xFF20:
 		mDuty = val >> 6;
 		mLC.mMax = 64 - (val & 0x3F);
+		break;
 
-	} else if (0xFF1B == addr) {
+	case 0xFF1B:
 		mLC.mMax = 256 - val;
+		break;
 
-	} else if (0xFF12 == addr || 0xFF17 == addr) {
+	case 0xFF12:	// NR12
+	case 0xFF17:	// NR22
+	case 0xFF21:	// NR42
 		mVol = val >> 4;
 		mEG.mMax = val & 7;
 		mEG.mDirection = -1;
@@ -162,26 +180,47 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 			mCurVol = (mCurVol+1) & 0x0F;
 			mEG.mDirection = 1;
 		}
+		break;
 
-	} else if (0xFF1C == addr) {
+	case 0xFF1C:
 		mVol = (val >> 5) & 3;
+		break;
 
-	} else if (0xFF13 == addr || 0xFF18 == addr || 0xFF1D == addr) {
+	case 0xFF13:
+	case 0xFF18:
+	case 0xFF1D:
 		mPeriod = (mPeriod & 0x700) | val;
+		break;
 
-	} else if (0xFF14 == addr || 0xFF19 == addr || 0xFF1E == addr) {
-		mPeriod = (mPeriod & 0xFF) | (uint16_t)(val & 7) << 8;
+	case 0xFF22:
+		mPeriod = 8 * (val & 7);
+		mPeriod = (mPeriod == 0) ? 4 : mPeriod;
+		mPeriod *= (1 << ((val >> 4) + 1));
+		mLfsrWidth = (val & 8) ? 7 : 15;
+		break;
+
+	case 0xFF14:	// NR14
+	case 0xFF19:	// Nr24
+	case 0xFF1E:	// NR34
+	case 0xFF23:	// NR44
+		if (0xFF23 != addr) {
+			mPeriod = (mPeriod & 0xFF) | (uint16_t)(val & 7) << 8;
+		}
 
 		mLC.mUse = ((val & 0x40) == 0x40);
 
 		if (val & 0x80) {
 			// Restart
-			AppLog("Restarting channel %d (volume %d)", mIndex, mVol);
+			//AppLog("Restarting channel %d (volume %d)", mIndex, mVol);
 			mWaveStep = 0;
 			mCurVol = mVol;
 			mLC.Reset();
 			mEG.Reset();
 		}
+		break;
+
+	default:
+		break;
 	}
 }
 
@@ -203,6 +242,12 @@ void GbPapuChip::Step()
 	}
 }
 
+int GbPapuChip::ChannelEnabled(uint8_t index) const
+{
+	int enabled = mChannels[index].mLC.GetMask();
+	enabled = (mNR52 & 0x80) ? enabled : 0;
+	return ((mNR51 & (1 << index)) | (mNR51 & (1 << (index+4)))) ? enabled : 0;
+}
 
 void GbPapuChip::Write(uint32_t addr, uint8_t val)
 {
@@ -219,6 +264,14 @@ void GbPapuChip::Write(uint32_t addr, uint8_t val)
 
 	} else if (addr >= 0xFF20 && addr <= 0xFF23) {
 		mChannels[3].Write(addr, val);
+
+	} else if (0xFF25 == addr) {
+		mNR51 = val;
+		AppLog("NR51 = %#x", val);
+
+	} else if (0xFF26 == addr) {
+		mNR52 = val;
+		AppLog("NR52 = %#x", val);
 
 	} else if (addr >= 0xFF30 && addr <= 0xFF3F) {
 		mWaveformRAM[addr & 0x0F] = val;
