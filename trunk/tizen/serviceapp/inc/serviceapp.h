@@ -87,6 +87,7 @@ private:
     Tizen::Base::ByteBuffer mBuffers[2];
     int mCurPlayingBuffer;
     int mMinBufferSize;
+    int mAudioPlaybackSession, mAudioCallbackSession;
 
 private:
 	SquarezenMessagePort *mMessagePort;

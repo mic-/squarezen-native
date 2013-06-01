@@ -29,6 +29,8 @@ static const wchar_t* LOCAL_MESSAGE_PORT_NAME = L"SQZSERVICE_PORT";
 
 serviceappApp::serviceappApp(void)
 	: mPlayer(NULL)
+	, mAudioPlaybackSession(0)
+	, mAudioCallbackSession(1)
 {
 }
 
@@ -128,10 +130,14 @@ void serviceappApp::OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src)
 {
 	mPlayerMutex.Acquire();
 
-	// Switch buffers and fill up with new audio data
-    mAudioOut.WriteBuffer(mBuffers[mCurPlayingBuffer ^ 1]);
-    mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[mCurPlayingBuffer].GetPointer());
-    mCurPlayingBuffer ^= 1;
+	if (mAudioCallbackSession == mAudioPlaybackSession) {
+		// Switch buffers and fill up with new audio data
+		mAudioOut.WriteBuffer(mBuffers[mCurPlayingBuffer ^ 1]);
+		mPlayer->Run(mMinBufferSize >> 2, (int16_t*)mBuffers[mCurPlayingBuffer].GetPointer());
+		mCurPlayingBuffer ^= 1;
+	}
+
+	mAudioCallbackSession = mAudioPlaybackSession;
 
     mPlayerMutex.Release();
 }
@@ -179,6 +185,8 @@ result serviceappApp::PlayFile(String *filePath) {
 		AppLog("AudioOut::Start failed");
 		return E_FAILURE;
     }
+
+	mAudioPlaybackSession++;
 
 	mPlayerMutex.Release();
 
