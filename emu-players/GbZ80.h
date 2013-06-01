@@ -17,6 +17,8 @@
 #ifndef GBZ80_H__
 #define GBZ80_H__
 
+#define DMG_CLOCK 4194304
+
 typedef struct
 {
 	struct {

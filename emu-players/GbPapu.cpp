@@ -16,6 +16,8 @@
 
 #include <FBase.h>
 #include "GbPapu.h"
+#include "GbZ80.h"
+
 
 const uint8_t GbPapuChip::SQUARE_WAVES[4][32] =
 {
@@ -41,9 +43,63 @@ const uint16_t GbPapuChip::VOL_TB[] = {
 };
 
 
+void GbPapuLengthCounter::Reset()
+{
+	mPos = mStep = 0;
+	mPeriod = DMG_CLOCK / 256;
+}
+
+void GbPapuLengthCounter::Step()
+{
+	mPos++;
+	if (mPos >= mPeriod) {
+		mPos -= mPeriod;
+		if (mStep < mMax) {
+			mStep++;
+		}
+	}
+}
+
+int GbPapuLengthCounter::GetMask() const
+{
+	return (mUse && mStep == mMax) ? 0 : -1;
+}
+
+
+void GbPapuEnvelopeGenerator::Reset()
+{
+	mPos = mStep = 0;
+	mPeriod = DMG_CLOCK / 64;
+}
+
+void GbPapuEnvelopeGenerator::Step()
+{
+	if (mMax) mPos++;
+	if (mPos >= mPeriod*mMax) {
+		mPos -= mPeriod*mMax;
+		if (mStep < mMax) {
+			mStep++;
+			if (-1 == mDirection && mChannel->mCurVol > 0) {
+				mChannel->mCurVol--;
+			} else if (1 == mDirection && mChannel->mCurVol < 0x0F) {
+				mChannel->mCurVol++;
+			}
+		}
+	}
+}
+
+
 void GbPapuChannel::Reset()
 {
-	// TODO: fill out
+	mLC.Reset();
+	mLC.mUse = false;
+	mLC.mMax = 0;
+
+	mEG.Reset();
+	mEG.SetChannel(this);
+	mEG.mMax = 0;
+	mEG.mDirection = 0;
+
 	mWaveStep = 0;
 	mPhase = 0;
 	mPeriod = 0;
@@ -58,6 +114,8 @@ void GbPapuChannel::Step()
 	mPos++;
 	if (mIndex <= 1) {
 		// Square wave channels
+		mLC.Step();
+		mEG.Step();
 		if (mPos >= (2048 - mPeriod)) {
 			mPos = 0;
 			if (mWaveStep == 32) {
@@ -75,10 +133,16 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 
 	if (0xFF11 == addr || 0xFF16 == addr) {
 		mDuty = val >> 6;
+		mLC.mMax = val & 0x3F;
 
 	} else if (0xFF12 == addr || 0xFF17 == addr) {
-		mVol = val & 0x0F;
-		if (val & 0x08) mCurVol = (mCurVol+1) & 0x0F;
+		mVol = val >> 4;
+		mEG.mMax = val & 7;
+		mEG.mDirection = -1;
+		if (val & 0x08) {
+			mCurVol = (mCurVol+1) & 0x0F;
+			mEG.mDirection = 1;
+		}
 
 	} else if (0xFF13 == addr || 0xFF18 == addr) {
 		mPeriod = (mPeriod & 0x700) | val;
@@ -86,11 +150,15 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 	} else if (0xFF14 == addr || 0xFF19 == addr) {
 		mPeriod = (mPeriod & 0xFF) | (uint16_t)(val & 7) << 8;
 
+		mLC.mUse = ((val & 0x40) == 0x40);
+
 		if (val & 0x80) {
 			// Restart
 			AppLog("Restarting channel %d (volume %d)", mIndex, mVol);
 			mWaveStep = 0;
 			mCurVol = mVol;
+			mLC.Reset();
+			mEG.Reset();
 		}
 	}
 }
