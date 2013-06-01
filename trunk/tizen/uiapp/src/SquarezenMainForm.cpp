@@ -236,9 +236,10 @@ SquarezenMainForm::OnActionPerformed(const Tizen::Ui::Control& source, int actio
 	switch(actionId)
 	{
 	case ID_BUTTON_OK: {
-		UiApp* pApp = UiApp::GetInstance();
-		AppAssert(pApp);
-		pApp->Terminate();
+		UiApp* app = UiApp::GetInstance();
+		AppAssert(app);
+		app->SendUserEvent(STATE_STOP_REQUEST, null);
+		//app->Terminate();
 		break;
 	}
 	default: {
@@ -251,12 +252,19 @@ void
 SquarezenMainForm::OnUserEventReceivedN(RequestId requestId, IList* args)
 {
 	AppLog("SquarezenMainForm: OnUserEventReceivedN is called. requestId is %d", requestId);
+	UiApp *app;
 
 	switch (requestId) {
 	case STATE_READY :
 		break;
 
 	case STATE_PLAYBACK_STARTED :
+		break;
+
+	case STATE_STOPPED:
+		app = UiApp::GetInstance();
+		AppAssert(app);
+		app->Terminate();
 		break;
 
 	default:
