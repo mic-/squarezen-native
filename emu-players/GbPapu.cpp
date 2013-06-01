@@ -112,7 +112,7 @@ void GbPapuChannel::Reset()
 void GbPapuChannel::Step()
 {
 	mPos++;
-	if (mIndex <= 1) {
+	if (mIndex < 2) {
 		// Square wave channels
 		mLC.Step();
 		mEG.Step();
@@ -122,6 +122,22 @@ void GbPapuChannel::Step()
 				mWaveStep = 0;
 			}
 			mPhase = GbPapuChip::SQUARE_WAVES[mDuty][mWaveStep++];
+		}
+
+	} else if (mIndex == 2) {
+		// Waveform channel
+		mLC.Step();
+		if (mPos >= (2048 - mPeriod)*2) {
+			mPos = 0;
+			if (mWaveStep == 32) {
+				mWaveStep = 0;
+			}
+			mCurVol = (mChip->mWaveformRAM[mWaveStep >> 1] >> ((mWaveStep & 1) * 4)) & 0x0F;
+			mPhase = 1;
+			mWaveStep++;
+			if (0 == mVol) mCurVol = 0;
+			else if (2 == mVol) mCurVol >>= 1;
+			else if (3 == mVol) mCurVol >>= 2;
 		}
 	}
 }
@@ -133,7 +149,10 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 
 	if (0xFF11 == addr || 0xFF16 == addr) {
 		mDuty = val >> 6;
-		mLC.mMax = val & 0x3F;
+		mLC.mMax = 64 - (val & 0x3F);
+
+	} else if (0xFF1B == addr) {
+		mLC.mMax = 256 - val;
 
 	} else if (0xFF12 == addr || 0xFF17 == addr) {
 		mVol = val >> 4;
@@ -144,10 +163,13 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 			mEG.mDirection = 1;
 		}
 
-	} else if (0xFF13 == addr || 0xFF18 == addr) {
+	} else if (0xFF1C == addr) {
+		mVol = (val >> 5) & 3;
+
+	} else if (0xFF13 == addr || 0xFF18 == addr || 0xFF1D == addr) {
 		mPeriod = (mPeriod & 0x700) | val;
 
-	} else if (0xFF14 == addr || 0xFF19 == addr) {
+	} else if (0xFF14 == addr || 0xFF19 == addr || 0xFF1E == addr) {
 		mPeriod = (mPeriod & 0xFF) | (uint16_t)(val & 7) << 8;
 
 		mLC.mUse = ((val & 0x40) == 0x40);
@@ -197,6 +219,9 @@ void GbPapuChip::Write(uint32_t addr, uint8_t val)
 
 	} else if (addr >= 0xFF20 && addr <= 0xFF23) {
 		mChannels[3].Write(addr, val);
+
+	} else if (addr >= 0xFF30 && addr <= 0xFF3F) {
+		mWaveformRAM[addr & 0x0F] = val;
 	}
 }
 
