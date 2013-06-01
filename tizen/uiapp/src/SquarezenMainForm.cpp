@@ -39,7 +39,7 @@ SquarezenMainForm::SquarezenMainForm(void) :
 SquarezenMainForm::~SquarezenMainForm(void)
 {
 	//delete mFileList;
-	delete mMessageArgList;
+	//delete mMessageArgList;
 }
 
 bool
