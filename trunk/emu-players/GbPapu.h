@@ -94,6 +94,7 @@ public:
 	static const uint16_t VOL_TB[];
 
 	GbPapuChannel mChannels[4];
+	uint8_t mWaveformRAM[16];
 };
 
 #endif /* GBPAPU_H_ */

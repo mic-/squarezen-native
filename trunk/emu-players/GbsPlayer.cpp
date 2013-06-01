@@ -121,14 +121,14 @@ int GbsPlayer::Prepare(std::wstring fileName)
 
 	AppLog("Reset done");
 
-	cart[0xF0] = 0xCD;
+	cart[0xF0] = 0xCD;	// CALL nn nn
 	cart[0xF1] = mFileHeader.initAddress & 0xFF;
 	cart[0xF2] = mFileHeader.initAddress >> 8;
-	cart[0xF3] = 0x18;
+	cart[0xF3] = 0x18;	// JR nn
 	cart[0xF4] = 0xFE;
 	cpu.regs.PC = 0xF0;
 	cpu.regs.SP = mFileHeader.SP;
-	cpu.regs.A = 0; // song number
+	cpu.regs.A = 1; // song number
 	cpu.cycles = 0;
 	cpu_execute(mFrameCycles);
 
@@ -168,10 +168,10 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 #ifdef __TIZEN__
 			//AppLog("Running GBZ80 %d cycles", mFrameCycles);
 #endif
-			cart[0xF0] = 0xCD;
+			cart[0xF0] = 0xCD;	// CALL nn nn
 			cart[0xF1] = mFileHeader.playAddress & 0xFF;
 			cart[0xF2] = mFileHeader.playAddress >> 8;
-			cart[0xF3] = 0x18;
+			cart[0xF3] = 0x18;	// JR nn
 			cart[0xF4] = 0xFE;
 			cpu.regs.PC = 0xF0;
 			cpu.cycles = 0;

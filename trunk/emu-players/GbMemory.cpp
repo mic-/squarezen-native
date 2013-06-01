@@ -213,7 +213,7 @@ void mem_write_8_F000(unsigned short address,unsigned char data)
 			VRAM0 = &VRAM[(data & 1) * 0x2000];
 			//fprintf(stderr,"[%04X] = 0x%02x\n",address,data);
 		}
-		if (address >= 0xFF10 && address <= 0xFF40) {
+		if (address >= 0xFF10 && address <= 0xFF3F) {
 			papu->Write(address, data);
 		}
 
