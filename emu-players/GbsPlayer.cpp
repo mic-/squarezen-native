@@ -182,7 +182,7 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		for (int i = 0; i < 4; i++) {
 			out = (-mPapu.mChannels[i].mPhase) &
-				  mPapu.mChannels[i].mLC.GetMask() &
+				  mPapu.ChannelEnabled(i) &
 				  GbPapuChip::VOL_TB[mPapu.mChannels[i].mCurVol & 0x0F];
 
 			if (out != mPapu.mChannels[i].mOut) {

@@ -74,6 +74,7 @@ public:
 	GbPapuChip *mChip;
 	GbPapuLengthCounter mLC;
 	GbPapuEnvelopeGenerator mEG;
+	uint16_t mLfsr, mLfsrWidth;
 	uint16_t mOut;
 	uint16_t mVol, mCurVol;
 	uint8_t mIndex;
@@ -90,11 +91,14 @@ public:
 	void Step();
 	void Write(uint32_t addr, uint8_t val);
 
+	int ChannelEnabled(uint8_t index) const;
+
 	static const uint8_t SQUARE_WAVES[4][32];
 	static const uint16_t VOL_TB[];
 
 	GbPapuChannel mChannels[4];
 	uint8_t mWaveformRAM[16];
+	uint8_t mNR51, mNR52;
 };
 
 #endif /* GBPAPU_H_ */
