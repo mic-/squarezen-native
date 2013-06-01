@@ -145,10 +145,14 @@ void GbPapuChannel::Step()
 	} else if (mIndex == 3) {
 		mLC.Step();
 		mEG.Step();
-		if (mPos >= mPeriod) {
+		if (mPeriod && mPos >= mPeriod) {
 			mPos = 0;
-			mPhase = mLfsr & 1;
-			mLfsr = (mLfsr >> 1) | (((mPhase ^ (mLfsr >> 1)) & 1) << (mLfsrWidth-1));
+			mPhase = (mLfsr & 1) ^ 1;
+			mLfsr = (mLfsr >> 1) | (((mLfsr ^ (mLfsr >> 1)) & 1) << 14);
+			if (mLfsrWidth == 7) {
+				mLfsr &= ~0x40;
+				mLfsr |= (mLfsr & 0x4000) >> 8;
+			}
 		}
 	}
 }
@@ -157,6 +161,7 @@ void GbPapuChannel::Step()
 void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 {
 	//AppLog("mChannel[%d].Write(%#x, %#x)", mIndex, addr, val);
+	int prevDirection;
 
 	switch (addr) {
 	case 0xFF11:
@@ -174,12 +179,16 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 	case 0xFF17:	// NR22
 	case 0xFF21:	// NR42
 		mVol = val >> 4;
-		mEG.mMax = val & 7;
-		mEG.mDirection = -1;
-		if (val & 0x08) {
-			mCurVol = (mCurVol+1) & 0x0F;
-			mEG.mDirection = 1;
+		prevDirection = mEG.mDirection;
+		mEG.mDirection = (val & 0x08) ? 1 : -1;
+		if ((mEG.mDirection == 1) && (mEG.mMax == 0)) {
+			mCurVol = (mCurVol + 1) & 0x0F;
+		} else if ((mEG.mDirection == -1) && (mEG.mMax == 0)) {
+			mCurVol = (mCurVol + 2) & 0x0F;
+		} else if ((mEG.mDirection != prevDirection) && (mEG.mMax != 0)) {
+			mCurVol = (16 - mCurVol) & 0x0F;
 		}
+		mEG.mMax = val & 7;
 		break;
 
 	case 0xFF1C:
@@ -195,7 +204,7 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 	case 0xFF22:
 		mPeriod = 8 * (val & 7);
 		mPeriod = (mPeriod == 0) ? 4 : mPeriod;
-		mPeriod *= (1 << ((val >> 4) + 1));
+		mPeriod *= ((val >> 4) < 14) ? (1 << ((val >> 4) + 1)) : 0;
 		mLfsrWidth = (val & 8) ? 7 : 15;
 		break;
 
