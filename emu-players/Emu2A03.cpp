@@ -48,3 +48,23 @@ void Emu2A03::Step()
 	}
 }
 
+
+void Emu2A03::Write(uint32_t addr, uint8_t data)
+{
+	if (addr >= 0x4000 && addr <= 0x4003) {
+		mChannels[0].Write(addr, data);
+
+	} else if (addr >= 0x4004 && addr <= 0x4007) {
+		mChannels[1].Write(addr, data);
+
+	} else if (addr >= 0x4008 && addr <= 0x400B) {
+		mChannels[2].Write(addr, data);
+
+	} else if (addr >= 0x400C && addr <= 0x400F) {
+		mChannels[3].Write(addr, data);
+
+	} else if (addr == 0x4017) {
+		mGenerateFrameIRQ = ((data & 0x40) == 0);
+		mMaxFrameCount = (data & 0x80) ? 4 : 3;
+	}
+}

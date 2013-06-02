@@ -44,10 +44,13 @@ class Emu2A03
 {
 public:
 	void Step();
+	void Write(uint32_t addr, uint8_t data);
 
 	static const uint16_t VOL_TB[];
 
 	Emu2A03Channel mChannels[4];
+	bool mGenerateFrameIRQ;
+	uint8_t mMaxFrameCount;
 };
 
 

@@ -15,6 +15,7 @@
  */
 
 #include <FBase.h>
+#include "GbMemory.h"
 #include "GbPapu.h"
 #include "GbZ80.h"
 
@@ -243,6 +244,27 @@ void GbPapuChip::Reset()
 		mChannels[i].SetIndex(i);
 		mChannels[i].Reset();
 	}
+
+	mem_write_8(0xFF10, 0x80);	// NR10
+	mem_write_8(0xFF11, 0xBF);	// NR11
+	mem_write_8(0xFF10, 0x80); 	// NR10
+	mem_write_8(0xFF11, 0xBF); 	// NR11
+	mem_write_8(0xFF12, 0xF3); 	// NR12
+	mem_write_8(0xFF14, 0xBF); 	// NR14
+	mem_write_8(0xFF16, 0x3F); 	// NR21
+	mem_write_8(0xFF17, 0x00); 	// NR22
+	mem_write_8(0xFF19, 0xBF); 	// NR24
+	mem_write_8(0xFF1A, 0x7F); 	// NR30
+	mem_write_8(0xFF1B, 0xFF); 	// NR31
+	mem_write_8(0xFF1C, 0x9F); 	// NR32
+	mem_write_8(0xFF1E, 0xBF); 	// NR33
+	mem_write_8(0xFF20, 0xFF); 	// NR41
+	mem_write_8(0xFF21, 0x00); 	// NR42
+	mem_write_8(0xFF22, 0x00); 	// NR43
+	mem_write_8(0xFF23, 0xBF); 	// NR30
+	mem_write_8(0xFF24, 0x77); 	// NR50
+    mem_write_8(0xFF25, 0xF3); 	// NR51
+	mem_write_8(0xFF26, 0xF1);	// NR52
 }
 
 
