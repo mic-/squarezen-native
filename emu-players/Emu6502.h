@@ -22,11 +22,14 @@
 #define EMU6502_H_
 
 #include <stdint.h>
-#include "NsfMapper.h"
+#include "MemoryMapper.h"
 
 class Emu6502
 {
+public:
+	void Reset();
 	void Run(uint32_t maxCycles);
+	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
 	enum {
 		FLAG_C = 0x01,
@@ -42,7 +45,7 @@ class Emu6502
 	} mRegs;
 
 	uint32_t mCycles;
-	NsfMapper *mMemory;
+	MemoryMapper *mMemory;
 };
 
 

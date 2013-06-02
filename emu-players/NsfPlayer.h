@@ -24,7 +24,9 @@
 #include <string>
 #include <stdint.h>
 #include "MusicPlayer.h"
+#include "Emu6502.h"
 #include "Emu2A03.h"
+#include "NsfMapper.h"
 
 
 class NsfPlayer : public MusicPlayer
@@ -72,9 +74,12 @@ public:
 	virtual int Reset();
 
 private:
+	Emu6502 *m6502;
 	Emu2A03 *m2A03;
+	NsfMapper *mMemory;
+
 	NsfFileHeader mFileHeader;
-	uint32_t mFrameCycles, mCycleCount, mCurFrame, mPlayCounter;
+	uint32_t mFrameCycles, mCycleCount, mPlayCounter;
 };
 
 

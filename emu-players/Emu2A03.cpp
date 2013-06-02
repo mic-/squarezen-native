@@ -24,6 +24,41 @@ const uint16_t Emu2A03::VOL_TB[] = {
 };
 
 
+void Emu2A03LengthCounter::Reset()
+{
+	mStep = 0;
+}
+
+void Emu2A03LengthCounter::Step()
+{
+	if (mStep) {
+		mStep--;
+	}
+}
+
+
+void Emu2A03EnvelopeGenerator::Reset()
+{
+	// TODO: fill out
+}
+
+void Emu2A03EnvelopeGenerator::Step()
+{
+	// TODO: fill out
+}
+
+
+void Emu2A03SweepUnit::Reset()
+{
+	// TODO: fill out
+}
+
+void Emu2A03SweepUnit::Step()
+{
+	// TODO: fill out
+}
+
+
 void Emu2A03Channel::Reset()
 {
 	// TODO: fill out
@@ -41,8 +76,35 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 }
 
 
+void Emu2A03::Reset()
+{
+	// TODO: fill out
+}
+
+
 void Emu2A03::Step()
 {
+	if (mCurFrame < 4) {
+		if ((mCurFrame & 1) == (mMaxFrameCount & 1)) {
+			for (int i = 0; i < 4; i++) {
+				mChannels[i].mLC.Step();
+				if (i < 2) {
+					mChannels[i].mSU.Step();
+				}
+			}
+		}
+		for (int i = 0; i < 4; i++) {
+			mChannels[i].mEG.Step();
+		}
+	}
+	if (mCurFrame == 3 && mMaxFrameCount == 3 && mGenerateFrameIRQ) {
+		// TODO: generate frame IRQ
+	}
+	mCurFrame++;
+	if (mCurFrame > mMaxFrameCount) {
+		mCurFrame = 0;
+	}
+
 	for (int i = 0; i < 4; i++) {
 		mChannels[i].Step();
 	}

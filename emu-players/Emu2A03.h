@@ -24,6 +24,54 @@
 #include <stdint.h>
 #include "Oscillator.h"
 
+class Emu2A03;
+class Emu2A03Channel;
+
+
+class Emu2A03LengthCounter : public Oscillator
+{
+public:
+	virtual ~Emu2A03LengthCounter() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	int GetMask() const;
+
+	uint32_t mMax;
+	bool mUse;
+};
+
+class Emu2A03EnvelopeGenerator : public Oscillator
+{
+public:
+	virtual ~Emu2A03EnvelopeGenerator() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	void SetChannel(Emu2A03Channel *channel) { mChannel = channel; }
+
+	Emu2A03Channel *mChannel;
+	uint32_t mMax;
+	int16_t mDirection;
+	bool mUse;
+};
+
+
+class Emu2A03SweepUnit : public Oscillator
+{
+public:
+	virtual ~Emu2A03SweepUnit() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	void SetChannel(Emu2A03Channel *channel) { mChannel = channel; }
+
+	Emu2A03Channel *mChannel;
+};
+
 
 class Emu2A03Channel : public Oscillator
 {
@@ -34,7 +82,15 @@ public:
 	virtual void Step();
 	virtual void Write(uint32_t addr, uint8_t val);
 
+	void SetChip(Emu2A03 *chip) { mChip = chip; }
+	void SetIndex(uint8_t index) { mIndex = index; }
+
+	Emu2A03LengthCounter mLC;
+	Emu2A03EnvelopeGenerator mEG;
+	Emu2A03SweepUnit mSU;
+	Emu2A03 *mChip;
 	int16_t mOut;
+	uint16_t mIndex;
 	uint16_t mVol, mCurVol;
 	uint8_t mPhase;
 };
@@ -43,6 +99,7 @@ public:
 class Emu2A03
 {
 public:
+	void Reset();
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
 
@@ -50,7 +107,7 @@ public:
 
 	Emu2A03Channel mChannels[4];
 	bool mGenerateFrameIRQ;
-	uint8_t mMaxFrameCount;
+	uint8_t mMaxFrameCount, mCurFrame;
 };
 
 

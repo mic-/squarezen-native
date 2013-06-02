@@ -18,6 +18,9 @@
 #include "NsfPlayer.h"
 
 NsfPlayer::NsfPlayer()
+	: m6502(NULL)
+	, m2A03(NULL)
+	, mMemory(NULL)
 {
 	// TODO: fill out
 }
@@ -32,7 +35,18 @@ int NsfPlayer::Reset()
 
 int NsfPlayer::Prepare(std::wstring fileName)
 {
-	// TODO: fill out
+	m6502 = new Emu6502;
+	m2A03 = new Emu2A03;
+	mMemory = new NsfMapper;
+
+	m6502->SetMapper(mMemory);
+	mMemory->Reset();
+	m6502->Reset();
+	m2A03->Reset();
+
+	for (int i = 0; i < 8; i++) {
+		mMemory->WriteByte(0x5FF8 + i, mFileHeader.initialBanks[i]);
+	}
 
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,82>[4];
@@ -50,7 +64,6 @@ int NsfPlayer::Prepare(std::wstring fileName)
 	}
 
 	mCycleCount = 0;
-	mCurFrame = 0;
 	mPlayCounter = 0;
 
     // Setup waves
@@ -82,19 +95,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
-			if (mCurFrame < 4) {
-				if ((mCurFrame & 1) == (m2A03->mMaxFrameCount & 1)) {
-					// TODO: update length counter and sweep
-				}
-				// TODO: update envelopes
-			}
-			if (mCurFrame == 3 && m2A03->mMaxFrameCount == 3 && m2A03->mGenerateFrameIRQ) {
-				// TODO: generate frame IRQ
-			}
-			mCurFrame++;
-			if (mCurFrame > m2A03->mMaxFrameCount) {
-				mCurFrame = 0;
-			}
+			m2A03->Step();
 			if (mPlayCounter == 3) {
 				// TODO: call NSF PLAY routine
 			}

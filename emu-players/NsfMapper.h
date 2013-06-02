@@ -22,13 +22,15 @@
 #define NSFMAPPER_H_
 
 #include <stdint.h>
+#include "MemoryMapper.h"
 
-class NsfMapper
+
+class NsfMapper : public MemoryMapper
 {
 public:
-	void Reset();
-	uint8_t ReadByte(uint16_t addr);
-	void WriteByte(uint16_t addr, uint8_t data);
+	virtual void Reset();
+	virtual uint8_t ReadByte(uint16_t addr);
+	virtual void WriteByte(uint16_t addr, uint8_t data);
 
 private:
 	void WriteByte_0000(uint16_t addr, uint8_t data);
