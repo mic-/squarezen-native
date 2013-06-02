@@ -75,7 +75,7 @@ public:
 	GbPapuLengthCounter mLC;
 	GbPapuEnvelopeGenerator mEG;
 	uint16_t mLfsr, mLfsrWidth;
-	uint16_t mOut;
+	uint16_t mOutL, mOutR;
 	uint16_t mVol, mCurVol;
 	uint8_t mIndex;
 	uint8_t mWaveStep;
@@ -91,7 +91,8 @@ public:
 	void Step();
 	void Write(uint32_t addr, uint8_t val);
 
-	int ChannelEnabled(uint8_t index) const;
+	int ChannelEnabledLeft(uint8_t index) const;
+	int ChannelEnabledRight(uint8_t index) const;
 
 	static const uint8_t SQUARE_WAVES[4][32];
 	static const uint16_t VOL_TB[];

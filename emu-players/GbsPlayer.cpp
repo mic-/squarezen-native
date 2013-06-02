@@ -29,6 +29,7 @@
 
 
 GbsPlayer::GbsPlayer()
+	: mBlipBufRight(NULL), mSynthRight(NULL)
 {
 	cart = NULL;
 }
@@ -43,6 +44,11 @@ int GbsPlayer::Reset()
 	mBlipBuf = NULL;
 	if (mSynth) delete [] mSynth;
 	mSynth = NULL;
+
+	if (mBlipBufRight) delete mBlipBufRight;
+	mBlipBufRight = NULL;
+	if (mSynthRight) delete [] mSynthRight;
+	mSynthRight = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
 
@@ -84,6 +90,7 @@ int GbsPlayer::Prepare(std::wstring fileName)
 #endif
 
     cart = new unsigned char[(uint32_t)numBanks << 14];
+    memset(cart, 0, (uint32_t)numBanks << 4);
 	musicFile.read((char*)cart + mFileHeader.loadAddress, fileSize-0x70);
 	if (!musicFile) {
 #ifdef __TIZEN__
@@ -97,24 +104,44 @@ int GbsPlayer::Prepare(std::wstring fileName)
 
 	musicFile.close();
 
-	mBlipBuf = new Blip_Buffer();
-	mSynth = new Blip_Synth<blip_low_quality,82>[4];
+	{
+		mBlipBuf = new Blip_Buffer();
+		mSynth = new Blip_Synth<blip_low_quality,82>[4];
 
-	if (mBlipBuf->set_sample_rate(44100)) {
-    	//AppLog("Failed to set blipbuffer sample rate");
-		return -1;
-	}
-	mBlipBuf->clock_rate(DMG_CLOCK);
+		if (mBlipBuf->set_sample_rate(44100)) {
+			//AppLog("Failed to set blipbuffer sample rate");
+			return -1;
+		}
+		mBlipBuf->clock_rate(DMG_CLOCK);
 
-	for (i = 0; i < 4; i++) {
-		mSynth[i].volume(0.22);
-		mSynth[i].output(mBlipBuf);
+		for (i = 0; i < 4; i++) {
+			//mSynth[i].volume(0.22);
+			mSynth[i].output(mBlipBuf);
+		}
 	}
+	{
+		mBlipBufRight = new Blip_Buffer();
+		mSynthRight = new Blip_Synth<blip_low_quality,82>[4];
+
+		if (mBlipBufRight->set_sample_rate(44100)) {
+			//AppLog("Failed to set blipbuffer sample rate");
+			return -1;
+		}
+		mBlipBufRight->clock_rate(DMG_CLOCK);
+
+		for (i = 0; i < 4; i++) {
+			//mSynthRight[i].volume(0.22);
+			mSynthRight[i].output(mBlipBufRight);
+		}
+	}
+
+	SetMasterVolume(0, 0);
 
 	mFrameCycles = DMG_CLOCK / 60;
 	mCycleCount = 0;
 
 	mem_set_papu(&mPapu);
+	mem_set_gbsplayer(this);
 	mem_reset();
 	cpu_reset();
 	mPapu.Reset();
@@ -124,11 +151,10 @@ int GbsPlayer::Prepare(std::wstring fileName)
 	cart[0xF0] = 0xCD;	// CALL nn nn
 	cart[0xF1] = mFileHeader.initAddress & 0xFF;
 	cart[0xF2] = mFileHeader.initAddress >> 8;
-	cart[0xF3] = 0x18;	// JR nn
-	cart[0xF4] = 0xFE;
+	cart[0xF3] = 0x76;	// HALT
 	cpu.regs.PC = 0xF0;
 	cpu.regs.SP = mFileHeader.SP;
-	cpu.regs.A = 2; // song number
+	cpu.regs.A = 0; // song number
 	cpu.cycles = 0;
 	cpu_execute(mFrameCycles);
 
@@ -140,16 +166,21 @@ int GbsPlayer::Prepare(std::wstring fileName)
 }
 
 
-void GbsPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
+void GbsPlayer::SetMasterVolume(int left, int right)
 {
-	int count = in->samples_avail();
-
-	in->read_samples(out, count, 1);
-
-	// Copy each left channel sample to the right channel
-	for (int i = 0; i < count*2; i += 2) {
-		out[i+1] = out[i];
+	for (int i = 0; i < 4; i++) {
+		mSynth[i].volume(0.0314f * (float)left);
+		mSynthRight[i].volume(0.0314f * (float)right);
 	}
+}
+
+
+void GbsPlayer::PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR)
+{
+	int count = inL->samples_avail();
+
+	inL->read_samples(out, count, 1);
+	inR->read_samples(out+1, count, 1);
 }
 
 
@@ -157,7 +188,7 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int k;
 	int blipLen = mBlipBuf->count_clocks(numSamples);
-	int16_t out;
+	int16_t out, outL, outR;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return -1;
@@ -168,11 +199,11 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 #ifdef __TIZEN__
 			//AppLog("Running GBZ80 %d cycles", mFrameCycles);
 #endif
+			cpu.halted = 0;
 			cart[0xF0] = 0xCD;	// CALL nn nn
 			cart[0xF1] = mFileHeader.playAddress & 0xFF;
 			cart[0xF2] = mFileHeader.playAddress >> 8;
-			cart[0xF3] = 0x18;	// JR nn
-			cart[0xF4] = 0xFE;
+			cart[0xF3] = 0x76;	// HALT
 			cpu.regs.PC = 0xF0;
 			cpu.cycles = 0;
 			cpu_execute(mFrameCycles);
@@ -182,12 +213,17 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		for (int i = 0; i < 4; i++) {
 			out = (-mPapu.mChannels[i].mPhase) &
-				  mPapu.ChannelEnabled(i) &
 				  GbPapuChip::VOL_TB[mPapu.mChannels[i].mCurVol & 0x0F];
+			outL = out & mPapu.ChannelEnabledLeft(i);
+			outR = out & mPapu.ChannelEnabledRight(i);
 
-			if (out != mPapu.mChannels[i].mOut) {
-				mSynth[i].update(k, out);
-				mPapu.mChannels[i].mOut = out;
+			if (outL != mPapu.mChannels[i].mOutL) {
+				mSynth[i].update(k, outL);
+				mPapu.mChannels[i].mOutL = outL;
+			}
+			if (outR != mPapu.mChannels[i].mOutR) {
+				mSynthRight[i].update(k, outR);
+				mPapu.mChannels[i].mOutR = outR;
 			}
 		}
 
@@ -198,7 +234,8 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	}
 
 	mBlipBuf->end_frame(blipLen);
-	PresentBuffer(buffer, mBlipBuf);
+	mBlipBufRight->end_frame(blipLen);
+	PresentBuffer(buffer, mBlipBuf, mBlipBufRight);
 
 	return 0;
 }

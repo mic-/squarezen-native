@@ -18,6 +18,7 @@
 #include "GbMemory.h"
 #include "GbZ80.h"
 #include "GbPapu.h"
+#include "GbsPlayer.h"
 
 typedef unsigned char (*read_8_func)(unsigned short);
 typedef void (*write_8_func)(unsigned short,unsigned char);
@@ -34,6 +35,7 @@ int				tmcnt,tmrld;
 read_8_func read_8_tbl[16];
 write_8_func write_8_tbl[16];
 GbPapuChip		*papu;
+GbsPlayer		*gbsPlayer;
 
 unsigned char cgbBgp[64],cgbObp[64];
 unsigned short cgbBgpRgb[32],cgbObpRgb[32];
@@ -47,20 +49,21 @@ void mem_write_8_A000_mbc1(unsigned short address,unsigned char data) {
 }
 
 void mem_write_8_0000_mbc1(unsigned short address,unsigned char data) {
-    if (address<0x2000) {
-        if ((data&0x0F)==0x0A) {
+    if (address < 0x2000) {
+        if ((data & 0x0F) == 0x0A) {
             RAM1 = &EXRAM[ramSelect*0x2000];
             write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_A000_mbc1;
         } else {
-	    RAM1 = NULL;
-	    write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_null;
-	}
+        	RAM1 = NULL;
+        	write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_null;
+        }
     } else if (address>=0x2000) {
 		romSelect = (data==0)?1:(data&0x1F);
 		romSelect &= (numBanks-1);
-		if (mbc1Layout==0)
+		AppLog("ROM bank1 selection: %d", romSelect);
+		/*if (mbc1Layout == 0)
 			ROM1 = &cart[(romSelect+highRomBits)*0x4000];
-		else
+		else*/
 			ROM1 = &cart[(romSelect)*0x4000];
 	}
 }
@@ -78,38 +81,14 @@ void mem_write_8_0000_mbc3(unsigned short address,unsigned char data) {
             RAM1 = &EXRAM[ramSelect*0x2000];
             write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_A000_mbc1;
         } else {
-	    RAM1 = NULL;
-	    write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_null;
-	}
+        	RAM1 = NULL;
+        	write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_null;
+        }
     } else if (address>=0x2000) {
 		romSelect = (data==0)?1:(data&0x7F);
 		romSelect &= (numBanks-1);
 		ROM1 = &cart[(romSelect)*0x4000];
     }
-}
-
-
-
-void mem_write_8_0000_mbc5(unsigned short address,unsigned char data) {
-        if ((data&0x0F)==0x0A) {
-            RAM1 = &EXRAM[ramSelect * 0x2000];
-            write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_A000_mbc1;
-        } else {
-        	RAM1 = NULL;
-        	write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_null;
-		}
-}
-
-
-void mem_write_8_2000_mbc5(unsigned short address,unsigned char data) {
-	romSelect = (romSelect & 0x100) | data;
-	ROM1 = &cart[(romSelect)*0x4000];
-}
-
-
-void mem_write_8_3000_mbc5(unsigned short address,unsigned char data) {
-	romSelect = (romSelect & 0x0FF) | ((data & 1) << 8);
-	ROM1 = &cart[(romSelect)*0x4000];
 }
 
 
@@ -142,22 +121,22 @@ void mem_write_8_4000_mbc3(unsigned short address,unsigned char data) {
 }
 
 
-void mem_write_8_4000_mbc5(unsigned short address,unsigned char data) {
+void mem_write_8_4000_mbc5(unsigned short address,unsigned char data)
+{
 	ramSelect = data & 0x0F;
 	RAM1 = &EXRAM[ramSelect*0x2000];
 }
 
 
-void mem_write_8_8000(unsigned short address,unsigned char data) {
-/*if ((address>=0x1800)&&(IOREGS[0x4F]&1)) {
-fprintf(stderr,"VRAM1[%04X] = 0x%02x\n",address-0x1800,data);
-}*/
+void mem_write_8_8000(unsigned short address,unsigned char data)
+{
 	VRAM0[address-0x8000] = data;
 }
 
 
 
-void mem_write_8_A000_mbc2(unsigned short address,unsigned char data) {
+void mem_write_8_A000_mbc2(unsigned short address,unsigned char data)
+{
 	if (address<0xA200)
 		MBC2RAM[address-0xA000] = data&0xF;
 }
@@ -215,6 +194,9 @@ void mem_write_8_F000(unsigned short address,unsigned char data)
 		}
 		if (address >= 0xFF10 && address <= 0xFF3F) {
 			papu->Write(address, data);
+			if (address == 0xFF24) {
+				gbsPlayer->SetMasterVolume((data >> 4) & 7, data & 7);
+			}
 		}
 
 	} else if ((address>=0xFF51)&&(address<=0xFF55)) {
@@ -374,12 +356,12 @@ int mem_reset()
 	REG_DIV = 0;
 	REG_TAC = 0;
 	ROM0 = cart;
-	ROM1 = ROM0+0x4000;
+	ROM1 = ROM0 + 0x4000;
 	RAM1 = NULL;
 	WRAM1 = WRAM;
 	VRAM0 = VRAM;
 
-	if ((CART_TYPE==TYPE_MBC1)||(CART_TYPE==TYPE_MBC1_RAM)||(CART_TYPE==TYPE_MBC1_RAM_BATT)) {
+	/*if ((CART_TYPE==TYPE_MBC1)||(CART_TYPE==TYPE_MBC1_RAM)||(CART_TYPE==TYPE_MBC1_RAM_BATT)) {
 		read_8_tbl[0x0] = mem_read_8_0000;
 		read_8_tbl[0x1] = mem_read_8_0000;
 		read_8_tbl[0x2] = mem_read_8_0000;
@@ -416,7 +398,7 @@ int mem_reset()
 
 	} else if ((CART_TYPE==TYPE_MBC2)||(CART_TYPE==TYPE_MBC2_BATT)) {
 
-	} else if ((CART_TYPE==TYPE_MBC3)||(CART_TYPE==TYPE_MBC3_RAM)||(CART_TYPE==TYPE_MBC3_RAM_BATT)) {
+	} else if ((CART_TYPE==TYPE_MBC3)||(CART_TYPE==TYPE_MBC3_RAM)||(CART_TYPE==TYPE_MBC3_RAM_BATT)) {*/
 		read_8_tbl[0x0] = mem_read_8_0000;
 		read_8_tbl[0x1] = mem_read_8_0000;
 		read_8_tbl[0x2] = mem_read_8_0000;
@@ -451,7 +433,7 @@ int mem_reset()
 		write_8_tbl[0xE] = mem_write_8_C000;
 		write_8_tbl[0xF] = mem_write_8_F000;
 
-	} else if ((CART_TYPE==TYPE_MBC5)||(CART_TYPE==TYPE_MBC5_RAM)) {
+	/*} else if ((CART_TYPE==TYPE_MBC5)||(CART_TYPE==TYPE_MBC5_RAM)) {
 		read_8_tbl[0x0] = mem_read_8_0000;
 		read_8_tbl[0x1] = mem_read_8_0000;
 		read_8_tbl[0x2] = mem_read_8_0000;
@@ -526,7 +508,29 @@ int mem_reset()
 	if (MACH_TYPE & 0x80) {
 		read_8_tbl[0xD] = mem_read_8_D000;
 		write_8_tbl[0xD] = mem_write_8_D000;
-	}
+	}*/
+
+	IOREGS[0x10] = 0x80; 	// NR10
+	IOREGS[0x11] = 0xBF;   	// NR11
+	IOREGS[0x12] = 0xF3; 	// NR12
+	IOREGS[0x14] = 0xBF; 	// NR14
+	IOREGS[0x16] = 0x3F; 	// NR21
+	IOREGS[0x17] = 0x00; 	// NR22
+	IOREGS[0x19] = 0xBF; 	// NR24
+	IOREGS[0x1A] = 0x7F; 	// NR30
+	IOREGS[0x1B] = 0xFF; 	// NR31
+	IOREGS[0x1C] = 0x9F; 	// NR32
+	IOREGS[0x1E] = 0xBF; 	// NR33
+	IOREGS[0x20] = 0xFF; 	// NR41
+	IOREGS[0x21] = 0x00; 	// NR42
+	IOREGS[0x22] = 0x00; 	// NR43
+	IOREGS[0x23] = 0xBF; 	// NR30
+    IOREGS[0x24] = 0x77; 	// NR50
+    gbsPlayer->SetMasterVolume(7, 7);
+	IOREGS[0x25] = 0xF3; 	// NR51
+	papu->Write(0xFF25, 0xF3);
+	IOREGS[0x26] = 0xF1;	// NR52
+	papu->Write(0xFF26, 0xF1);
 
 	IOREGS[0x4D] = 0;
 
@@ -537,6 +541,11 @@ int mem_reset()
 void mem_set_papu(GbPapuChip *p)
 {
 	papu = p;
+}
+
+void mem_set_gbsplayer(GbsPlayer *p)
+{
+	gbsPlayer = p;
 }
 
 unsigned char mem_read_8(unsigned short address)
