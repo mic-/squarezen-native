@@ -73,7 +73,8 @@ public:
 
 private:
 	Emu2A03 *m2A03;
-	uint32_t mSampleCycles, mCycleCount;
+	NsfFileHeader mFileHeader;
+	uint32_t mFrameCycles, mCycleCount, mCurFrame, mPlayCounter;
 };
 
 

@@ -34,6 +34,31 @@ int NsfPlayer::Prepare(std::wstring fileName)
 {
 	// TODO: fill out
 
+	mBlipBuf = new Blip_Buffer();
+	mSynth = new Blip_Synth<blip_low_quality,82>[4];
+
+	if (mBlipBuf->set_sample_rate(44100)) {
+    	//AppLog("Failed to set blipbuffer sample rate");
+		return -1;
+	}
+	if (mFileHeader.region & NsfPlayer::REGION_PAL) {
+		mBlipBuf->clock_rate(1662607);
+		mFrameCycles = 1662607 / 200;
+	} else {
+		mBlipBuf->clock_rate(1789773);
+		mFrameCycles = 1789773 / 240;
+	}
+
+	mCycleCount = 0;
+	mCurFrame = 0;
+	mPlayCounter = 0;
+
+    // Setup waves
+	for (int i = 0; i < 4; i++) {
+		mSynth[i].volume(0.22);
+		mSynth[i].output(mBlipBuf);
+	}
+
 	AppLog("Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
@@ -57,7 +82,23 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
-			//Step();
+			if (mCurFrame < 4) {
+				if ((mCurFrame & 1) == (m2A03->mMaxFrameCount & 1)) {
+					// TODO: update length counter and sweep
+				}
+				// TODO: update envelopes
+			}
+			if (mCurFrame == 3 && m2A03->mMaxFrameCount == 3 && m2A03->mGenerateFrameIRQ) {
+				// TODO: generate frame IRQ
+			}
+			mCurFrame++;
+			if (mCurFrame > m2A03->mMaxFrameCount) {
+				mCurFrame = 0;
+			}
+			if (mPlayCounter == 3) {
+				// TODO: call NSF PLAY routine
+			}
+			mPlayCounter = (mPlayCounter + 1) & 3;
 		}
 
 		m2A03->Step();
@@ -72,7 +113,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		}
 
 		mCycleCount++;
-		if (mCycleCount == mSampleCycles) {
+		if (mCycleCount == mFrameCycles) {
 			mCycleCount = 0;
 		}
 	}
