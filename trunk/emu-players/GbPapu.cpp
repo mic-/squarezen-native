@@ -21,14 +21,14 @@
 
 const uint8_t GbPapuChip::SQUARE_WAVES[4][32] =
 {
-		// 12.5%
-		{1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
-		// 25%
-		{1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
-		// 50%
-		{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
-		// 75%
-		{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0}
+	// 12.5%
+	{1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
+	// 25%
+	{1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
+	// 50%
+	{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
+	// 75%
+	{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0}
 };
 
 const uint16_t GbPapuChip::VOL_TB[] = {
@@ -36,10 +36,6 @@ const uint16_t GbPapuChip::VOL_TB[] = {
 	20,25,30,35,
 	41,47,53,59,
 	65,71,77,82
-	/*0x0000,0x0000,0x0000,0x0001,
-	0x0001,0x0002,0x0003,0x0005,
-	0x0007,0x000A,0x000E,0x0014,
-	0x001D,0x0029,0x003A,0x0052*/
 };
 
 const uint16_t GbPapuChip::NOISE_PERIODS[] = {
@@ -107,7 +103,7 @@ void GbPapuChannel::Reset()
 	mPhase = 0;
 	mPeriod = 0;
 	mDuty = 0;
-	mOut = -1;
+	mOutL = mOutR = -1;
 	mVol = mCurVol = 0;
 	mLfsr = 0x7FFF;
 	mLfsrWidth = 15;
@@ -163,18 +159,17 @@ void GbPapuChannel::Step()
 
 void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 {
-	//AppLog("mChannel[%d].Write(%#x, %#x)", mIndex, addr, val);
 	int prevDirection;
 
 	switch (addr) {
-	case 0xFF11:
-	case 0xFF16:
-	case 0xFF20:
+	case 0xFF11:	// NR11
+	case 0xFF16:	// NR21
+	case 0xFF20:	// NR41
 		mDuty = val >> 6;
 		mLC.mMax = 64 - (val & 0x3F);
 		break;
 
-	case 0xFF1B:
+	case 0xFF1B:	// NR31
 		mLC.mMax = 256 - val;
 		break;
 
@@ -191,27 +186,24 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		} else if ((mEG.mDirection != prevDirection) && (mEG.mMax != 0)) {
 			mCurVol = (16 - mCurVol) & 0x0F;
 		}
-		if (addr==0xFF21) {
-			AppLog("Noise: mVol %d, direction %d, steps %d", mVol, mEG.mDirection, val&7);
-		}
 		mEG.mMax = val & 7;
 		break;
 
-	case 0xFF1C:
+	case 0xFF1C:	// NR32
 		mVol = (val >> 5) & 3;
 		break;
 
-	case 0xFF13:
-	case 0xFF18:
-	case 0xFF1D:
+	case 0xFF13:	// NR13
+	case 0xFF18:	// NR23
+	case 0xFF1D:	// NR33
 		mPeriod = (mPeriod & 0x700) | val;
 		break;
 
-	case 0xFF22:
+	case 0xFF22:	// NR43
 		mPeriod = GbPapuChip::NOISE_PERIODS[val & 7]; //8 * (val & 7);
 		//mPeriod = (mPeriod == 0) ? 4 : mPeriod;
 		mPeriod *= ((val >> 4) < 14) ? (1 << ((val >> 4) + 1)) : 0;
-		AppLog("Noise period = %d [s %d, r %d] (%d Hz)", mPeriod, val&7, val>>4, (DMG_CLOCK/mPeriod));
+		//AppLog("Noise period = %d [s %d, r %d] (%d Hz)", mPeriod, val&7, val>>4, (DMG_CLOCK/mPeriod));
 		mLfsrWidth = (val & 8) ? 7 : 15;
 		break;
 
@@ -261,11 +253,18 @@ void GbPapuChip::Step()
 	}
 }
 
-int GbPapuChip::ChannelEnabled(uint8_t index) const
+int GbPapuChip::ChannelEnabledLeft(uint8_t index) const
 {
 	int enabled = mChannels[index].mLC.GetMask();
 	enabled = (mNR52 & 0x80) ? enabled : 0;
-	return ((mNR51 & (1 << index)) | (mNR51 & (1 << (index+4)))) ? enabled : 0;
+	return (mNR51 & (1 << (index + 4))) ? enabled : 0;
+}
+
+int GbPapuChip::ChannelEnabledRight(uint8_t index) const
+{
+	int enabled = mChannels[index].mLC.GetMask();
+	enabled = (mNR52 & 0x80) ? enabled : 0;
+	return (mNR51 & (1 << index)) ? enabled : 0;
 }
 
 void GbPapuChip::Write(uint32_t addr, uint8_t val)

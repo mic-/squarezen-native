@@ -20,6 +20,7 @@
 #include "GbCommon.h"
 
 class GbPapuChip;
+class GbsPlayer;
 
 extern unsigned char IME,REG_IE;
 extern unsigned char RAM[0x2000],VRAM[0x2000*2],OAM[0xA0],IOREGS[0x50],HIRAM[0x80];
@@ -66,5 +67,6 @@ extern void mem_write_8(unsigned short,unsigned char);
 extern void mem_write_16(unsigned short,unsigned short);
 extern void mem_key_down();
 extern void mem_set_papu(GbPapuChip*);
+extern void mem_set_gbsplayer(GbsPlayer*);
 
 #endif

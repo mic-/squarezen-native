@@ -52,10 +52,13 @@ public:
 	virtual int Prepare(std::wstring fileName);
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
+	void SetMasterVolume(int left, int right);
 
 private:
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
+	void PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR);
 
+	Blip_Buffer *mBlipBufRight;
+	Blip_Synth<blip_low_quality,82> *mSynthRight;
 	GbsFileHeader mFileHeader;
 	GbPapuChip mPapu;
 	uint32_t mCycleCount, mFrameCycles;
