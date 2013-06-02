@@ -17,6 +17,8 @@
 #include <FBase.h>
 #include "GbMemory.h"
 #include "GbZ80.h"
+#include "GbsPlayer.h"
+
 
 #define	FLAG_Z 0x80
 #define FLAG_N 0x40
@@ -227,6 +229,7 @@ unsigned char	*cart;
 int		pendingDI,pendingEI;
 int 		speedShift;
 tag_cpu		cpu;
+extern GbsPlayer *gbsPlayer;  // located in GbMemory.cpp
 
 int exec_count[512];
 int exec_samples = 1000000;
@@ -271,7 +274,7 @@ void cpu_rst(unsigned short address)
 	cpu.halted = 0;
 	cpu.regs.SP -= 2;
 	mem_write_16(cpu.regs.SP, cpu.regs.PC);
-	cpu.regs.PC = address;
+	cpu.regs.PC = address + gbsPlayer->GetLoadAddress();
 }
 
 void cpu_close()

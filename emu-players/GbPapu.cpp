@@ -23,13 +23,13 @@
 const uint8_t GbPapuChip::SQUARE_WAVES[4][32] =
 {
 	// 12.5%
-	{1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
+	{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,1,1},
 	// 25%
-	{1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
+	{1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,1,1},
 	// 50%
-	{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0},
+	{1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,1,1, 1,1,1,1, 1,1,1,1},
 	// 75%
-	{1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0, 0,0,0,0}
+	{0,0,0,0, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0}
 };
 
 const uint16_t GbPapuChip::VOL_TB[] = {
@@ -42,6 +42,13 @@ const uint16_t GbPapuChip::VOL_TB[] = {
 const uint16_t GbPapuChip::NOISE_PERIODS[] = {
 		8, 16, 32, 48,
 		64, 80, 96, 112
+};
+
+const uint8_t INITIAL_WAVEFORM[] = {
+	0x84, 0x40, 0x43, 0xAA,
+	0x2D, 0x78, 0x92, 0x3C,
+	0x60, 0x59, 0x59, 0xB0,
+	0x34, 0xB8, 0x2E, 0xDA
 };
 
 
@@ -203,9 +210,9 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 	case 0xFF22:	// NR43
 		mPeriod = GbPapuChip::NOISE_PERIODS[val & 7]; //8 * (val & 7);
 		//mPeriod = (mPeriod == 0) ? 4 : mPeriod;
-		mPeriod *= ((val >> 4) < 14) ? (1 << ((val >> 4) + 1)) : 0;
-		//AppLog("Noise period = %d [s %d, r %d] (%d Hz)", mPeriod, val&7, val>>4, (DMG_CLOCK/mPeriod));
+		mPeriod = ((val >> 4) < 14) ? (mPeriod << ((val >> 4) + 0)) : 0;
 		mLfsrWidth = (val & 8) ? 7 : 15;
+		AppLog("Noise period = %d [s %d, r %d, w %d] (%d Hz)", mPeriod, val&7, val>>4, mLfsrWidth, (DMG_CLOCK/mPeriod));
 		break;
 
 	case 0xFF14:	// NR14
@@ -265,6 +272,10 @@ void GbPapuChip::Reset()
 	mem_write_8(0xFF24, 0x77); 	// NR50
     mem_write_8(0xFF25, 0xF3); 	// NR51
 	mem_write_8(0xFF26, 0xF1);	// NR52
+
+	for (int i = 0; i < 0x10; i++) {
+		mem_write_8(0xFF30 + i, INITIAL_WAVEFORM[i]);
+	}
 }
 
 

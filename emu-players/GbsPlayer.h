@@ -52,7 +52,9 @@ public:
 	virtual int Prepare(std::wstring fileName);
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
+
 	void SetMasterVolume(int left, int right);
+	uint16_t GetLoadAddress() const { return mFileHeader.loadAddress; }
 
 private:
 	void PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR);

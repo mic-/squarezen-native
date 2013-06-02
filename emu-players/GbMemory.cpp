@@ -26,7 +26,7 @@ typedef void (*write_8_func)(unsigned short,unsigned char);
 // Not needed for GBS playback; return a dummy value
 #define color16(r,g,b) 0
 
-unsigned char	RAM[0x2000],VRAM[0x2000*2],OAM[0xA0],IOREGS[0x50],HIRAM[0x80],EXRAM[128*1024],MBC2RAM[512],WRAM[28*1024];
+unsigned char	RAM[0x2000],VRAM[0x2000*2],OAM[0xA0],IOREGS[0x50],HIRAM[0x80],EXRAM[32*1024],MBC2RAM[512],WRAM[28*1024];
 unsigned char	*ROM0,*ROM1,*RAM1,*WRAM1,*VRAM0;
 unsigned char	mbc1Layout;
 unsigned short	highRomBits,highRomBitsLatch,hdmasrc,hdmadest,hdmalen;
@@ -76,7 +76,7 @@ void mem_write_8_0000_mbc2(unsigned short address,unsigned char data) {
 
 
 void mem_write_8_0000_mbc3(unsigned short address,unsigned char data) {
-    if (address<0x2000) {
+    /*if (address<0x2000) {
         if ((data&0x0F)==0x0A) {
             RAM1 = &EXRAM[ramSelect*0x2000];
             write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_A000_mbc1;
@@ -84,9 +84,10 @@ void mem_write_8_0000_mbc3(unsigned short address,unsigned char data) {
         	RAM1 = NULL;
         	write_8_tbl[0x0A] = write_8_tbl[0x0B] = mem_write_8_null;
         }
-    } else if (address>=0x2000) {
+    } else*/ if (address >= 0x2000) {
 		romSelect = (data==0)?1:(data&0x7F);
 		romSelect &= (numBanks-1);
+		AppLog("New ROM at 0x4000: bank %d", romSelect);
 		ROM1 = &cart[(romSelect)*0x4000];
     }
 }
@@ -114,6 +115,7 @@ void mem_write_8_4000_mbc1(unsigned short address,unsigned char data) {
 void mem_write_8_4000_mbc3(unsigned short address,unsigned char data) {
 	if (address<0x6000) {
 	    ramSelect = data&3;
+	    AppLog("New EXRAM bank: %d", ramSelect);
 	} else {
 	    // TODO: Handle RTC
 	}
@@ -324,6 +326,9 @@ unsigned char mem_read_8_F000(unsigned short address) {
 				return IOREGS[0];
 		} else
 		{
+			if (address >= 0xFF10 && address <= 0xFF3F) {
+				AppLog("Reading from PAPU register (%#x)", address);
+			}
  			return IOREGS[address-0xFF00];
         }
 
@@ -357,7 +362,7 @@ int mem_reset()
 	REG_TAC = 0;
 	ROM0 = cart;
 	ROM1 = ROM0 + 0x4000;
-	RAM1 = NULL;
+	RAM1 = EXRAM; //NULL;
 	WRAM1 = WRAM;
 	VRAM0 = VRAM;
 
@@ -534,6 +539,7 @@ unsigned char mem_read_8(unsigned short address)
 
 unsigned short mem_read_16(unsigned short address)
 {
+	//AppLog("mem_read_16(%#x)", address);
 	return mem_read_8(address) + ((unsigned short)mem_read_8(address+1)<<8);
 }
 
