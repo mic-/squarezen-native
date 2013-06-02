@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <FBase.h>
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -81,22 +82,23 @@ int VgmPlayer::Prepare(std::wstring fileName)
 
 	musicFile.close();
 
-	//Tizen::Base::ByteBuffer bbuf;
-	//bbuf.Construct(buf, 0, fileSize, fileSize);
-#if 0
-	// TODO: handle zipped VGMs
-	Tizen::Base::ByteBuffer *inflatedBuf = Tizen::Base::Utility::Inflator::InflateN(bbuf);
-	if (null == inflatedBuf) {
-        // Error case handling...
-		return E_FAILURE;
+	if (buf[0] != 'V' || buf[1] != 'g' || buf[2] != 'm') {
+		Tizen::Base::ByteBuffer zippedBuffer;
+		zippedBuffer.Construct((byte*)buf, 0, fileSize, fileSize);
+		Tizen::Base::ByteBuffer *inflatedBuf = Tizen::Base::Utility::Inflator::InflateN(zippedBuffer);
+		if (null == inflatedBuf) {
+			AppLog("Inflating VGZ failed: %s", GetErrorMessage(GetLastResult()));
+			return -1;
+		}
+		AppLog("Inflated size: %d bytes", inflatedBuf->GetRemaining());
+		mVgmData = new uint8_t[inflatedBuf->GetRemaining()];
+		inflatedBuf->GetArray(mVgmData, 0, inflatedBuf->GetRemaining());
+		delete inflatedBuf;
+	} else {
+		mVgmData = new uint8_t[fileSize];
+		memcpy(mVgmData, buf, fileSize);
+		delete [] buf;
 	}
-    AppLog("Inflated size: %d bytes", inflatedBuf->GetRemaining());
-	mVgmData.Clear();
-	mVgmData.CopyFrom(*inflatedBuf);
-#else
-	mVgmData = new uint8_t[fileSize];
-	memcpy(mVgmData, buf, fileSize);
-#endif
 
 	mDataPos = 0x40;
 	mDataLen = fileSize;
@@ -208,18 +210,11 @@ void VgmPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 int VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
-    int16_t *writebuf;
     int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return -1;
     }
-
-    if (!mTempBuffer) {
-        mTempBuffer = new int16_t[numSamples];
-    }
-    writebuf = mTempBuffer;
-
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
