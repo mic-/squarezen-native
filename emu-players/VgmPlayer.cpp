@@ -17,8 +17,10 @@
 #include <FBase.h>
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include <string.h>
 #include "VgmPlayer.h"
+#include "../zlib/zlib.h"
 
 
 //#define LOG_PCM 1
@@ -83,17 +85,34 @@ int VgmPlayer::Prepare(std::wstring fileName)
 	musicFile.close();
 
 	if (buf[0] != 'V' || buf[1] != 'g' || buf[2] != 'm') {
-		Tizen::Base::ByteBuffer zippedBuffer;
-		zippedBuffer.Construct((byte*)buf, 0, fileSize, fileSize);
-		Tizen::Base::ByteBuffer *inflatedBuf = Tizen::Base::Utility::Inflator::InflateN(zippedBuffer);
-		if (null == inflatedBuf) {
-			AppLog("Inflating VGZ failed: %s", GetErrorMessage(GetLastResult()));
+		AppLog("Unzipping file");
+		delete [] buf;
+		gzFile inFileZ = gzopen(std::string(fileName.begin(), fileName.end()).c_str(), "rb");
+		if (inFileZ == NULL) {
+			AppLog("Error: Failed to gzopen %s\n", std::string(fileName.begin(), fileName.end()).c_str());
 			return -1;
 		}
-		AppLog("Inflated size: %d bytes", inflatedBuf->GetRemaining());
-		mVgmData = new uint8_t[inflatedBuf->GetRemaining()];
-		inflatedBuf->GetArray(mVgmData, 0, inflatedBuf->GetRemaining());
-		delete inflatedBuf;
+		AppLog("Opened file successfully");
+		std::vector<uint8_t> unzippedData;
+		int numUnzippedBytes = 0;
+		uint8_t *unzipBuffer = new uint8_t[8192];
+		while (unzipBuffer) {
+			numUnzippedBytes = gzread(inFileZ, unzipBuffer, 8192);
+			AppLog("gzread returned %d bytes", numUnzippedBytes);
+			if (numUnzippedBytes > 0) {
+				for (i = 0; i < numUnzippedBytes; i++) {
+					unzippedData.push_back(unzipBuffer[i]);
+				}
+			} else {
+				break;
+			}
+		}
+		gzclose(inFileZ);
+		delete [] unzipBuffer;
+		fileSize = unzippedData.size();
+		AppLog("Unzipped size: %d bytes", fileSize);
+		mVgmData = new uint8_t[fileSize];
+		memcpy(mVgmData, unzippedData.data(), fileSize);
 	} else {
 		mVgmData = new uint8_t[fileSize];
 		memcpy(mVgmData, buf, fileSize);
