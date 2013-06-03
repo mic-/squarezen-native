@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
- #ifndef __ANDROID__
-#include <FBase.h>
-#endif
+#include "NativeLogger.h"
 #include "GbMemory.h"
 #include "GbZ80.h"
 #include "GbPapu.h"
@@ -62,9 +60,7 @@ void mem_write_8_0000_mbc1(unsigned short address,unsigned char data) {
     } else if (address>=0x2000) {
 		romSelect = (data==0)?1:(data&0x1F);
 		romSelect &= (numBanks-1);
-#ifndef __ANDROID__
-		AppLog("ROM bank1 selection: %d", romSelect);
-#endif
+		NativeLog(0, "GbMemory", "ROM bank1 selection: %d", romSelect);
 		/*if (mbc1Layout == 0)
 			ROM1 = &cart[(romSelect+highRomBits)*0x4000];
 		else*/
@@ -91,9 +87,7 @@ void mem_write_8_0000_mbc3(unsigned short address,unsigned char data) {
     } else*/ if (address >= 0x2000) {
 		romSelect = (data==0)?1:(data&0x7F);
 		romSelect &= (numBanks-1);
-#ifndef __ANDROID__
-		AppLog("New ROM at 0x4000: bank %d", romSelect);
-#endif
+		NativeLog(0, "GbMemory", "New ROM at 0x4000: bank %d", romSelect);
 		ROM1 = &cart[(romSelect)*0x4000];
     }
 }
@@ -121,10 +115,8 @@ void mem_write_8_4000_mbc1(unsigned short address,unsigned char data) {
 void mem_write_8_4000_mbc3(unsigned short address,unsigned char data) {
 	if (address<0x6000) {
 	    ramSelect = data&3;
-#ifndef __ANDROID__
-	    AppLog("New EXRAM bank: %d", ramSelect);
-#endif
-		} else {
+	    NativeLog(0, "GbMemory", "New EXRAM bank: %d", ramSelect);
+	} else {
 	    // TODO: Handle RTC
 	}
 	RAM1 = &EXRAM[ramSelect*0x2000];
@@ -266,7 +258,7 @@ void mem_write_8_F000(unsigned short address,unsigned char data)
 		//fprintf(stderr,"[FF70] = 0x%02x\n",data);
 		
 	} else if ((address>=0xFF80)&&(address<0xFFFF)) {
-		//AppLog("HIRAM[%#x] = %#x", address-0xFF80, data);
+		//NativeLog("HIRAM[%#x] = %#x", address-0xFF80, data);
 		HIRAM[address-0xFF80] = data;
 
 	} else if (address==0xFFFF) {
@@ -544,7 +536,7 @@ unsigned char mem_read_8(unsigned short address)
 
 unsigned short mem_read_16(unsigned short address)
 {
-	//AppLog("mem_read_16(%#x)", address);
+	//NativeLog("mem_read_16(%#x)", address);
 	return mem_read_8(address) + ((unsigned short)mem_read_8(address+1)<<8);
 }
 

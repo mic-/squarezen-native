@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-#ifdef __TIZEN__
-#include <FBase.h>
-#endif
+#include "NativeLogger.h"
 #include "NsfPlayer.h"
 
 
@@ -55,7 +53,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[4];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-    	//AppLog("Failed to set blipbuffer sample rate");
+    	NativeLog(0, "NsfPlayer", "Failed to set blipbuffer sample rate");
 		return -1;
 	}
 	if (mFileHeader.region & NsfPlayer::REGION_PAL) {
@@ -75,9 +73,7 @@ int NsfPlayer::Prepare(std::string fileName)
 		mSynth[i].output(mBlipBuf);
 	}
 
-#ifdef __TIZEN__	
-	AppLog("Prepare finished");
-#endif
+	NativeLog(0, "NsfPlayer", "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 
@@ -96,7 +92,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
-	//AppLog("Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
+	//NativeLog(0, "NsfPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {

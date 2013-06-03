@@ -64,7 +64,7 @@ void SnChannel::Step()
 
 void SnChannel::Write(uint32_t addr, uint8_t val)
 {
-	//AppLog("Writing %#x to PSG", val);
+	//NativeLog(0, "SN76489", "Writing %#x to PSG", val);
 
 	switch (addr) {
 	case 0x06:
