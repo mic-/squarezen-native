@@ -21,7 +21,7 @@
 				       mRegs.F |= (val == 0) ? Emu6502::FLAG_Z : 0; \
 				       mRegs.F |= (val & 0x80)
 
-#define UPDATE_NZC(val, val2) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N) | Emu6502::FLAG_C; \
+#define UPDATE_NZC(val, val2) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N | Emu6502::FLAG_C); \
 				       mRegs.F |= (val == 0) ? Emu6502::FLAG_Z : 0; \
 				       mRegs.F |= (val & 0x80); \
 				       mRegs.F |= (val >= val2) ? FLAG_C : 0
