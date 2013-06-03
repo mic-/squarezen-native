@@ -17,6 +17,7 @@
 #include <iostream>
 #include <fstream>
 #include <stddef.h>
+#include "NativeLogger.h"
 #include "YmPlayer.h"
 
 #ifdef LOG_PCM
@@ -33,7 +34,7 @@ YmPlayer::YmPlayer() :
 
 int YmPlayer::Reset()
 {
-	//AppLog("YmPlayer::Reset");
+	//NativeLog(0, "YmPlayer", "YmPlayer::Reset");
 
 	if (mYmData) delete [] mYmData;
 	if (mTempBuffer) delete [] mTempBuffer;
@@ -64,7 +65,7 @@ int YmPlayer::Prepare(std::string fileName)
 
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
-    	// AppLog("Failed to open file %S", fileName.c_str());
+    	NativeLog(0, "YmPlayer", "Failed to open file %s", fileName.c_str());
     	return -1;
     }
     musicFile.seekg(0, musicFile.end);
@@ -88,7 +89,7 @@ int YmPlayer::Prepare(std::string fileName)
 
 	musicFile.read((char*)mYmData, fileSize);
 	if (!musicFile) {
-		//AppLog("Failed to read data from file");
+		NativeLog(0, "YmPlayer", "Failed to read data from file");
 		musicFile.close();
 		return -1;
 	}
@@ -130,7 +131,7 @@ int YmPlayer::Prepare(std::string fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[3];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-    	//AppLog("Failed to set blipbuffer sample rate");
+		NativeLog(0, "YmPlayer", "Failed to set blipbuffer sample rate");
 		return -1;
 	}
 	mBlipBuf->clock_rate(2000000);
@@ -201,7 +202,7 @@ int YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
-	//AppLog("Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
+	//NativeLog(0, "YmPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {

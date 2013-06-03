@@ -14,13 +14,11 @@
  * limitations under the License.
  */
 
-#ifdef __TIZEN__ 
-#include <FBase.h>
-#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string.h>
+#include "NativeLogger.h"
 #include "VgmPlayer.h"
 #ifdef __ANDROID__
 #include <zlib.h>
@@ -38,7 +36,7 @@ VgmPlayer::VgmPlayer() :
 
 int VgmPlayer::Reset()
 {
-	//AppLog("VgmPlayer::Reset");
+	//NativeLog(0, "VgmPlayer", "VgmPlayer::Reset");
 
 	if (mSN76489) delete mSN76489;
 	mSN76489 = NULL;
@@ -64,7 +62,7 @@ int VgmPlayer::Prepare(std::string fileName)
 
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
-    	// AppLog("Failed to open file %S", fileName.c_str());
+    	NativeLog(0, "VgmPlayer", "Failed to open file %s", fileName.c_str());
     	return -1;
     }
     musicFile.seekg(0, musicFile.end);
@@ -81,7 +79,7 @@ int VgmPlayer::Prepare(std::string fileName)
     char *buf = new char[fileSize];
 	musicFile.read(buf, fileSize);
 	if (!musicFile) {
-		//AppLog("Read failed");
+		NativeLog(0, "VgmPlayer", "ifstream::read failed");
 		musicFile.close();
 		return -1;
 	}
@@ -89,28 +87,20 @@ int VgmPlayer::Prepare(std::string fileName)
 	musicFile.close();
 
 	if (buf[0] != 'V' || buf[1] != 'g' || buf[2] != 'm') {
-#ifdef __TIZEN__	
-		AppLog("Unzipping file");
-#endif
+		NativeLog(0, "VgmPlayer", "Unzipping file");
 		delete [] buf;
 		gzFile inFileZ = gzopen(std::string(fileName.begin(), fileName.end()).c_str(), "rb");
 		if (inFileZ == NULL) {
-#ifdef __TIZEN__	
-			AppLog("Error: Failed to gzopen %s\n", std::string(fileName.begin(), fileName.end()).c_str());
-#endif
+			NativeLog(0, "VgmPlayer", "Error: Failed to gzopen %s\n", std::string(fileName.begin(), fileName.end()).c_str());
 			return -1;
 		}
-#ifdef __TIZEN__	
-		AppLog("Opened file successfully");
-#endif
+		NativeLog(0, "VgmPlayer", "Opened file successfully");
 		std::vector<uint8_t> unzippedData;
 		int numUnzippedBytes = 0;
 		uint8_t *unzipBuffer = new uint8_t[8192];
 		while (unzipBuffer) {
 			numUnzippedBytes = gzread(inFileZ, unzipBuffer, 8192);
-#ifdef __TIZEN__	
-			AppLog("gzread returned %d bytes", numUnzippedBytes);
-#endif
+			NativeLog(0, "VgmPlayer", "gzread returned %d bytes", numUnzippedBytes);
 			if (numUnzippedBytes > 0) {
 				for (i = 0; i < numUnzippedBytes; i++) {
 					unzippedData.push_back(unzipBuffer[i]);
@@ -122,9 +112,7 @@ int VgmPlayer::Prepare(std::string fileName)
 		gzclose(inFileZ);
 		delete [] unzipBuffer;
 		fileSize = unzippedData.size();
-#ifdef __TIZEN__	
-		AppLog("Unzipped size: %d bytes", fileSize);
-#endif
+		NativeLog(0, "VgmPlayer", "Unzipped size: %d bytes", fileSize);
 		mVgmData = new uint8_t[fileSize];
 		memcpy(mVgmData, unzippedData.data(), fileSize);
 	} else {
@@ -140,7 +128,7 @@ int VgmPlayer::Prepare(std::string fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[4];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-    	//AppLog("Failed to set blipbuffer sample rate");
+    	NativeLog(0, "VgmPlayer", "Failed to set blipbuffer sample rate");
 		return -1;
 	}
 	mBlipBuf->clock_rate(3579545);
@@ -157,7 +145,7 @@ int VgmPlayer::Prepare(std::string fileName)
 	mSN76489 = new SnChip();
 	mSN76489->Reset();
 
-	//AppLog("Prepare done");
+	NativeLog(0, "VgmPlayer", "Prepare done");
 	mState = MusicPlayer::STATE_PREPARED;
 
 	return 0;
@@ -187,7 +175,7 @@ void VgmPlayer::Step()
 
 	uint8_t c = GetData();
 
-	//AppLog("Step got %#x from VGM file", c);
+	//NativeLog(0, "VgmPlayer", "Step got %#x from VGM file", c);
 
 	switch (c) {
 	case 0x4F:
@@ -251,7 +239,7 @@ int VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
-	//AppLog("Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
+	//NativeLog(0, "VgmPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
