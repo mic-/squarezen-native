@@ -69,14 +69,14 @@ SquarezenMainForm::OnInitializing(void)
 
 	mExtStoragePath = Tizen::System::Environment::GetExternalStoragePath();
 
-	mFileScanner.Construct();
-	mFileScanner.Start();
+	//mFileScanner.Construct();
+	//mFileScanner.Start();
 
 	Directory* dir;
 	DirEnumerator* dirEnum;
 	String dirName;
 
-	AppLog("FileScannerThread started");
+	//AppLog("FileScannerThread started");
 
 	dir = new Directory;
 
@@ -118,7 +118,7 @@ SquarezenMainForm::OnInitializing(void)
     mItemContext = new ListContextItem();
 	mItemContext->Construct();
 
-	mMessageArgList = new ArrayList(SingleObjectDeleter);
+	mMessageArgList = new ArrayList(NoOpDeleter);
 	mMessageArgList->Construct();
 
 	// Get a button via resource ID
@@ -154,11 +154,15 @@ SquarezenMainForm::OnListViewItemStateChanged(ListView &listView, int index, int
 	mFileListMutex.Acquire();
 
 	if (mFileList && elementId >= 0 && elementId < mFileList->GetCount()) {
+		AppLog("ItemStateChanged: index=%d, elementId=%d", index, elementId);
 		UiApp* app = UiApp::GetInstance();
 		AppAssert(app);
-		mMessageArgList->RemoveAll();
+		AppLog("RemoveAll");
+		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAt(0);
 		String *path = new String(String(mExtStoragePath) + *(String*)(mFileList->GetAt(index)));
+		AppLog("Add");
 		mMessageArgList->Add(path);
+		AppLog("SendUserEvent");
 		app->SendUserEvent(STATE_PLAYBACK_REQUEST, mMessageArgList);
 
 		AppLog("Clicked %S", ((String*)mFileList->GetAt(index))->GetPointer());
