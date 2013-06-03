@@ -150,7 +150,7 @@ result serviceappApp::PlayFile(String *filePath) {
 		if (IsFailed(mAudioOut.Stop())) {
 			AppLog("AudioOut::Stop failed");
 		}
-		mAudioOut.Reset();
+		//mAudioOut.Reset();
 	}
 
 	if (mPlayer) {
