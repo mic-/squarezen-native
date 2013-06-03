@@ -94,7 +94,7 @@ public:
 	int ChannelEnabledLeft(uint8_t index) const;
 	int ChannelEnabledRight(uint8_t index) const;
 
-	static const uint8_t SQUARE_WAVES[4][32];
+	static const uint8_t SQUARE_WAVES[4][16];
 	static const uint16_t VOL_TB[];
 	static const uint16_t NOISE_PERIODS[];
 

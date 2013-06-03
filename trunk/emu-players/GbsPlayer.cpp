@@ -112,7 +112,7 @@ int GbsPlayer::Prepare(std::string fileName)
 			//AppLog("Failed to set blipbuffer sample rate");
 			return -1;
 		}
-		mBlipBuf->clock_rate(DMG_CLOCK);
+		mBlipBuf->clock_rate(DMG_CLOCK/2);
 
 		for (i = 0; i < 4; i++) {
 			//mSynth[i].volume(0.22);
@@ -127,7 +127,7 @@ int GbsPlayer::Prepare(std::string fileName)
 			//AppLog("Failed to set blipbuffer sample rate");
 			return -1;
 		}
-		mBlipBufRight->clock_rate(DMG_CLOCK);
+		mBlipBufRight->clock_rate(DMG_CLOCK/2);
 
 		for (i = 0; i < 4; i++) {
 			//mSynthRight[i].volume(0.22);
@@ -137,7 +137,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	SetMasterVolume(0, 0);
 
-	mFrameCycles = DMG_CLOCK / 60;
+	mFrameCycles = (DMG_CLOCK / 2) / 60;
 	mCycleCount = 0;
 
 	mem_set_papu(&mPapu);
