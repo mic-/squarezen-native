@@ -22,8 +22,9 @@
 #include "GbZ80.h"
 
 
-const uint8_t GbPapuChip::SQUARE_WAVES[4][32] =
+const uint8_t GbPapuChip::SQUARE_WAVES[4][16] =
 {
+/*
 	// 12.5%
 	{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,1,1},
 	// 25%
@@ -32,6 +33,14 @@ const uint8_t GbPapuChip::SQUARE_WAVES[4][32] =
 	{1,1,1,1, 0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0, 1,1,1,1, 1,1,1,1, 1,1,1,1},
 	// 75%
 	{0,0,0,0, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0}
+	*/
+	{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1},
+	// 25%
+	{1,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1},
+	// 50%
+	{1,1,0,0, 0,0,0,0, 0,0,1,1, 1,1,1,1},
+	// 75%
+	{0,0,1,1, 1,1,1,1, 1,1,1,1, 1,1,0,0}
 };
 
 const uint16_t GbPapuChip::VOL_TB[] = {
@@ -57,7 +66,7 @@ const uint8_t INITIAL_WAVEFORM[] = {
 void GbPapuLengthCounter::Reset()
 {
 	mPos = mStep = 0;
-	mPeriod = DMG_CLOCK / 256;
+	mPeriod = (DMG_CLOCK / 2) / 256;
 }
 
 void GbPapuLengthCounter::Step()
@@ -80,7 +89,7 @@ int GbPapuLengthCounter::GetMask() const
 void GbPapuEnvelopeGenerator::Reset()
 {
 	mPos = mStep = 0;
-	mPeriod = DMG_CLOCK / 64;
+	mPeriod = (DMG_CLOCK / 2) / 64;
 }
 
 void GbPapuEnvelopeGenerator::Step()
@@ -129,7 +138,7 @@ void GbPapuChannel::Step()
 		mEG.Step();
 		if (mPos >= (2048 - mPeriod)) {
 			mPos = 0;
-			if (mWaveStep == 32) {
+			if (mWaveStep == 16) {
 				mWaveStep = 0;
 			}
 			mPhase = GbPapuChip::SQUARE_WAVES[mDuty][mWaveStep++];
@@ -138,7 +147,7 @@ void GbPapuChannel::Step()
 	} else if (mIndex == 2) {
 		// Waveform channel
 		mLC.Step();
-		if (mPos >= (2048 - mPeriod)*2) {
+		if (mPos >= (2048 - mPeriod)) {
 			mPos = 0;
 			if (mWaveStep == 32) {
 				mWaveStep = 0;

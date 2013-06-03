@@ -85,7 +85,7 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        minBufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE,
+        /*minBufferSize = AudioTrack.getMinBufferSize(SAMPLE_RATE,
         											AudioFormat.CHANNEL_OUT_STEREO,
         											AudioFormat.ENCODING_PCM_16BIT);
         Log.e("YmPlay", "minBufferSize = " + minBufferSize);
@@ -105,7 +105,7 @@ public class MainActivity extends Activity {
         pcmFromNative = new ByteBuffer[2];
         pcmFromNative[0] = ByteBuffer.allocateDirect(minBufferSize);
         pcmFromNative[1] = ByteBuffer.allocateDirect(minBufferSize);
-        buf = new byte[minBufferSize*2];
+        buf = new byte[minBufferSize*2];*/
 
         File dir = new File(Environment.getExternalStorageDirectory().getPath()+"/YM");
         ymFiles = dir.list(
@@ -159,8 +159,8 @@ public class MainActivity extends Activity {
     public void stopSong() {
     	if (playing) {
 	    	stopAudioRunner = true;
-	    	while (stopAudioRunner) {}
-	    	audioTrack.stop();
+	    	//while (stopAudioRunner) {}
+	    	//audioTrack.stop();
 	    	Close();
 	    	playing = false;
 	    	audioRunner = null;
@@ -169,7 +169,8 @@ public class MainActivity extends Activity {
     
     public void playSong(String songName) {  	
     	Prepare(Environment.getExternalStorageDirectory().getPath() + "/YM/" + songName);
-        Run(minBufferSize>>2, pcmFromNative[0]);
+    	playing = true;
+        /*Run(minBufferSize>>2, pcmFromNative[0]);
         bufferToPlay = 0;
         
         if (audioRunner == null) {
@@ -202,7 +203,7 @@ public class MainActivity extends Activity {
 	            }
 	        });
         } 	
-        t.start();
+        t.start();*/
         
         activityWindow = getWindow();
         activityWindow.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
@@ -213,10 +214,11 @@ public class MainActivity extends Activity {
     public void onDestroy() {
     	stopAudioRunner = true;
         activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    	while (stopAudioRunner) {}
-    	audioTrack.stop();
-    	audioTrack.release();
+    	//while (stopAudioRunner) {}
+    	//audioTrack.stop();
+    	//audioTrack.release();
     	Close();
+    	Exit();
     	super.onDestroy();
     }
     
@@ -233,6 +235,7 @@ public class MainActivity extends Activity {
     
     public native void Prepare(String filePath);
     public native void Close();
+    public native void Exit();
     public native void Run(int numSamples, ByteBuffer byteBuffer);
     //public native void GetState(byte[] state);    
 }
