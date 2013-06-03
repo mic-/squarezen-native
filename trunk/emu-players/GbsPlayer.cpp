@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-#define __TIZEN__
-
-#ifdef __TIZEN__
+#ifndef __ANDROID__
 #include <FBase.h>
 #endif
 #include <iostream>
@@ -56,7 +54,7 @@ int GbsPlayer::Reset()
 }
 
 
-int GbsPlayer::Prepare(std::wstring fileName)
+int GbsPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
@@ -65,8 +63,7 @@ int GbsPlayer::Prepare(std::wstring fileName)
     	Reset();
     }
 
-    std::ifstream musicFile(std::string(fileName.begin(), fileName.end()).c_str(),
-    		std::ios::in | std::ios::binary);
+    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
     	// AppLog("Failed to open file %S", fileName.c_str());
     	return -1;
@@ -101,7 +98,9 @@ int GbsPlayer::Prepare(std::wstring fileName)
 		return -1;
 	}
 
+#ifdef __TIZEN__	
 	AppLog("File read done");
+#endif
 
 	musicFile.close();
 
@@ -147,7 +146,9 @@ int GbsPlayer::Prepare(std::wstring fileName)
 	cpu_reset();
 	mPapu.Reset();
 
+#ifdef __TIZEN__
 	AppLog("Reset done");
+#endif
 
 	cart[0xF0] = 0xCD;	// CALL nn nn
 	cart[0xF1] = mFileHeader.initAddress & 0xFF;
@@ -155,11 +156,13 @@ int GbsPlayer::Prepare(std::wstring fileName)
 	cart[0xF3] = 0x76;	// HALT
 	cpu.regs.PC = 0xF0;
 	cpu.regs.SP = mFileHeader.SP;
-	cpu.regs.A = 0; // song number
+	cpu.regs.A = 1; // song number
 	cpu.cycles = 0;
 	cpu_execute(mFrameCycles);
 
+#ifdef __TIZEN__
 	AppLog("Prepare finished");
+#endif
 
 	mState = MusicPlayer::STATE_PREPARED;
 

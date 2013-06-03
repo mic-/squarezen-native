@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+#ifdef __TIZEN__
 #include <FBase.h>
+#endif
 #include "NsfPlayer.h"
+
 
 NsfPlayer::NsfPlayer()
 	: m6502(NULL)
@@ -33,7 +36,7 @@ int NsfPlayer::Reset()
 	return 0;
 }
 
-int NsfPlayer::Prepare(std::wstring fileName)
+int NsfPlayer::Prepare(std::string fileName)
 {
 	m6502 = new Emu6502;
 	m2A03 = new Emu2A03;
@@ -72,7 +75,9 @@ int NsfPlayer::Prepare(std::wstring fileName)
 		mSynth[i].output(mBlipBuf);
 	}
 
+#ifdef __TIZEN__	
 	AppLog("Prepare finished");
+#endif
 
 	mState = MusicPlayer::STATE_PREPARED;
 

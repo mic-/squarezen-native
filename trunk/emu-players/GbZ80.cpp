@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#ifdef __TIZEN__
 #include <FBase.h>
+#endif
 #include "GbMemory.h"
 #include "GbZ80.h"
 #include "GbsPlayer.h"
@@ -338,8 +340,9 @@ void cpu_execute(unsigned int max) {
         oldPC = cpu.regs.PC;
 
 		if (debg>0) {
+#ifdef __TIZEN__
 			AppLog("PC=%#x, A=%#x, B=%#x, SP=%#x, opcode=%#x", cpu.regs.PC, cpu.regs.A, cpu.regs.B, cpu.regs.SP, opcode);
-
+#endif
 			/*fprintf(stderr,"PC=%04X: A=%02X, B=%02X, C=%02X, D=%02X, E=%02X, H=%02X, L=%02X, F=%02X, SP=%02X, opcode=%02X\n",
 					cpu.regs.PC,cpu.regs.A,cpu.regs.B,cpu.regs.C,cpu.regs.D,cpu.regs.E,cpu.regs.H,cpu.regs.L,cpu.regs.F,
 					cpu.regs.SP,opcode);*/
