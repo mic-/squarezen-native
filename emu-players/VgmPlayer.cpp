@@ -14,14 +14,19 @@
  * limitations under the License.
  */
 
+#ifdef __TIZEN__ 
 #include <FBase.h>
+#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <string.h>
 #include "VgmPlayer.h"
+#ifdef __ANDROID__
+#include <zlib.h>
+#else
 #include "../zlib/zlib.h"
-
+#endif
 
 //#define LOG_PCM 1
 
@@ -48,7 +53,7 @@ int VgmPlayer::Reset()
 }
 
 
-int VgmPlayer::Prepare(std::wstring fileName)
+int VgmPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
@@ -57,8 +62,7 @@ int VgmPlayer::Prepare(std::wstring fileName)
     	Reset();
     }
 
-    std::ifstream musicFile(std::string(fileName.begin(), fileName.end()).c_str(),
-    		std::ios::in | std::ios::binary);
+    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
     	// AppLog("Failed to open file %S", fileName.c_str());
     	return -1;
@@ -85,20 +89,28 @@ int VgmPlayer::Prepare(std::wstring fileName)
 	musicFile.close();
 
 	if (buf[0] != 'V' || buf[1] != 'g' || buf[2] != 'm') {
+#ifdef __TIZEN__	
 		AppLog("Unzipping file");
+#endif
 		delete [] buf;
 		gzFile inFileZ = gzopen(std::string(fileName.begin(), fileName.end()).c_str(), "rb");
 		if (inFileZ == NULL) {
+#ifdef __TIZEN__	
 			AppLog("Error: Failed to gzopen %s\n", std::string(fileName.begin(), fileName.end()).c_str());
+#endif
 			return -1;
 		}
+#ifdef __TIZEN__	
 		AppLog("Opened file successfully");
+#endif
 		std::vector<uint8_t> unzippedData;
 		int numUnzippedBytes = 0;
 		uint8_t *unzipBuffer = new uint8_t[8192];
 		while (unzipBuffer) {
 			numUnzippedBytes = gzread(inFileZ, unzipBuffer, 8192);
+#ifdef __TIZEN__	
 			AppLog("gzread returned %d bytes", numUnzippedBytes);
+#endif
 			if (numUnzippedBytes > 0) {
 				for (i = 0; i < numUnzippedBytes; i++) {
 					unzippedData.push_back(unzipBuffer[i]);
@@ -110,7 +122,9 @@ int VgmPlayer::Prepare(std::wstring fileName)
 		gzclose(inFileZ);
 		delete [] unzipBuffer;
 		fileSize = unzippedData.size();
+#ifdef __TIZEN__	
 		AppLog("Unzipped size: %d bytes", fileSize);
+#endif
 		mVgmData = new uint8_t[fileSize];
 		memcpy(mVgmData, unzippedData.data(), fileSize);
 	} else {

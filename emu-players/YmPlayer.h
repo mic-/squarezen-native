@@ -32,7 +32,7 @@ class YmPlayer : public MusicPlayer {
 public:
 	YmPlayer();
 
-	virtual int Prepare(std::wstring fileName);
+	virtual int Prepare(std::string fileName);
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 

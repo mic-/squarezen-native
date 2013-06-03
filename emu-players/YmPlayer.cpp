@@ -51,7 +51,7 @@ int YmPlayer::Reset()
 }
 
 
-int YmPlayer::Prepare(std::wstring fileName)
+int YmPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
 	uint32_t sampleBytes;
@@ -62,8 +62,7 @@ int YmPlayer::Prepare(std::wstring fileName)
     	Reset();
     }
 
-    std::ifstream musicFile(std::string(fileName.begin(), fileName.end()).c_str(),
-    		std::ios::in | std::ios::binary);
+    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
     	// AppLog("Failed to open file %S", fileName.c_str());
     	return -1;

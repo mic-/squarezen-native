@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef __ANDROID__
 #include <FBase.h>
+#endif
 #include "Emu6502.h"
 
 #define UPDATE_NZ(val) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N); \
@@ -32,10 +34,14 @@
 
 #define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
 
+#ifndef __ANDROID__
 #define ILLEGAL_OP() AppLog("Emu6502::Run: Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
 					 mCycles += 2; \
 					 mRegs.PC++
-
+#else
+#define ILLEGAL_OP() mCycles += 2; \
+				     mRegs.PC++
+#endif
 
 void Emu6502::Reset()
 {

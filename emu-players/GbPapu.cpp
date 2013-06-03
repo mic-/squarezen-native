@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+#ifndef __ANDROID__
 #include <FBase.h>
+#endif
 #include "GbMemory.h"
 #include "GbPapu.h"
 #include "GbZ80.h"
@@ -212,7 +214,9 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		//mPeriod = (mPeriod == 0) ? 4 : mPeriod;
 		mPeriod = ((val >> 4) < 14) ? (mPeriod << ((val >> 4) + 0)) : 0;
 		mLfsrWidth = (val & 8) ? 7 : 15;
+#ifndef __ANDROID__
 		AppLog("Noise period = %d [s %d, r %d, w %d] (%d Hz)", mPeriod, val&7, val>>4, mLfsrWidth, (DMG_CLOCK/mPeriod));
+#endif
 		break;
 
 	case 0xFF14:	// NR14
@@ -318,11 +322,15 @@ void GbPapuChip::Write(uint32_t addr, uint8_t val)
 
 	} else if (0xFF25 == addr) {
 		mNR51 = val;
+#ifndef __ANDROID__		
 		AppLog("NR51 = %#x", val);
+#endif
 
 	} else if (0xFF26 == addr) {
 		mNR52 = val;
+#ifndef __ANDROID__
 		AppLog("NR52 = %#x", val);
+#endif
 
 	} else if (addr >= 0xFF30 && addr <= 0xFF3F) {
 		mWaveformRAM[addr & 0x0F] = val;

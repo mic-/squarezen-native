@@ -60,7 +60,10 @@ public:
 		if (mSynth) { delete [] mSynth; mSynth = NULL; }
 	}
 
-	virtual int Prepare(std::wstring fileName) = 0;
+	virtual int Prepare(std::string fileName) = 0;
+#ifndef __ANDROID__
+	virtual int Prepare(std::wstring fileName) { return Prepare(std::string(fileName.begin(), fileName.end())); }
+#endif
 	virtual int Run(uint32_t numSamples, int16_t *buffer) = 0;
 	virtual int Reset() = 0;
 
