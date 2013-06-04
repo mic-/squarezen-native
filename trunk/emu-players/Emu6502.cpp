@@ -32,13 +32,13 @@
 // Updates PC
 #define ABSX_ADDR(dest) dest = (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8)); \
 	                    if ((dest & 0x100) != ((dest + mRegs.X) & 0x100)) mCycles++; \
-	                    mRegs+PC += 2; \
+	                    mRegs.PC += 2; \
 						dest += mRegs.X
 
 // Updates PC
 #define ABSY_ADDR(dest) dest = (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8)); \
 	                    if ((dest & 0x100) != ((dest + mRegs.Y) & 0x100)) mCycles++; \
-	                    mRegs+PC += 2; \
+	                    mRegs.PC += 2; \
 						dest += mRegs.Y
 
 // Updates PC
@@ -47,6 +47,12 @@
 // Updates PC
 #define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
 
+
+#define COND_BRANCH(cc) if ((cc)) { relAddr = mMemory->ReadByte(mRegs.PC++); \
+								    addr = mRegs.PC + relAddr; \
+                                    mCycles += ((addr & 0x100) == (mRegs.PC & 0x100)) ? 1 : 2; \
+                                    mRegs.PC = addr; } \
+                                  mCycles += 2
 
 #define ILLEGAL_OP() NativeLog(0, "Emu6502", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
 					 mCycles += 2; \
@@ -62,6 +68,7 @@ void Emu6502::Run(uint32_t maxCycles)
 {
 	uint16_t addr;
 	uint8_t operand;
+    int8_t relAddr;
 
 	while (mCycles < maxCycles) {
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
@@ -87,6 +94,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
+			break;
+
+		case 0x10:		// BPL rel
+			COND_BRANCH((mRegs.F & Emu6502::FLAG_N) == 0);
 			break;
 
 		case 0x12: case 0x13: case 0x14:
@@ -139,6 +150,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
+			break;
+
+		case 0x30:		// BMI rel
+			COND_BRANCH(mRegs.F & Emu6502::FLAG_N);
 			break;
 
 		case 0x32: case 0x33: case 0x34:
@@ -200,6 +215,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0x50:		// BVC rel
+			COND_BRANCH((mRegs.F & Emu6502::FLAG_V) == 0);
+			break;
+
 		case 0x52: case 0x53: case 0x54:
 			ILLEGAL_OP();
 			break;
@@ -235,6 +254,10 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0x62: case 0x63: case 0x64:
 			ILLEGAL_OP();
+			break;
+
+		case 0x70:		// BVS rel
+			COND_BRANCH(mRegs.F & Emu6502::FLAG_V);
 			break;
 
 		case 0x72: case 0x73: case 0x74:
@@ -411,6 +434,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			ILLEGAL_OP();
 			break;
 
+		case 0xD0:		// BNE rel
+			COND_BRANCH((mRegs.F & Emu6502::FLAG_Z) == 0);
+			break;
+
 		case 0xD2: case 0xD3: case 0xD4:
 			ILLEGAL_OP();
 			break;
@@ -468,6 +495,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mRegs.PC += 2;
 			UPDATE_NZC(mRegs.X, operand);
 			mCycles += 4;
+			break;
+
+		case 0xF0:		// BEQ rel
+			COND_BRANCH(mRegs.F & Emu6502::FLAG_Z);
 			break;
 
 		case 0xF2: case 0xF3: case 0xF4:
