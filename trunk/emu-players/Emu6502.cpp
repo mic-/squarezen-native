@@ -133,6 +133,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0x1F:
+			ILLEGAL_OP();
+			break;
+
 		case 0x25:		// AND zp
 			mRegs.A &= mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZ(mRegs.A);
@@ -145,11 +149,19 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0x2B:
+			ILLEGAL_OP();
+			break;
+
 		case 0x2D:		// AND abs
 			mRegs.A &= mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
+			break;
+
+		case 0x2F:
+			ILLEGAL_OP();
 			break;
 
 		case 0x30:		// BMI rel
@@ -178,11 +190,19 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0x3A: case 0x3B: case 0x3C:
+			ILLEGAL_OP();
+			break;
+
 		case 0x3D:		// AND abs,X
 			ABSX_ADDR(addr);
 			mRegs.A &= mMemory->ReadByte(addr);
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
+			break;
+
+		case 0x3F:
+			ILLEGAL_OP();
 			break;
 
 		case 0x42: case 0x43: case 0x44:
@@ -201,6 +221,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0x4B:
+			ILLEGAL_OP();
+			break;
+
 		case 0x4C:		// JMP abs
 			 addr = mMemory->ReadByte(mRegs.PC++);
 			 addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
@@ -213,6 +237,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
+			break;
+
+		case 0x4F:
+			ILLEGAL_OP();
 			break;
 
 		case 0x50:		// BVC rel
@@ -252,7 +280,23 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0x5F:
+			ILLEGAL_OP();
+			break;
+
 		case 0x62: case 0x63: case 0x64:
+			ILLEGAL_OP();
+			break;
+
+		case 0x67:
+			ILLEGAL_OP();
+			break;
+
+		case 0x6B:
+			ILLEGAL_OP();
+			break;
+
+		case 0x6F:
 			ILLEGAL_OP();
 			break;
 
@@ -264,12 +308,20 @@ void Emu6502::Run(uint32_t maxCycles)
 			ILLEGAL_OP();
 			break;
 
+		case 0x77:
+			ILLEGAL_OP();
+			break;
+
 		case 0x78:		// SEI
 			mRegs.F |= Emu6502::FLAG_I;
 			mCycles += 2;
 			break;
 
 		case 0x7A: case 0x7B: case 0x7C:
+			ILLEGAL_OP();
+			break;
+
+		case 0x7F:
 			ILLEGAL_OP();
 			break;
 
@@ -297,6 +349,10 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0x8F:
 			ILLEGAL_OP();
+			break;
+
+		case 0x90:		// BCC rel
+			COND_BRANCH((mRegs.F & Emu6502::FLAG_C) == 0);
 			break;
 
 		case 0x92: case 0x93:
@@ -335,6 +391,10 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0xAF:
 			ILLEGAL_OP();
+			break;
+
+		case 0xB0:		// BCS rel
+			COND_BRANCH(mRegs.F & Emu6502::FLAG_C);
 			break;
 
 		case 0xB2: case 0xB3:
@@ -480,6 +540,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 3;
 			break;
 
+		case 0xE7:
+			ILLEGAL_OP();
+			break;
+
 		case 0xE8:		// INX
 			mRegs.X++;
 			UPDATE_NZ(mRegs.X);
@@ -490,6 +554,10 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0xEB:
+			ILLEGAL_OP();
+			break;
+
 		case 0xEC:		// CPX abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -497,11 +565,23 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0xEF:
+			ILLEGAL_OP();
+			break;
+
 		case 0xF0:		// BEQ rel
 			COND_BRANCH(mRegs.F & Emu6502::FLAG_Z);
 			break;
 
 		case 0xF2: case 0xF3: case 0xF4:
+			ILLEGAL_OP();
+			break;
+
+		case 0xF7:
+			ILLEGAL_OP();
+			break;
+
+		case 0xFF:
 			ILLEGAL_OP();
 			break;
 		}
