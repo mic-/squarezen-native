@@ -26,11 +26,27 @@
 				       mRegs.F |= (val & 0x80); \
 				       mRegs.F |= (val >= val2) ? FLAG_C : 0
 
+// Doesn't update PC
 #define ABS_ADDR() (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8))
 
+// Updates PC
+#define ABSX_ADDR(dest) dest = (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8)); \
+	                    if ((dest & 0x100) != ((dest + mRegs.X) & 0x100)) mCycles++; \
+	                    mRegs+PC += 2; \
+						dest += mRegs.X
+
+// Updates PC
+#define ABSY_ADDR(dest) dest = (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8)); \
+	                    if ((dest & 0x100) != ((dest + mRegs.Y) & 0x100)) mCycles++; \
+	                    mRegs+PC += 2; \
+						dest += mRegs.Y
+
+// Updates PC
 #define ZP_ADDR() (mMemory->ReadByte(mRegs.PC++))
 
+// Updates PC
 #define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
+
 
 #define ILLEGAL_OP() NativeLog(0, "Emu6502", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
 					 mCycles += 2; \
@@ -66,6 +82,13 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0x0D:		// ORA abs
+			mRegs.A |= mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
 		case 0x12: case 0x13: case 0x14:
 			ILLEGAL_OP();
 			break;
@@ -81,8 +104,22 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0x19:		// ORA abs,Y
+			ABSY_ADDR(addr);
+			mRegs.A |= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
 		case 0x1A: case 0x1B: case 0x1C:
 			ILLEGAL_OP();
+			break;
+
+		case 0x1D:		// ORA abs,X
+			ABSX_ADDR(addr);
+			mRegs.A |= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
 			break;
 
 		case 0x25:		// AND zp
@@ -119,6 +156,20 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0x39:		// AND abs,Y
+			ABSY_ADDR(addr);
+			mRegs.A &= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0x3D:		// AND abs,X
+			ABSX_ADDR(addr);
+			mRegs.A &= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
 		case 0x42: case 0x43: case 0x44:
 			ILLEGAL_OP();
 			break;
@@ -142,6 +193,13 @@ void Emu6502::Run(uint32_t maxCycles)
 			 mCycles += 3;
 			 break;
 
+		case 0x4D:		// EOR abs
+			mRegs.A ^= mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
 		case 0x52: case 0x53: case 0x54:
 			ILLEGAL_OP();
 			break;
@@ -157,8 +215,22 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0x59:		// EOR abs,Y
+			ABSY_ADDR(addr);
+			mRegs.A ^= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
 		case 0x5A: case 0x5B: case 0x5C:
 			ILLEGAL_OP();
+			break;
+
+		case 0x5D:		// EOR abs,X
+			ABSX_ADDR(addr);
+			mRegs.A ^= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
 			break;
 
 		case 0x62: case 0x63: case 0x64:
