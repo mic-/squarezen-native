@@ -32,6 +32,7 @@ const uint8_t GbPapuChip::SQUARE_WAVES[4][16] =
 	// 75%
 	{0,0,0,0, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0}
 	*/
+
 	{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1},
 	// 25%
 	{1,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1},
@@ -39,6 +40,11 @@ const uint8_t GbPapuChip::SQUARE_WAVES[4][16] =
 	{1,1,0,0, 0,0,0,0, 0,0,1,1, 1,1,1,1},
 	// 75%
 	{0,0,1,1, 1,1,1,1, 1,1,1,1, 1,1,0,0}
+
+/*		{0,0,0,0, 0,0,0,1},
+		{1,0,0,0, 0,0,0,1},
+		{1,0,0,0, 0,1,1,1},
+		{0,1,1,1, 1,1,1,0}*/
 };
 
 const uint16_t GbPapuChip::VOL_TB[] = {
@@ -217,8 +223,8 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		break;
 
 	case 0xFF22:	// NR43
-		mPeriod = GbPapuChip::NOISE_PERIODS[val & 7]; //8 * (val & 7);
-		//mPeriod = (mPeriod == 0) ? 4 : mPeriod;
+		mPeriod = 8 * (val & 7);
+		mPeriod = (mPeriod == 0) ? 4 : mPeriod;
 		mPeriod = ((val >> 4) < 14) ? (mPeriod << ((val >> 4) + 0)) : 0;
 		mLfsrWidth = (val & 8) ? 7 : 15;
 		NativeLog(0, "GbPapu", "Noise period = %d [s %d, r %d, w %d] (%d Hz)", mPeriod, val&7, val>>4, mLfsrWidth, (DMG_CLOCK/mPeriod));

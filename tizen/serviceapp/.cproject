@@ -19,7 +19,13 @@
 					<folderInfo id="org.tizen.nativecpp.config.sbi.gcc45.app.debug.542757660." name="/" resourcePath="">
 						<toolChain id="org.tizen.nativecpp.toolchain.sbi.gcc45.app.debug.1784086492" name="Tizen Native Toolchain" superClass="org.tizen.nativecpp.toolchain.sbi.gcc45.app.debug">
 							<targetPlatform binaryParser="org.eclipse.cdt.core.ELF" id="org.tizen.nativeide.target.sbi.gnu.platform.base.165304646" osList="linux,win32" superClass="org.tizen.nativeide.target.sbi.gnu.platform.base"/>
-							<builder autoBuildTarget="all" buildPath="${workspace_loc:/serviceapp/Debug}" enableAutoBuild="true" id="org.tizen.nativecpp.target.sbi.gnu.builder.910776161" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Tizen Application Builder" superClass="org.tizen.nativecpp.target.sbi.gnu.builder"/>
+							<builder autoBuildTarget="all" buildPath="${workspace_loc:/serviceapp/Debug}" enableAutoBuild="true" id="org.tizen.nativecpp.target.sbi.gnu.builder.910776161" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="Tizen Application Builder" superClass="org.tizen.nativecpp.target.sbi.gnu.builder">
+								<outputEntries>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Debug"/>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Release"/>
+									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="Dynamic Analyzer"/>
+								</outputEntries>
+							</builder>
 							<tool id="org.tizen.nativecpp.tool.sbi.gnu.archiver.707842937" name="Archiver" superClass="org.tizen.nativecpp.tool.sbi.gnu.archiver"/>
 							<tool command="clang++.exe" id="org.tizen.nativecpp.tool.sbi.gnu.cpp.compiler.1219153705" name="C++ Compiler" superClass="org.tizen.nativecpp.tool.sbi.gnu.cpp.compiler">
 								<option id="gnu.cpp.compiler.option.optimization.level.235211314" name="Optimization Level" superClass="gnu.cpp.compiler.option.optimization.level" value="gnu.cpp.compiler.optimization.level.none" valueType="enumerated"/>
@@ -29,7 +35,11 @@
 									<listOptionValue builtIn="false" value="tizen-emulator-2.1.native_llvm31.i386.cpp.app"/>
 								</option>
 								<option id="gnu.cpp.compiler.option.include.paths.1491943414" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/serviceapp/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/library"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/osp"/>
 								</option>
 								<option id="sbi.gnu.cpp.compiler.option.frameworks.cpp.399579441" name="Tizen-Frameworks" superClass="sbi.gnu.cpp.compiler.option.frameworks.cpp" valueType="userObjs">
 									<listOptionValue builtIn="false" value="osp"/>
@@ -59,7 +69,11 @@
 									<listOptionValue builtIn="false" value="tizen-emulator-2.1.native_llvm31.i386.cpp.app"/>
 								</option>
 								<option id="gnu.c.compiler.option.include.paths.2147015964" name="Include paths (-I)" superClass="gnu.c.compiler.option.include.paths" valueType="includePath">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/serviceapp/serviceapp/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/library"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/osp"/>
 								</option>
 								<option id="sbi.gnu.c.compiler.option.frameworks.cpp.435620859" name="Tizen-Frameworks" superClass="sbi.gnu.c.compiler.option.frameworks.cpp" valueType="userObjs">
 									<listOptionValue builtIn="false" value="osp"/>
@@ -77,14 +91,13 @@
 								</option>
 								<option id="gnu.c.compiler.option.preprocessor.def.symbols.927058880" name="Defined symbols (-D)" superClass="gnu.c.compiler.option.preprocessor.def.symbols" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="_DEBUG"/>
+									<listOptionValue builtIn="false" value="__TIZEN__=1"/>
 								</option>
 								<inputType id="sbi.gnu.c.compiler.tizen.inputType.386884738" superClass="sbi.gnu.c.compiler.tizen.inputType"/>
 							</tool>
 							<tool id="org.tizen.nativeide.tool.sbi.gnu.c.linker.base.640241801" name="C Linker" superClass="org.tizen.nativeide.tool.sbi.gnu.c.linker.base"/>
 							<tool command="clang++.exe" id="org.tizen.nativecpp.tool.sbi.gnu.cpp.linker.901135465" name="C++ Linker" superClass="org.tizen.nativecpp.tool.sbi.gnu.cpp.linker">
-								<option id="gnu.cpp.link.option.paths.1307041173" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths">
-									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/lib}&quot;"/>
-								</option>
+								<option id="gnu.cpp.link.option.paths.1307041173" name="Library search path (-L)" superClass="gnu.cpp.link.option.paths" valueType="libPaths"/>
 								<option id="sbi.gnu.cpp.linker.option.frameworks_lflags.cpp.787442281" name="Tizen-Frameworks-Other-Lflags" superClass="sbi.gnu.cpp.linker.option.frameworks_lflags.cpp" valueType="stringList">
 									<listOptionValue builtIn="false" value="-target i386-tizen-linux-gnueabi -gcc-toolchain &quot;C:/tizen-sdk/tools/smart-build-interface/../i386-linux-gnueabi-gcc-4.5/&quot; -ccc-gcc-name i386-linux-gnueabi-g++ -march=i386 -Xlinker --as-needed"/>
 									<listOptionValue builtIn="false" value="-pie -lpthread "/>
@@ -125,6 +138,13 @@
 								</inputType>
 							</tool>
 							<tool command="i386-linux-gnueabi-as.exe" id="org.tizen.nativeapp.tool.sbi.gnu.assembler.base.2146766494" name="Assembler" superClass="org.tizen.nativeapp.tool.sbi.gnu.assembler.base">
+								<option id="gnu.both.asm.option.include.paths.1194079329" name="Include paths (-I)" superClass="gnu.both.asm.option.include.paths" valueType="includePath">
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/serviceapp/serviceapp/inc}&quot;"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/libxml2"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/library"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include"/>
+									<listOptionValue builtIn="false" value="C:/tizen-sdk/platforms/tizen2.1/rootstraps/tizen-emulator-2.1.native/usr/include/osp"/>
+								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.2008442855" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
 							<tool id="org.tizen.nativecpp.tool.sbi.po.compiler.248419226" name="PO Resource Compiler" superClass="org.tizen.nativecpp.tool.sbi.po.compiler"/>
@@ -132,11 +152,11 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="res"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="inc"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="emu-players"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="res"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="zlib"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="inc"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -186,7 +206,7 @@
 									<listOptionValue builtIn="false" value=" -fPIE"/>
 									<listOptionValue builtIn="false" value="--sysroot=&quot;${SBI_SYSROOT}&quot;"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.preprocessor.def.1038683118" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+								<option id="gnu.cpp.compiler.option.preprocessor.def.1038683118" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="__TIZEN__=1"/>
 								</option>
 								<inputType id="sbi.gnu.cpp.compiler.tizen.inputType.1912377546" superClass="sbi.gnu.cpp.compiler.tizen.inputType"/>
@@ -269,11 +289,11 @@
 						</toolChain>
 					</folderInfo>
 					<sourceEntries>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="zlib"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="res"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="emu-players"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="inc"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="res"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="zlib"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -420,9 +440,9 @@
 					<sourceEntries>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="inc"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="emu-players"/>
-						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="zlib"/>
 						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="res"/>
+						<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name="src"/>
 					</sourceEntries>
 				</configuration>
 			</storageModule>
@@ -444,10 +464,10 @@
 		<scannerConfigBuildInfo instanceId="org.tizen.nativecpp.config.sbi.gcc45.app.debug.da.512415136">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.tizen.nativecommon.TizenGCCManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="org.tizen.nativecpp.config.sbi.gcc45.app.release.728069853">
+		<scannerConfigBuildInfo instanceId="org.tizen.nativecpp.config.sbi.gcc45.app.debug.542757660">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.tizen.nativecommon.TizenGCCManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
-		<scannerConfigBuildInfo instanceId="org.tizen.nativecpp.config.sbi.gcc45.app.debug.542757660">
+		<scannerConfigBuildInfo instanceId="org.tizen.nativecpp.config.sbi.gcc45.app.release.728069853">
 			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.tizen.nativecommon.TizenGCCManagedMakePerProjectProfileCPP"/>
 		</scannerConfigBuildInfo>
 	</storageModule>
