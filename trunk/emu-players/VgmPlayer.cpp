@@ -38,11 +38,11 @@ int VgmPlayer::Reset()
 {
 	//NativeLog(0, "VgmPlayer", "VgmPlayer::Reset");
 
-	if (mSN76489) delete mSN76489;
+	delete mSN76489;
 	mSN76489 = NULL;
-	if (mBlipBuf) delete mBlipBuf;
+	delete mBlipBuf;
 	mBlipBuf = NULL;
-	if (mSynth) delete [] mSynth;
+	delete [] mSynth;
 	mSynth = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;

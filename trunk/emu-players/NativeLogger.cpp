@@ -15,6 +15,7 @@
  */
 
 #include <stdarg.h>
+#include <stdio.h>
 #include "NativeLogger.h"
 #ifdef __ANDROID__
 #include <android/log.h>

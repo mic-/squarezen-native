@@ -30,6 +30,11 @@ NsfPlayer::NsfPlayer()
 int NsfPlayer::Reset()
 {
 	// TODO: fill out
+	delete mBlipBuf;
+	mBlipBuf = NULL;
+	delete [] mSynth;
+	mSynth = NULL;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return 0;
 }

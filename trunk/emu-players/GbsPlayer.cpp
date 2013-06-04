@@ -34,17 +34,17 @@ GbsPlayer::GbsPlayer()
 
 int GbsPlayer::Reset()
 {
-	if (cart) delete [] cart;
+	delete [] cart;
 	cart = NULL;
 
-	if (mBlipBuf) delete mBlipBuf;
+	delete mBlipBuf;
 	mBlipBuf = NULL;
-	if (mSynth) delete [] mSynth;
+	delete [] mSynth;
 	mSynth = NULL;
 
-	if (mBlipBufRight) delete mBlipBufRight;
+	delete mBlipBufRight;
 	mBlipBufRight = NULL;
-	if (mSynthRight) delete [] mSynthRight;
+	delete [] mSynthRight;
 	mSynthRight = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
