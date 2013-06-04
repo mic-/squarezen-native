@@ -37,17 +37,46 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
+	typedef struct __attribute__ ((__packed__))
+	{
+		char ID[4];
+		uint32_t eofOffset;
+		uint32_t version;
+		uint32_t sn76489Clock;
+		uint32_t ym2413Clock;
+		uint32_t gd3Offset;
+		uint32_t totalSamples;
+		uint32_t loopOffset;
+		uint32_t loopSamples;
+
+		// Added in 1.01
+		uint32_t rateHz;
+
+		// Added in 1.10
+		uint16_t lfsrTaps;
+		uint8_t lfsrWidth;
+		uint8_t sn76489Flags;
+		uint32_t ym2612Clock;
+		uint32_t ym2151Clock;
+
+		// Added in 1.50,1.51
+		uint32_t dataOffset;
+		uint32_t segaPcmClock;
+		uint32_t segaPcmItfReg;
+	} VgmFileHeader;
+	
 private:
 	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 	uint8_t GetData();
 	void Step();
 
-	uint32_t mWait;
-	uint32_t mCycleCount, mSampleCycles;
-	uint32_t mDataPos, mDataLen;
 	uint8_t *mVgmData;
 	int16_t *mTempBuffer;
 	SnChip *mSN76489;
+	VgmFileHeader *mFileHeader;
+	uint32_t mWait;
+	uint32_t mCycleCount, mSampleCycles;
+	uint32_t mDataPos, mDataLen;
 };
 
 #endif /* VGMPLAYER_H_ */
