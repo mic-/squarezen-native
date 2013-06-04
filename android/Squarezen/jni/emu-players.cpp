@@ -8,6 +8,7 @@
 #include <SLES/OpenSLES.h>
 #include <SLES/OpenSLES_Android.h>
 #include <sys/time.h>
+#include <pthread.h>
 
 static MusicPlayer *player = NULL;
 JavaVM *gJavaVM;
@@ -20,13 +21,18 @@ static SLObjectItf outputMixObject = NULL;
 static SLObjectItf bqPlayerObject = NULL;
 static SLPlayItf bqPlayerPlay;
 static SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue;
-//static SLEffectSendItf bqPlayerEffectSend;
 static SLVolumeItf bqPlayerVolume;
 
-#define BUFFER_SIZE_BYTES (3072*2*2)
+#define BUFFER_SIZE_BYTES (2048*2*2)
+#define NUM_BUFFERS 4
 
-static short *pcmBuffer[3];
-int bufferToEnqueue, bufferToFill;
+static pthread_mutex_t playerMutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t bufferFillCond = PTHREAD_COND_INITIALIZER;
+static pthread_t bufferFillThread;
+static bool playing = false;
+
+static short *pcmBuffer[NUM_BUFFERS];
+static int bufferToEnqueue, bufferToFill;
 
 
 extern "C"
@@ -50,36 +56,55 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 }
 
 
-// this callback handler is called every time a buffer finishes playing
-void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
+void *BufferFillThread(void *parm)
 {
 	static char temp[128];
 
-    assert(bq == bqPlayerBufferQueue);
+	while (playing) {
+		pthread_mutex_lock(&playerMutex);
+		pthread_cond_wait(&bufferFillCond, &playerMutex);
+
+		if (player) {
+	    	struct timeval t1, t2;
+	    	gettimeofday(&t1, NULL);
+	    	player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[bufferToFill]);
+	    	gettimeofday(&t2, NULL);
+#ifdef HAVE_NEON
+	    	sprintf(temp, "Player::Run took %d us for %d samples", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4);
+	    	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
+#endif
+	    }
+
+	    bufferToFill++;
+	    bufferToFill = (bufferToFill < NUM_BUFFERS) ? bufferToFill : 0;
+
+	    pthread_mutex_unlock(&playerMutex);
+	}
+
+	return NULL;
+}
+
+
+// this callback handler is called every time a buffer finishes playing
+void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
+{
+	pthread_mutex_lock(&playerMutex);
+
+	assert(bq == bqPlayerBufferQueue);
     assert(NULL == context);
 
    	SLresult result;
    	result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, pcmBuffer[bufferToEnqueue], BUFFER_SIZE_BYTES);
-   	// the most likely other result is SL_RESULT_BUFFER_INSUFFICIENT,
-   	// which for this code example would indicate a programming error
+   	// the most likely other result is SL_RESULT_BUFFER_INSUFFICIENT, which for this code example would indicate a programming error
    	assert(SL_RESULT_SUCCESS == result);
    	(void)result;
 
-    if (player) {
-    	struct timeval t1, t2;
-    	gettimeofday(&t1, NULL);
-    	player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[bufferToFill]);
-    	gettimeofday(&t2, NULL);
-#ifdef HAVE_NEON
-    	sprintf(temp, "Player::Run took %d us for %d samples", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4);
-    	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
-#endif
-    }
-
     bufferToEnqueue++;
-    if (bufferToEnqueue > 2) bufferToEnqueue = 0;
-    bufferToFill++;
-    if (bufferToFill > 2) bufferToFill = 0;
+    bufferToEnqueue = (bufferToEnqueue < NUM_BUFFERS) ? bufferToEnqueue : 0;
+
+	pthread_mutex_unlock(&playerMutex);
+
+   	pthread_cond_signal(&bufferFillCond);
 }
 
 
@@ -123,7 +148,7 @@ void CreateBufferQueueAudioPlayer()
     SLresult result;
 
     // configure audio source
-    SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 2};
+    SLDataLocator_AndroidSimpleBufferQueue loc_bufq = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, 4};
     SLDataFormat_PCM format_pcm = {SL_DATAFORMAT_PCM, 2, SL_SAMPLINGRATE_44_1,
         SL_PCMSAMPLEFORMAT_FIXED_16, SL_PCMSAMPLEFORMAT_FIXED_16,
         SL_SPEAKER_FRONT_LEFT|SL_SPEAKER_FRONT_RIGHT, SL_BYTEORDER_LITTLEENDIAN};
@@ -162,12 +187,6 @@ void CreateBufferQueueAudioPlayer()
     assert(SL_RESULT_SUCCESS == result);
     (void)result;
 
-    // get the effect send interface
-    /*result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_EFFECTSEND,
-            &bqPlayerEffectSend);
-    assert(SL_RESULT_SUCCESS == result);
-    (void)result;*/
-
     // get the volume interface
     result = (*bqPlayerObject)->GetInterface(bqPlayerObject, SL_IID_VOLUME, &bqPlayerVolume);
     assert(SL_RESULT_SUCCESS == result);
@@ -182,15 +201,30 @@ void CreateBufferQueueAudioPlayer()
 
 void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Close(JNIEnv *ioEnv, jobject ioThis)
 {
+	pthread_mutex_lock(&playerMutex);
+
 	if (player) {
 		delete player;
 		player = NULL;
+	}
+
+	pthread_mutex_unlock(&playerMutex);
+
+	if (playing) {
+		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "signalling bufferFillCond");
+		pthread_cond_signal(&bufferFillCond);
+		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "joining bufferFillThread");
+		playing = false;
+		pthread_join(bufferFillThread, NULL);
+		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "joined thread");
 	}
 }
 
 
 void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Exit(JNIEnv *ioEnv, jobject ioThis)
 {
+	pthread_mutex_lock(&playerMutex);
+
 	if (player) {
 		delete player;
 		player = NULL;
@@ -211,9 +245,17 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Exit(JNIEnv *ioEnv, jobje
 		engineObject = NULL;
 	}
 
-	delete [] pcmBuffer[0];
-	delete [] pcmBuffer[1];
-	delete [] pcmBuffer[2];
+	for (int i = 0; i < NUM_BUFFERS; i++) {
+		delete [] pcmBuffer[i];
+	}
+
+	pthread_mutex_unlock(&playerMutex);
+
+	if (playing) {
+		pthread_cond_signal(&bufferFillCond);
+		playing = false;
+		pthread_join(bufferFillThread, NULL);
+	}
 }
 
 
@@ -225,19 +267,14 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 	size_t fileSize, readBytes;
 	static char temp[256];
 
+	// Assumes that Close() has been called unless this is the first time Prepare() is called
+
 	const char *str;
 	str = ioEnv->GetStringUTFChars(filePath, NULL);
 	if (str == NULL) {
 		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "failed to convert jstring to char*");
 		return;
 	}
-
-	if (player) {
-		player->Reset();
-		delete player;
-	}
-
-	//__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", str);
 
 	if (strstr(str, ".gbs") || strstr(str, ".GBS")) {
 		player = new GbsPlayer;
@@ -247,6 +284,8 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 		player = new YmPlayer;
 	} else {
 		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "unrecognized file type");
+		ioEnv->ReleaseStringUTFChars(filePath, str);
+		return;
 	}
 	std::string *s = new std::string(str);
 	if (player->Prepare(*s)) {
@@ -260,23 +299,28 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 	if (!engineObject) {
 		CreateAudioEngine();
 		CreateBufferQueueAudioPlayer();
-		pcmBuffer[0] = new short[BUFFER_SIZE_BYTES/2];
-		pcmBuffer[1] = new short[BUFFER_SIZE_BYTES/2];
-		pcmBuffer[2] = new short[BUFFER_SIZE_BYTES/2];
-		if (!pcmBuffer[0] || !pcmBuffer[2]) {
+		for (int i = 0; i < NUM_BUFFERS; i++) {
+			pcmBuffer[i] = new short[BUFFER_SIZE_BYTES/2];
+		}
+		if (!pcmBuffer[0] || !pcmBuffer[NUM_BUFFERS-1]) {
 			__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "failed to allocate PCM buffers");
 		}
 	}
-	player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[0]);
-	player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[1]);
-	player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[2]);
+	for (int i = 0; i < NUM_BUFFERS; i++) {
+		player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[i]);
+	}
 
-	SLresult result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, pcmBuffer[0], BUFFER_SIZE_BYTES);
-	result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, pcmBuffer[1], BUFFER_SIZE_BYTES);
-	(void) result;
+	playing = true;
+	pthread_create(&bufferFillThread, NULL, BufferFillThread, NULL);
 
-	bufferToEnqueue = 2;
+	SLresult result;
+	for (int i = 0; i < NUM_BUFFERS-1; i++) {
+		result = (*bqPlayerBufferQueue)->Enqueue(bqPlayerBufferQueue, pcmBuffer[i], BUFFER_SIZE_BYTES);
+	}
+
+	bufferToEnqueue = NUM_BUFFERS-1;
 	bufferToFill = 0;
+
 }
 
 

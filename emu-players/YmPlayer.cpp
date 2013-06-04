@@ -26,8 +26,8 @@ int loggedBuffers;
 #endif
 
 
-YmPlayer::YmPlayer() :
-		mYmData(NULL), mTempBuffer(NULL)
+YmPlayer::YmPlayer()
+	: mYmData(NULL)
 {
 }
 
@@ -36,13 +36,11 @@ int YmPlayer::Reset()
 {
 	//NativeLog(0, "YmPlayer", "YmPlayer::Reset");
 
-	if (mYmData) delete [] mYmData;
-	if (mTempBuffer) delete [] mTempBuffer;
+	delete [] mYmData;
 	mYmData = NULL;
-	mTempBuffer = NULL;
 
-	if (mBlipBuf) delete mBlipBuf;
-	if (mSynth) delete [] mSynth;
+	delete mBlipBuf;
+	delete [] mSynth;
 	mBlipBuf = NULL;
 	mSynth = NULL;
 
@@ -188,17 +186,11 @@ void YmPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 int YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
-    int16_t *writebuf;
     int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return -1;
     }
-
-    if (!mTempBuffer) {
-        mTempBuffer = new int16_t[numSamples];
-    }
-    writebuf = mTempBuffer;
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 

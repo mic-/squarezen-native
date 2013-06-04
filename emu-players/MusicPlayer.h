@@ -56,12 +56,12 @@ public:
 
 	virtual ~MusicPlayer()
 	{
-		if (mBlipBuf) { delete mBlipBuf; mBlipBuf = NULL; }
-		if (mSynth) { delete [] mSynth; mSynth = NULL; }
+		delete mBlipBuf; mBlipBuf = NULL;
+		delete [] mSynth; mSynth = NULL;
 	}
 
 	virtual int Prepare(std::string fileName) = 0;
-#ifndef __ANDROID__
+#ifdef __TIZEN__
 	virtual int Prepare(std::wstring fileName) { return Prepare(std::string(fileName.begin(), fileName.end())); }
 #endif
 	virtual int Run(uint32_t numSamples, int16_t *buffer) = 0;
