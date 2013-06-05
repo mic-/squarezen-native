@@ -32,6 +32,15 @@ GbsPlayer::GbsPlayer()
 }
 
 
+GbsPlayer::~GbsPlayer()
+{
+	delete mBlipBufRight;
+	mBlipBufRight = NULL;
+	delete [] mSynthRight;
+	mSynthRight = NULL;
+}
+
+
 int GbsPlayer::Reset()
 {
 	delete [] cart;
@@ -64,7 +73,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
-    	// NativeLog("Failed to open file %S", fileName.c_str());
+    	NativeLog(0, "GbsPlayer", "Failed to open file %S", fileName.c_str());
     	return -1;
     }
     musicFile.seekg(0, musicFile.end);
@@ -104,7 +113,7 @@ int GbsPlayer::Prepare(std::string fileName)
 			//NativeLog("Failed to set blipbuffer sample rate");
 			return -1;
 		}
-		mBlipBuf->clock_rate(DMG_CLOCK/2);
+		mBlipBuf->clock_rate(GBPAPU_EMULATION_CLOCK);
 
 		for (i = 0; i < 4; i++) {
 			//mSynth[i].volume(0.22);
@@ -119,7 +128,7 @@ int GbsPlayer::Prepare(std::string fileName)
 			//NativeLog("Failed to set blipbuffer sample rate");
 			return -1;
 		}
-		mBlipBufRight->clock_rate(DMG_CLOCK/2);
+		mBlipBufRight->clock_rate(GBPAPU_EMULATION_CLOCK);
 
 		for (i = 0; i < 4; i++) {
 			//mSynthRight[i].volume(0.22);
@@ -129,7 +138,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	SetMasterVolume(0, 0);
 
-	mFrameCycles = (DMG_CLOCK / 2) / 60;
+	mFrameCycles = GBPAPU_EMULATION_CLOCK / 60;
 	mCycleCount = 0;
 
 	mem_set_papu(&mPapu);
