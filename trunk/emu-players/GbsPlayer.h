@@ -31,6 +31,7 @@ class GbsPlayer : public MusicPlayer
 {
 public:
 	GbsPlayer();
+	virtual ~GbsPlayer();
 
 	typedef struct __attribute__ ((__packed__))
 	{

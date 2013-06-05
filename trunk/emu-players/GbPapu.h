@@ -22,6 +22,9 @@
 #define GBPAPU_H_
 
 #include "Oscillator.h"
+#include "GbZ80.h"
+
+#define GBPAPU_EMULATION_CLOCK (DMG_CLOCK/4)
 
 class GbPapuChannel;
 class GbPapuChip;
@@ -94,9 +97,8 @@ public:
 	int ChannelEnabledLeft(uint8_t index) const;
 	int ChannelEnabledRight(uint8_t index) const;
 
-	static const uint8_t SQUARE_WAVES[4][16];
+	static const uint8_t SQUARE_WAVES[4][8];
 	static const uint16_t VOL_TB[];
-	static const uint16_t NOISE_PERIODS[];
 
 	GbPapuChannel mChannels[4];
 	uint8_t mWaveformRAM[16];

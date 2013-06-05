@@ -20,7 +20,7 @@
 #include "GbZ80.h"
 
 
-const uint8_t GbPapuChip::SQUARE_WAVES[4][16] =
+const uint8_t GbPapuChip::SQUARE_WAVES[4][8] =
 {
 /*
 	// 12.5%
@@ -32,19 +32,19 @@ const uint8_t GbPapuChip::SQUARE_WAVES[4][16] =
 	// 75%
 	{0,0,0,0, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 1,1,1,1, 0,0,0,0}
 	*/
-
+/*
 	{0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1},
 	// 25%
 	{1,1,0,0, 0,0,0,0, 0,0,0,0, 0,0,1,1},
 	// 50%
 	{1,1,0,0, 0,0,0,0, 0,0,1,1, 1,1,1,1},
 	// 75%
-	{0,0,1,1, 1,1,1,1, 1,1,1,1, 1,1,0,0}
+	{0,0,1,1, 1,1,1,1, 1,1,1,1, 1,1,0,0}*/
 
-/*		{0,0,0,0, 0,0,0,1},
+		{0,0,0,0, 0,0,0,1},
 		{1,0,0,0, 0,0,0,1},
 		{1,0,0,0, 0,1,1,1},
-		{0,1,1,1, 1,1,1,0}*/
+		{0,1,1,1, 1,1,1,0}
 };
 
 const uint16_t GbPapuChip::VOL_TB[] = {
@@ -54,10 +54,6 @@ const uint16_t GbPapuChip::VOL_TB[] = {
 	65,71,77,82
 };
 
-const uint16_t GbPapuChip::NOISE_PERIODS[] = {
-		8, 16, 32, 48,
-		64, 80, 96, 112
-};
 
 const uint8_t INITIAL_WAVEFORM[] = {
 	0x84, 0x40, 0x43, 0xAA,
@@ -70,7 +66,7 @@ const uint8_t INITIAL_WAVEFORM[] = {
 void GbPapuLengthCounter::Reset()
 {
 	mPos = mStep = 0;
-	mPeriod = (DMG_CLOCK / 2) / 256;
+	mPeriod = GBPAPU_EMULATION_CLOCK / 256;
 }
 
 void GbPapuLengthCounter::Step()
@@ -93,13 +89,13 @@ int GbPapuLengthCounter::GetMask() const
 void GbPapuEnvelopeGenerator::Reset()
 {
 	mPos = mStep = 0;
-	mPeriod = (DMG_CLOCK / 2) / 64;
+	mPeriod = GBPAPU_EMULATION_CLOCK / 64;
 }
 
 void GbPapuEnvelopeGenerator::Step()
 {
-	if (mMax) mPos++;
-	if (mPos >= mPeriod*mMax) {
+	mPos++;
+	if (mMax && mPos >= mPeriod*mMax) {
 		mPos -= mPeriod*mMax;
 		mStep++;
 		if (-1 == mDirection && mChannel->mCurVol > 0) {
@@ -142,7 +138,7 @@ void GbPapuChannel::Step()
 		mEG.Step();
 		if (mPos >= (2048 - mPeriod)) {
 			mPos = 0;
-			if (mWaveStep == 16) {
+			if (mWaveStep == 8) {
 				mWaveStep = 0;
 			}
 			mPhase = GbPapuChip::SQUARE_WAVES[mDuty][mWaveStep++];
@@ -150,6 +146,7 @@ void GbPapuChannel::Step()
 
 	} else if (mIndex == 2) {
 		// Waveform channel
+		mPos++;
 		mLC.Step();
 		if (mPos >= (2048 - mPeriod)) {
 			mPos = 0;
@@ -223,11 +220,11 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		break;
 
 	case 0xFF22:	// NR43
-		mPeriod = 8 * (val & 7);
-		mPeriod = (mPeriod == 0) ? 4 : mPeriod;
+		mPeriod = 4 * (val & 7);
+		mPeriod = (mPeriod == 0) ? 2 : mPeriod;
 		mPeriod = ((val >> 4) < 14) ? (mPeriod << ((val >> 4) + 0)) : 0;
 		mLfsrWidth = (val & 8) ? 7 : 15;
-		NativeLog(0, "GbPapu", "Noise period = %d [s %d, r %d, w %d] (%d Hz)", mPeriod, val&7, val>>4, mLfsrWidth, (DMG_CLOCK/mPeriod));
+		NativeLog(0, "GbPapu", "Noise period = %d [s %d, r %d, w %d] (%d Hz)", mPeriod, val&7, val>>4, mLfsrWidth, (GBPAPU_EMULATION_CLOCK/mPeriod));
 		break;
 
 	case 0xFF14:	// NR14
@@ -247,6 +244,9 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 			mCurVol = mVol;
 			mLC.Reset();
 			mEG.Reset();
+			if (mIndex == 0) {
+				NativeLog(0, "GbPapu", "Restarting channel %d with period %d, duty %d, volume %d, EG dir %d, EG max %d", mIndex, 2048-mPeriod, mDuty, mVol, mEG.mDirection, mEG.mMax);
+			}				
 			if (0xFF23 == addr) {
 				mLfsr = 0x7FFF;
 			}
