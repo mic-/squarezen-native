@@ -76,7 +76,7 @@ private:
 	VgmFileHeader *mFileHeader;
 	uint32_t mWait;
 	uint32_t mCycleCount, mSampleCycles;
-	uint32_t mDataPos, mDataLen;
+	uint32_t mDataPos, mDataLen, mLoopPos;
 };
 
 #endif /* VGMPLAYER_H_ */

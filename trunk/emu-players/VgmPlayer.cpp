@@ -86,7 +86,9 @@ int VgmPlayer::Prepare(std::string fileName)
 
 	musicFile.close();
 
-	if (buf[0] != 'V' || buf[1] != 'g' || buf[2] != 'm') {
+	mFileHeader = (VgmFileHeader*)buf;
+
+	if (mFileHeader->ID[0] != 'V' || mFileHeader->ID[1] != 'g' || mFileHeader->ID[2] != 'm') {
 		NativeLog(0, "VgmPlayer", "Unzipping file");
 		delete [] buf;
 		gzFile inFileZ = gzopen(std::string(fileName.begin(), fileName.end()).c_str(), "rb");
@@ -120,9 +122,20 @@ int VgmPlayer::Prepare(std::string fileName)
 		memcpy(mVgmData, buf, fileSize);
 		delete [] buf;
 	}
+	mFileHeader = (VgmFileHeader*)mVgmData;
 
-	mDataPos = 0x40;
+	if ((mFileHeader->version & 0xFF) >= 0x50) {
+		mDataPos = mFileHeader->dataOffset;
+	} else {
+		mDataPos = 0x40;
+	}
 	mDataLen = fileSize;
+
+	if (mFileHeader->loopOffset) {
+		mLoopPos = mFileHeader->loopOffset + 0x1C;
+	} else {
+		mLoopPos = mDataPos;
+	}
 
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,82>[4];
@@ -159,7 +172,7 @@ uint8_t VgmPlayer::GetData()
 	if (mDataPos < mDataLen) {
 		c = mVgmData[mDataPos++];
 		if (mDataPos >= mDataLen)
-			mDataPos = 0; // TODO: loop?
+			mDataPos = 0x40; // TODO: loop?
 	}
 
 	return c;
@@ -203,7 +216,7 @@ void VgmPlayer::Step()
 		break;
 	case 0x66:
 		// TODO: loop song
-		mDataPos = 0x40;
+		mDataPos = mLoopPos;
 		break;
 	case 0x70: case 0x71: case 0x72: case 0x73:
 	case 0x74: case 0x75: case 0x76: case 0x77:
