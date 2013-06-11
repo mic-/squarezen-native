@@ -36,11 +36,26 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
+	typedef struct __attribute__ ((__packed__))
+	{
+		uint8_t archiveHeaderSize;
+		uint8_t headerChecksum;
+		char methodId[5];
+		uint32_t compressedSize;
+		uint32_t uncompressedSize;
+		uint32_t originalTimestamp;
+		uint8_t fileAttribute;
+		uint8_t level;
+		uint8_t filenameLength;
+	} LhFileHeader;
+
 	YmChip mChip;
+	LhFileHeader *mLhHeader;
+	uint32_t mLhDataPos,mLhDataAvail;
+	uint8_t *mYmData;
 private:
 	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 
-	uint8_t *mYmData;
 	uint32_t mCycleCount, mFrameCycles;
 	uint32_t mFrame, mNumFrames;
 	uint32_t mDataOffs;

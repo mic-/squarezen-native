@@ -29,5 +29,6 @@ C_UPPER_DEPS :=
 SUBDIRS := \
 zlib \
 src \
+lha \
 emu-players \
 

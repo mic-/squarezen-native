@@ -17,8 +17,10 @@
 #include <iostream>
 #include <fstream>
 #include <stddef.h>
+#include <string.h>
 #include "NativeLogger.h"
 #include "YmPlayer.h"
+#include "../lha/lha_decoder.h"
 
 #ifdef LOG_PCM
 FILE *pcmFile;
@@ -50,6 +52,19 @@ int YmPlayer::Reset()
 }
 
 
+size_t lhDecodeCallback(void *buf, size_t buf_len, void *user_data)
+{
+	YmPlayer *ymPlayer = (YmPlayer*)user_data;
+	int bytesToCopy = ymPlayer->mLhDataAvail - ymPlayer->mLhDataPos;
+	if (bytesToCopy < 0) return 0;
+	bytesToCopy = (bytesToCopy > buf_len) ? buf_len : bytesToCopy;
+
+	memcpy(buf, &(ymPlayer->mYmData[ymPlayer->mLhDataPos]), bytesToCopy);
+	ymPlayer->mLhDataPos += bytesToCopy;
+	return bytesToCopy;
+}
+
+
 int YmPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
@@ -69,6 +84,12 @@ int YmPlayer::Prepare(std::string fileName)
     musicFile.seekg(0, musicFile.end);
     fileSize = musicFile.tellg();
     musicFile.seekg(0, musicFile.beg);
+
+    if (fileSize < 7) {
+    	musicFile.close();
+    	NativeLog(0, "YmPlayer", "File is too small (%d bytes)", fileSize);
+    	return -1;
+    }
 
 #ifdef LOG_PCM
     pcmFile = fopen("/sdcard/log.pcm", "wb");
@@ -92,6 +113,33 @@ int YmPlayer::Prepare(std::string fileName)
 		return -1;
 	}
 	musicFile.close();
+
+	if (mYmData[2] == '-' && mYmData[3] == 'l' && mYmData[4] == 'h' && mYmData[5] == '5') {
+		NativeLog(0, "YmPlayer", "File is compressed; decoding..");
+		LHADecoderType *decoderType;
+		LHADecoder *decoder;
+		mLhHeader = (LhFileHeader*)mYmData;
+		mLhDataPos = 24 + mLhHeader->filenameLength;
+		mLhDataAvail = fileSize;
+		NativeLog(0, "YmPlayer", "Decompressed size: %d bytes", mLhHeader->uncompressedSize);
+		if (!(decoderType = lha_decoder_for_name("-lh5-"))) {
+			NativeLog(0, "YmPlayer", "Failed to get decoder type for \"-lh5-\"");
+			return -1;
+		}
+		if (!(decoder = lha_decoder_new(decoderType, lhDecodeCallback, this, mLhHeader->uncompressedSize))) {
+			NativeLog(0, "YmPlayer", "Failed to get decoder for \"-lh5-\"");
+			return -1;
+		}
+		uint8_t *decoded = new uint8_t[mLhHeader->uncompressedSize];
+		uint8_t *p = decoded;
+		while (lha_decoder_read(decoder, p, 4096) == 4096) {
+			p += 4096;
+		}
+		NativeLog(0, "YmPlayer", "Number of bytes decoded: %d", lha_decoder_get_length(decoder));
+		lha_decoder_free(decoder);
+		delete [] mYmData;
+		mYmData = decoded;
+	}
 
 	numDigiDrums = ((uint16_t)mYmData[0x14]) << 8;
 	numDigiDrums |= mYmData[0x15];
