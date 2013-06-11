@@ -29,8 +29,9 @@
 //#define LOG_PCM 1
 
 
-VgmPlayer::VgmPlayer() :
-	mWait(0), mSN76489(NULL)
+VgmPlayer::VgmPlayer()
+	: mSN76489(NULL)
+	, mWait(0)
 {
 }
 
