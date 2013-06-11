@@ -98,7 +98,7 @@
 		<link>
 			<name>zlib</name>
 			<type>2</type>
-			<location>C:/Work/squarezen-native/zlib</location>
+			<location>$%7BPARENT-2-PROJECT_LOC%7D/zlib</location>
 		</link>
 	</linkedResources>
 	<filteredResources>

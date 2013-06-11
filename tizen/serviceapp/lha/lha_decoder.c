@@ -16,6 +16,9 @@ LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
 NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
 CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
+Modified by Mic, 2013:
+Threw out a lot of the non-LH5-related stuff.
+
  */
 
 #include <stdlib.h>
@@ -25,40 +28,16 @@ CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "crc16.h"
 #include "lha_decoder.h"
 
-// Null decoder, used for -lz4-, -lh0-, -pm0-:
-extern LHADecoderType lha_null_decoder;
-
 // LArc compression algorithms:
 extern LHADecoderType lha_lz5_decoder;
-extern LHADecoderType lha_lzs_decoder;
 
-// LHarc compression algorithms:
-//extern LHADecoderType lha_lh1_decoder;
-//extern LHADecoderType lha_lh4_decoder;
 extern LHADecoderType lha_lh5_decoder;
-//extern LHADecoderType lha_lh6_decoder;
-//extern LHADecoderType lha_lh7_decoder;
-
-// PMarc compression algorithms:
-//extern LHADecoderType lha_pm1_decoder;
-//extern LHADecoderType lha_pm2_decoder;
 
 static struct {
 	char *name;
 	LHADecoderType *dtype;
 } decoders[] = {
-	/*{ "-lz4-", &lha_null_decoder },
-	{ "-lz5-", &lha_lz5_decoder },
-	{ "-lzs-", &lha_lzs_decoder },
-	{ "-lh0-", &lha_null_decoder },
-	{ "-lh1-", &lha_lh1_decoder },
-	{ "-lh4-", &lha_lh4_decoder },*/
 	{ "-lh5-", &lha_lh5_decoder },
-	/*{ "-lh6-", &lha_lh6_decoder },
-	{ "-lh7-", &lha_lh7_decoder },
-	{ "-pm0-", &lha_null_decoder },
-	{ "-pm1-", &lha_pm1_decoder },
-	{ "-pm2-", &lha_pm2_decoder },*/
 };
 
 LHADecoder *lha_decoder_new(LHADecoderType *dtype,
