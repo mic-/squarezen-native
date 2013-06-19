@@ -69,6 +69,10 @@ public:
 
 	virtual int GetState() const { return mState; }
 
+	const std::string& GetTitle() const { return mMetaData.mTitle; }
+	const std::string& GetAuthor() const { return mMetaData.mAuthor; }
+	const std::string& GetComment() const { return mMetaData.mComment; }
+
 	enum
 	{
 		STATE_CREATED,
