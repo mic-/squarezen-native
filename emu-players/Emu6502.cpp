@@ -47,6 +47,9 @@
 // Updates PC
 #define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
 
+// Updates PC
+#define INDX_ADDR(dest) dest = ZPX_ADDR(); \
+						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte(dest+1) << 8));
 
 #define COND_BRANCH(cc) if ((cc)) { relAddr = mMemory->ReadByte(mRegs.PC++); \
 								    addr = mRegs.PC + relAddr; \
@@ -73,6 +76,14 @@ void Emu6502::Run(uint32_t maxCycles)
 	while (mCycles < maxCycles) {
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
 		switch (opcode) {
+
+		case 0x01:		// ORA (zp,X)
+			INDX_ADDR(addr);
+			mRegs.A |= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 6;
+			break;
+
 		case 0x02: case 0x03: case 0x04:
 			ILLEGAL_OP();
 			break;
@@ -135,6 +146,13 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0x1F:
 			ILLEGAL_OP();
+			break;
+
+		case 0x21:		// AND (zp,X)
+			INDX_ADDR(addr);
+			mRegs.A &= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 6;
 			break;
 
 		case 0x25:		// AND zp
@@ -203,6 +221,13 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0x3F:
 			ILLEGAL_OP();
+			break;
+
+		case 0x41:		// EOR (zp,X)
+			INDX_ADDR(addr);
+			mRegs.A ^= mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 6;
 			break;
 
 		case 0x42: case 0x43: case 0x44:
@@ -371,6 +396,13 @@ void Emu6502::Run(uint32_t maxCycles)
 			ILLEGAL_OP();
 			break;
 
+		case 0xA1:		// LDA (zp,X)
+			INDX_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 6;
+			break;
+
 		case 0xA3:
 			ILLEGAL_OP();
 			break;
@@ -387,6 +419,27 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0xAB:
 			ILLEGAL_OP();
+			break;
+
+		case 0xAC:		// LDY abs
+			mRegs.Y = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 4;
+			break;
+
+		case 0xAD:		// LDA abs
+			mRegs.A = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xAE:		// LDX abs
+			mRegs.X = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.X);
+			mCycles += 4;
 			break;
 
 		case 0xAF:
@@ -410,8 +463,36 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
+		case 0xB9:		// LDA abs,Y
+			ABSY_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
 		case 0xBB:
 			ILLEGAL_OP();
+			break;
+
+		case 0xBC:		// LDY abs,X
+			ABSX_ADDR(addr);
+			mRegs.Y = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 4;
+			break;
+
+		case 0xBD:		// LDA abs,X
+			ABSX_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xBE:		// LDX abs,Y
+			ABSY_ADDR(addr);
+			mRegs.X = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.X);
+			mCycles += 4;
 			break;
 
 		case 0xBF:
