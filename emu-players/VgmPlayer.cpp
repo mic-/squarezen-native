@@ -64,7 +64,7 @@ int VgmPlayer::Prepare(std::string fileName)
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
     	NativeLog(0, "VgmPlayer", "Failed to open file %s", fileName.c_str());
-    	return -1;
+    	return MusicPlayer::ERROR_FILE_IO;
     }
     musicFile.seekg(0, musicFile.end);
     fileSize = musicFile.tellg();
@@ -82,7 +82,7 @@ int VgmPlayer::Prepare(std::string fileName)
 	if (!musicFile) {
 		NativeLog(0, "VgmPlayer", "ifstream::read failed");
 		musicFile.close();
-		return -1;
+		return MusicPlayer::ERROR_FILE_IO;
 	}
 
 	musicFile.close();
@@ -95,7 +95,7 @@ int VgmPlayer::Prepare(std::string fileName)
 		gzFile inFileZ = gzopen(std::string(fileName.begin(), fileName.end()).c_str(), "rb");
 		if (inFileZ == NULL) {
 			NativeLog(0, "VgmPlayer", "Error: Failed to gzopen %s\n", std::string(fileName.begin(), fileName.end()).c_str());
-			return -1;
+			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
 		NativeLog(0, "VgmPlayer", "Opened file successfully");
 		std::vector<uint8_t> unzippedData;
@@ -143,7 +143,7 @@ int VgmPlayer::Prepare(std::string fileName)
 
 	if (mBlipBuf->set_sample_rate(44100)) {
     	NativeLog(0, "VgmPlayer", "Failed to set blipbuffer sample rate");
-		return -1;
+		return MusicPlayer::ERROR_UNKNOWN;
 	}
 	mBlipBuf->clock_rate(3579545);
 
@@ -162,7 +162,7 @@ int VgmPlayer::Prepare(std::string fileName)
 	NativeLog(0, "VgmPlayer", "Prepare done");
 	mState = MusicPlayer::STATE_PREPARED;
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
 
@@ -248,7 +248,7 @@ int VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
     int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
-    	return -1;
+    	return MusicPlayer::ERROR_BAD_STATE;
     }
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
@@ -288,5 +288,5 @@ int VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	}
 #endif
 
-	return 0;
+	return MusicPlayer::OK;
 }

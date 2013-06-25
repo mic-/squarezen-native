@@ -36,7 +36,7 @@ int NsfPlayer::Reset()
 	mSynth = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
-	return 0;
+	return MusicPlayer::OK;
 }
 
 int NsfPlayer::Prepare(std::string fileName)
@@ -59,7 +59,7 @@ int NsfPlayer::Prepare(std::string fileName)
 
 	if (mBlipBuf->set_sample_rate(44100)) {
     	NativeLog(0, "NsfPlayer", "Failed to set blipbuffer sample rate");
-		return -1;
+		return MusicPlayer::ERROR_UNKNOWN;
 	}
 	if (mFileHeader.region & NsfPlayer::REGION_PAL) {
 		mBlipBuf->clock_rate(1662607);
@@ -82,7 +82,7 @@ int NsfPlayer::Prepare(std::string fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
 
@@ -92,7 +92,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
     int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
-    	return -1;
+    	return MusicPlayer::ERROR_BAD_STATE;
     }
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
@@ -128,6 +128,6 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	mBlipBuf->end_frame(blipLen);
 	//PresentBuffer(buffer, mBlipBuf);
 
-	return 0;
+	return MusicPlayer::OK;
 }
 

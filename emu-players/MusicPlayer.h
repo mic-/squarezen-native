@@ -80,6 +80,17 @@ public:
 		STATE_PLAYING,
 	};
 
+	enum
+	{
+		OK = 0,
+		ERROR_UNKNOWN = -1,
+		ERROR_FILE_IO = -2,
+		ERROR_OUT_OF_MEMORY = -3,
+		ERROR_UNRECOGNIZED_FORMAT = -4,
+		ERROR_DECOMPRESSION = -5,
+		ERROR_BAD_STATE = -6,
+	};
+
 protected:
 	Blip_Buffer *mBlipBuf;
 	Blip_Synth<blip_low_quality,82> *mSynth;
