@@ -58,7 +58,7 @@ int GbsPlayer::Reset()
 
 	mState = MusicPlayer::STATE_CREATED;
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
 
@@ -74,7 +74,7 @@ int GbsPlayer::Prepare(std::string fileName)
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
     	NativeLog(0, "GbsPlayer", "Failed to open file %S", fileName.c_str());
-    	return -1;
+    	return MusicPlayer::ERROR_FILE_IO;
     }
     musicFile.seekg(0, musicFile.end);
     fileSize = musicFile.tellg();
@@ -98,7 +98,7 @@ int GbsPlayer::Prepare(std::string fileName)
 	if (!musicFile) {
 		NativeLog(0, "GbsPlayer", "Read failed");
         musicFile.close();
-		return -1;
+		return MusicPlayer::ERROR_FILE_IO;
 	}
 
 	NativeLog(0, "GbsPlayer.h", "File read done");
@@ -111,7 +111,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
 		if (mBlipBuf->set_sample_rate(44100)) {
 			//NativeLog("Failed to set blipbuffer sample rate");
-			return -1;
+			return MusicPlayer::ERROR_UNKNOWN;
 		}
 		mBlipBuf->clock_rate(GBPAPU_EMULATION_CLOCK);
 
@@ -126,7 +126,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
 		if (mBlipBufRight->set_sample_rate(44100)) {
 			//NativeLog("Failed to set blipbuffer sample rate");
-			return -1;
+			return MusicPlayer::ERROR_UNKNOWN;
 		}
 		mBlipBufRight->clock_rate(GBPAPU_EMULATION_CLOCK);
 
@@ -163,7 +163,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
 
@@ -192,7 +192,7 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	int16_t out, outL, outR;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
-    	return -1;
+    	return MusicPlayer::ERROR_BAD_STATE;
     }
 
 	for (k = 0; k < blipLen; k++) {
@@ -236,5 +236,5 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	mBlipBufRight->end_frame(blipLen);
 	PresentBuffer(buffer, mBlipBuf, mBlipBufRight);
 
-	return 0;
+	return MusicPlayer::OK;
 }

@@ -79,7 +79,7 @@ int YmPlayer::Prepare(std::string fileName)
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
     	NativeLog(0, "YmPlayer", "Failed to open file %s", fileName.c_str());
-    	return -1;
+    	return MusicPlayer::ERROR_FILE_IO;
     }
     musicFile.seekg(0, musicFile.end);
     fileSize = musicFile.tellg();
@@ -88,7 +88,7 @@ int YmPlayer::Prepare(std::string fileName)
     if (fileSize < 7) {
     	musicFile.close();
     	NativeLog(0, "YmPlayer", "File is too small (%d bytes)", fileSize);
-    	return -1;
+    	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
 #ifdef LOG_PCM
@@ -101,7 +101,7 @@ int YmPlayer::Prepare(std::string fileName)
     mYmData = new unsigned char[fileSize];
     if (!mYmData) {
     	//AppLog("Failed to allocate memory");
-		return -1;
+		return MusicPlayer::ERROR_OUT_OF_MEMORY;
     }
 
 	//AppLog("Allocation ok");
@@ -110,7 +110,7 @@ int YmPlayer::Prepare(std::string fileName)
 	if (!musicFile) {
 		NativeLog(0, "YmPlayer", "Failed to read data from file");
 		musicFile.close();
-		return -1;
+		return MusicPlayer::ERROR_FILE_IO;
 	}
 	musicFile.close();
 
@@ -124,11 +124,11 @@ int YmPlayer::Prepare(std::string fileName)
 		NativeLog(0, "YmPlayer", "Decompressed size: %d bytes", mLhHeader->uncompressedSize);
 		if (!(decoderType = lha_decoder_for_name("-lh5-"))) {
 			NativeLog(0, "YmPlayer", "Failed to get decoder type for \"-lh5-\"");
-			return -1;
+			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
 		if (!(decoder = lha_decoder_new(decoderType, lhDecodeCallback, this, mLhHeader->uncompressedSize))) {
 			NativeLog(0, "YmPlayer", "Failed to get decoder for \"-lh5-\"");
-			return -1;
+			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
 		uint8_t *decoded = new uint8_t[mLhHeader->uncompressedSize];
 		uint8_t *p = decoded;
@@ -178,7 +178,7 @@ int YmPlayer::Prepare(std::string fileName)
 
 	if (mBlipBuf->set_sample_rate(44100)) {
 		NativeLog(0, "YmPlayer", "Failed to set blipbuffer sample rate");
-		return -1;
+		return MusicPlayer::ERROR_UNKNOWN;
 	}
 	mBlipBuf->clock_rate(2000000);
 
