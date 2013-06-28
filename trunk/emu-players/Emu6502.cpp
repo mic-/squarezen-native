@@ -34,6 +34,16 @@
 				 mRegs.F |= ((!((mRegs.A ^ val) & 0x80)) && ((mRegs.A ^ temp16) & 0x80)) ? Emu6502::FLAG_V : 0; \
 				 mRegs.A = (uint8_t)temp16
 
+#define ASL(val) mRegs.F &= ~Emu6502::FLAG_C; \
+	             mRegs.F |= (val & 0x80) ? Emu6502::FLAG_C : 0; \
+	             val <<= 1; \
+	             UPDATE_NZ(val)
+
+#define LSR(val) mRegs.F &= ~Emu6502::FLAG_C; \
+	             mRegs.F |= (val & 0x01) ? Emu6502::FLAG_C : 0; \
+	             val >>= 1; \
+	             UPDATE_NZ(val)
+
 // == Addressing ==
 
 // abs
@@ -214,7 +224,46 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 5;
 			break;
 
+
 // == ASL ==
+		case 0x0A:		// ASL A
+			ASL(mRegs.A);
+			mCycles += 2;
+			break;
+
+		case 0x06:		// ASL zp
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ASL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x16:		// ASL zp,X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ASL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x0E:		// ASL abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			ASL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x1E:		// ASL abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ASL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 7;
+			break;
+
 
 // == Bxx ==
 		case 0x10:		// BPL rel
@@ -597,6 +646,46 @@ void Emu6502::Run(uint32_t maxCycles)
 			mRegs.Y = mMemory->ReadByte(addr);
 			UPDATE_NZ(mRegs.Y);
 			mCycles += 4;
+			break;
+
+
+// == LSR ==
+		case 0x4A:		// LSR A
+			LSR(mRegs.A);
+			mCycles += 2;
+			break;
+
+		case 0x46:		// LSR zp
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			LSR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x56:		// LSR zp,X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			LSR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x4E:		// LSR abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			LSR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x5E:		// LSR abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			LSR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 7;
 			break;
 
 
