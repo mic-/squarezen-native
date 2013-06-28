@@ -198,6 +198,28 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0xDD:		// CMP abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			UPDATE_NZC(mRegs.A, operand);
+			mCycles += 4;
+			break;
+
+		case 0xD9:		// CMP abs,Y
+			ABSY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			UPDATE_NZC(mRegs.A, operand);
+			mCycles += 4;
+			break;
+
+		case 0xC1:		// CMP (zp,X)
+			INDX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			UPDATE_NZC(mRegs.A, operand);
+			mCycles += 6;
+			break;
+
+
 // == CPX ==
 		case 0xE0:		// CPX imm
 			operand = mMemory->ReadByte(mRegs.PC++);
@@ -265,6 +287,13 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 6;
 			break;
 
+		case 0xDE:		// DEC abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr) - 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
 
 // ====
 		case 0xCA:		// DEX
@@ -354,6 +383,13 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 6;
 			break;
 
+		case 0xFE:		// INC abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr) + 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
 
 // ====
 		case 0xE8:		// INX
@@ -513,6 +549,39 @@ void Emu6502::Run(uint32_t maxCycles)
 			mRegs.F |= Emu6502::FLAG_I;
 			mCycles += 2;
 			break;
+
+// == STA ==
+		case 0x85:		// STA zp
+			addr = ZP_ADDR();
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 3;
+			break;
+
+		case 0x95:		// STA zp,X
+			addr = ZPX_ADDR();
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0x8D:		// STA abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0x9D:		// STA abs,X
+			ABSX_ADDR(addr);
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0x99:		// STA abs,Y
+			ABSY_ADDR(addr);
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 4;
+			break;
+
 
 // ====
 		case 0xEA:		// NOP
