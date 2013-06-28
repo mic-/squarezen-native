@@ -26,7 +26,7 @@
 				       mRegs.F |= (val & 0x80); \
 				       mRegs.F |= (val >= val2) ? FLAG_C : 0
 
-// ====
+// == Arithmetic ==
 
 #define ADC(val) temp16 = (uint16_t)(val) + (uint16_t)mRegs.A + ((mRegs.F & Emu6502::FLAG_C) ? 1 : 0); \
 				 UPDATE_NZC(temp16, 0x100); \
@@ -42,6 +42,18 @@
 #define LSR(val) mRegs.F &= ~Emu6502::FLAG_C; \
 	             mRegs.F |= (val & 0x01) ? Emu6502::FLAG_C : 0; \
 	             val >>= 1; \
+	             UPDATE_NZ(val)
+
+#define ROL(val) temp8 = (val << 1) | ((mRegs.F & Emu6502::FLAG_C) ? 1 : 0); \
+				 mRegs.F &= ~Emu6502::FLAG_C; \
+	             mRegs.F |= (val & 0x80) ? Emu6502::FLAG_C : 0; \
+	             val = temp8; \
+	             UPDATE_NZ(val)
+
+#define ROR(val) temp8 = (val >> 1) | ((mRegs.F & Emu6502::FLAG_C) ? 0x80 : 0); \
+				 mRegs.F &= ~Emu6502::FLAG_C; \
+	             mRegs.F |= (val & 0x01) ? Emu6502::FLAG_C : 0; \
+	             val = temp8; \
 	             UPDATE_NZ(val)
 
 // == Addressing ==
@@ -71,6 +83,10 @@
 // zp,X
 // Updates PC
 #define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
+
+// zp,Y
+// Updates PC
+#define ZPY_ADDR() ((ZP_ADDR() + mRegs.Y) & 0xFF)
 
 // (zp,X)
 // Updates PC
@@ -121,7 +137,7 @@ void Emu6502::Reset()
 void Emu6502::Run(uint32_t maxCycles)
 {
 	uint16_t addr, temp16;
-	uint8_t operand;
+	uint8_t operand, temp8;
     int8_t relAddr;
 
 	while (mCycles < maxCycles) {
@@ -576,6 +592,13 @@ void Emu6502::Run(uint32_t maxCycles)
 			 mCycles += 3;
 			 break;
 
+		case 0x6C:		// JMP (abs)
+			addr = ABS_ADDR();
+			mRegs.PC = mMemory->ReadByte(addr);
+			mRegs.PC |= (uint16_t)mMemory->ReadByte(addr+1) << 8;
+			mCycles += 5;
+			break;
+
 		case 0x20:		// JSR abs
 			 addr = mMemory->ReadByte(mRegs.PC++);
 			 addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
@@ -641,6 +664,24 @@ void Emu6502::Run(uint32_t maxCycles)
 			break;
 
 // == LDX ==
+		case 0xA2:		// LDX imm
+			mRegs.X = mMemory->ReadByte(mRegs.PC++);
+			UPDATE_NZ(mRegs.X);
+			mCycles += 2;
+			break;
+
+		case 0xA6:		// LDX zp
+			mRegs.X = mMemory->ReadByte(ZP_ADDR());
+			UPDATE_NZ(mRegs.X);
+			mCycles += 3;
+			break;
+
+		case 0xB6:		// LDX zp,Y
+			mRegs.X = mMemory->ReadByte(ZPY_ADDR());
+			UPDATE_NZ(mRegs.X);
+			mCycles += 4;
+			break;
+
 		case 0xAE:		// LDX abs
 			mRegs.X = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -657,6 +698,24 @@ void Emu6502::Run(uint32_t maxCycles)
 
 
 // == LDY ==
+		case 0xA0:		// LDY imm
+			mRegs.Y = mMemory->ReadByte(mRegs.PC++);
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 2;
+			break;
+
+		case 0xA4:		// LDY zp
+			mRegs.Y = mMemory->ReadByte(ZP_ADDR());
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 3;
+			break;
+
+		case 0xB4:		// LDY zp,X
+			mRegs.Y = mMemory->ReadByte(ZPX_ADDR());
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 4;
+			break;
+
 		case 0xAC:		// LDY abs
 			mRegs.Y = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -789,6 +848,85 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+
+// == ROL ==
+		case 0x2A:		// ROL A
+			ROL(mRegs.A);
+			mCycles += 2;
+			break;
+
+		case 0x26:		// ROL zp
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x36:		// ROL zp,X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x2E:		// ROL abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			ROL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x3E:		// ROL abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ROL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 7;
+			break;
+
+// == ROR ==
+		case 0x6A:		// ROR A
+			ROR(mRegs.A);
+			mCycles += 2;
+			break;
+
+		case 0x66:		// ROR zp
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x76:		// ROR zp,X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x6E:		// ROR abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			ROR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 6;
+			break;
+
+		case 0x7E:		// ROR abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ROR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 7;
+			break;
+
 // ====
 		case 0x60:		// RTS
 			PULLB(mRegs.PC);
@@ -852,6 +990,84 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 5;
 			break;
 
+
+// == STX ==
+		case 0x86:		// STX zp
+			addr = ZP_ADDR();
+			mMemory->WriteByte(addr, mRegs.X);
+			mCycles += 3;
+			break;
+
+		case 0x96:		// STX zp,Y
+			addr = ZPY_ADDR();
+			mMemory->WriteByte(addr, mRegs.X);
+			mCycles += 4;
+			break;
+
+		case 0x8E:		// STX abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			mMemory->WriteByte(addr, mRegs.X);
+			mCycles += 4;
+			break;
+
+// == STY ==
+		case 0x84:		// STY zp
+			addr = ZP_ADDR();
+			mMemory->WriteByte(addr, mRegs.Y);
+			mCycles += 3;
+			break;
+
+		case 0x94:		// STY zp,X
+			addr = ZPX_ADDR();
+			mMemory->WriteByte(addr, mRegs.Y);
+			mCycles += 4;
+			break;
+
+		case 0x8C:		// STY abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			mMemory->WriteByte(addr, mRegs.Y);
+			mCycles += 4;
+			break;
+
+
+// == Txx ==
+		case 0xAA:		// TAX
+			mRegs.X = mRegs.A;
+			UPDATE_NZ(mRegs.X);
+			mCycles += 2;
+			break;
+
+		case 0xA8:		// TAY
+			mRegs.Y = mRegs.A;
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 2;
+			break;
+
+		case 0xBA:		// TSX
+			mRegs.X = mRegs.S;
+			UPDATE_NZ(mRegs.X);
+			mCycles += 2;
+			break;
+
+		case 0x8A:		// TXA
+			mRegs.A = mRegs.X;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 2;
+			break;
+
+		case 0x9A:		// TXS
+			mRegs.S = mRegs.X;
+			UPDATE_NZ(mRegs.S);
+			mCycles += 2;
+			break;
+
+		case 0x98:		// TYA
+			mRegs.A = mRegs.Y;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 2;
+			break;
 
 // ====
 		case 0xEA:		// NOP
