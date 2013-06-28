@@ -93,11 +93,24 @@
                                     mRegs.PC = addr; } \
                                   mCycles += 2
 
+#define PUSHB(val) mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, val); \
+	               mRegs.S--
+
+#define PUSHW(val) mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, ((uint16_t)val >> 8)); \
+	               mRegs.S--; \
+	               mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, (uint8_t)val); \
+	               mRegs.S--
+
+#define PULLB(dest) mRegs.S++; \
+	                dest = mMemory->ReadByte(0x100 + (uint16_t)mRegs.S)
+
+
 #define ILLEGAL_OP() NativeLog(0, "Emu6502", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
 					 mCycles += 2; \
 					 mRegs.PC++
 
 // ====
+
 
 void Emu6502::Reset()
 {
@@ -563,6 +576,16 @@ void Emu6502::Run(uint32_t maxCycles)
 			 mCycles += 3;
 			 break;
 
+		case 0x20:		// JSR abs
+			 addr = mMemory->ReadByte(mRegs.PC++);
+			 addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
+			 mRegs.PC--;
+			 PUSHW(mRegs.PC);
+			 mRegs.PC = addr;
+			 mCycles += 6;
+			 break;
+
+
 // == LDA ==
 		case 0xA9:		// LDA imm
 			mRegs.A = mMemory->ReadByte(mRegs.PC++);
@@ -743,6 +766,36 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 5;
 			break;
 
+// == PHx ==
+		case 0x48:		// PHA
+			PUSHB(mRegs.A);
+			mCycles += 3;
+			break;
+
+		case 0x08:		// PHP
+			PUSHB(mRegs.F);
+			mCycles += 3;
+			break;
+
+// == PLx ==
+		case 0x68:		// PLA
+			PULLB(mRegs.A);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0x28:		// PLP
+			PULLB(mRegs.F);
+			mCycles += 4;
+			break;
+
+// ====
+		case 0x60:		// RTS
+			PULLB(mRegs.PC);
+			PULLB(addr);
+			mRegs.PC += (addr << 8) + 1;
+			mCycles += 6;
+			break;
 
 // == SEx ==
 		case 0x38:		// SEC
