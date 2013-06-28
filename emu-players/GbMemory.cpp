@@ -310,6 +310,12 @@ unsigned char mem_read_8_D000(unsigned short address) {
 
 
 unsigned char mem_read_8_F000(unsigned short address) {
+	static unsigned char NR1xSet[] = {0x80,0x3F,0x00,0xFF,0xBF}; 
+	static unsigned char NR2xSet[] = {0xFF,0x3F,0x00,0xFF,0xBF}; 
+	static unsigned char NR3xSet[] = {0x7F,0xFF,0x9F,0xFF,0xBF};
+	static unsigned char NR4xSet[] = {0xFF,0xFF,0x00,0x00,0xBF};
+	
+	
 	if (address < 0xFE00) {
 		return RAM[address&0x1FFF];
 
@@ -326,6 +332,18 @@ unsigned char mem_read_8_F000(unsigned short address) {
 				return IOREGS[0];
 		} else
 		{
+			if (address >= 0xFF10 && address <= 0xFF14) {
+				return IOREGS[address-0xFF00] | NR1xSet[address-0xFF10];
+			} else if (address >= 0xFF15 && address <= 0xFF19) {
+				return IOREGS[address-0xFF00] | NR2xSet[address-0xFF15];
+			} else if (address >= 0xFF1A && address <= 0xFF1E) {
+				return IOREGS[address-0xFF00] | NR3xSet[address-0xFF1A];
+			} else if (address >= 0xFF1F && address <= 0xFF23) {
+				return IOREGS[address-0xFF00] | NR4xSet[address-0xFF1F];
+			}
+			if (address >= 0xFF10 && address <= 0xFF3F) {
+				NativeLog(0, "GbMemory", "Read from PAPU area: %#x", address);
+			}
  			return IOREGS[address-0xFF00];
         }
 
