@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <string.h>
 #include "NativeLogger.h"
 #include "NsfPlayer.h"
 
@@ -80,11 +81,21 @@ int NsfPlayer::Prepare(std::string fileName)
     fileSize = musicFile.tellg();
     musicFile.seekg(0, musicFile.beg);
 
-    musicFile.read((char*)&mFileHeader, sizeof(NsfFileHeader));
     NativeLog(0, "NsfPlayer", "Reading NSF header");
+    musicFile.read((char*)&mFileHeader, sizeof(NsfFileHeader));
+	if (!musicFile) {
+		NativeLog(0, "NsfPlayer", "Reading NSF header failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
     NativeLog(0, "NsfPlayer", "ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
     NativeLog(0, "NsfPlayer", "Load: %#x\nInit: %#x\nPlay: %#x",
     		mFileHeader.loadAddress, mFileHeader.initAddress, mFileHeader.playAddress);
+    if (strncmp(mFileHeader.ID, "NESM", 4)) {
+    	NativeLog(0, "NsfPlayer", "Bad NSF header signature");
+    	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+    }
 
     bool usesBankswitching = false;
     for (i = 0; i < 8; i++) {

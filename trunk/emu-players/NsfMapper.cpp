@@ -21,20 +21,29 @@
 
 NsfMapper::NsfMapper(uint32_t numRomBanks)
 {
-    mCart = new unsigned char[(uint32_t)numRomBanks << 12];
+    mCart = new uint8_t[(uint32_t)numRomBanks << 12];
     memset(mCart, 0, (uint32_t)numRomBanks << 12);
+    mRam = new uint8_t[0x800];
+    mExRam = new uint8_t[0x2000];
 }
 
 NsfMapper::~NsfMapper()
 {
 	delete [] mCart;
+	delete [] mRam;
+	delete [] mExRam;
+
 	mCart = NULL;
+	mRam = NULL;
+	mExRam = NULL;
 }
 
 
 uint8_t NsfMapper::ReadByte_0000(uint16_t addr)
 {
-	// TODO: fill out
+	if (addr < 0x2000) {
+		return mRam[addr & 0x7FF];
+	}
 	return 0;
 }
 
@@ -44,11 +53,14 @@ uint8_t NsfMapper::ReadByte_4000(uint16_t addr)
 	return 0;
 }
 
+uint8_t NsfMapper::ReadByte_6000(uint16_t addr)
+{
+	return mExRam[addr - 0x6000];
+}
 
 uint8_t NsfMapper::ReadByte_8000(uint16_t addr)
 {
-	// TODO: fill out
-	return 0;
+	return mRomTbl[(addr >> 12) - 8][addr & 0x0FFF];
 }
 
 
@@ -68,6 +80,9 @@ uint8_t NsfMapper::ReadByte(uint16_t addr)
 
 void NsfMapper::WriteByte_0000(uint16_t addr, uint8_t data)
 {
+	if (addr < 0x2000) {
+		mRam[addr & 0x7FF] = data;
+	}
 }
 
 void NsfMapper::WriteByte_4000(uint16_t addr, uint8_t data)
@@ -79,6 +94,11 @@ void NsfMapper::WriteByte_5000(uint16_t addr, uint8_t data)
 	if (addr >= 0x5FF8 && addr <= 0x5FFF) {
 		mRomTbl[addr - 0x5FF8] = mCart + data * 0x1000;
 	}
+}
+
+void NsfMapper::WriteByte_6000(uint16_t addr, uint8_t data)
+{
+	mExRam[addr - 0x6000] = data;
 }
 
 void NsfMapper::WriteByte_8000(uint16_t addr, uint8_t data)
