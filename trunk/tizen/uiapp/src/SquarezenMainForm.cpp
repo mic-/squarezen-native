@@ -102,6 +102,7 @@ SquarezenMainForm::OnInitializing(void)
 		entry.GetName().ToUpper(s);
 		if (s.EndsWith(".YM") ||
 				s.EndsWith(".VGM") ||
+				s.EndsWith(".NSF") ||
 				s.EndsWith(".GBS")) {
 			String *temp = new String(entry.GetName());
 			mFileList->Add(temp);
