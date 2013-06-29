@@ -61,6 +61,8 @@ int VgmPlayer::Prepare(std::string fileName)
     	Reset();
     }
 
+    mState = MusicPlayer::STATE_PREPARING;
+
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
     	NativeLog(0, "VgmPlayer", "Failed to open file %s", fileName.c_str());
@@ -89,7 +91,7 @@ int VgmPlayer::Prepare(std::string fileName)
 
 	mFileHeader = (VgmFileHeader*)buf;
 
-	if (mFileHeader->ID[0] != 'V' || mFileHeader->ID[1] != 'g' || mFileHeader->ID[2] != 'm') {
+	if (strncmp(mFileHeader->ID, "Vgm", 3)) {
 		NativeLog(0, "VgmPlayer", "Unzipping file");
 		delete [] buf;
 		gzFile inFileZ = gzopen(std::string(fileName.begin(), fileName.end()).c_str(), "rb");
@@ -118,6 +120,10 @@ int VgmPlayer::Prepare(std::string fileName)
 		NativeLog(0, "VgmPlayer", "Unzipped size: %d bytes", fileSize);
 		mVgmData = new uint8_t[fileSize];
 		memcpy(mVgmData, unzippedData.data(), fileSize);
+		if (strncmp((char*)mVgmData, "Vgm", 3)) {
+			NativeLog(0, "VgmPlayer", "Bad VGM header signature");
+			return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+		}
 	} else {
 		mVgmData = new uint8_t[fileSize];
 		memcpy(mVgmData, buf, fileSize);

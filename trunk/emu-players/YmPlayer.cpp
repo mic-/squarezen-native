@@ -114,7 +114,7 @@ int YmPlayer::Prepare(std::string fileName)
 	}
 	musicFile.close();
 
-	if (mYmData[2] == '-' && mYmData[3] == 'l' && mYmData[4] == 'h' && mYmData[5] == '5') {
+	if (strncmp((char*)&mYmData[2], "-lh5", 4) == 0) {
 		NativeLog(0, "YmPlayer", "File is compressed; decoding..");
 		LHADecoderType *decoderType;
 		LHADecoder *decoder;
