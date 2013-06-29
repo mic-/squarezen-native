@@ -40,12 +40,14 @@ public:
 private:
 	uint8_t ReadByte_0000(uint16_t addr);
 	uint8_t ReadByte_4000(uint16_t addr);
+	uint8_t ReadByte_6000(uint16_t addr);
 	uint8_t ReadByte_8000(uint16_t addr);
 	uint8_t ReadByte_C000(uint16_t addr);
 
 	void WriteByte_0000(uint16_t addr, uint8_t data);
 	void WriteByte_4000(uint16_t addr, uint8_t data);
 	void WriteByte_5000(uint16_t addr, uint8_t data);
+	void WriteByte_6000(uint16_t addr, uint8_t data);
 	void WriteByte_8000(uint16_t addr, uint8_t data);
 	void WriteByte_C000(uint16_t addr, uint8_t data);
 
@@ -55,6 +57,8 @@ private:
 	WriteByteFunc mWriteByteFunc[0x10];
 
 	uint8_t *mRomTbl[8];
+	uint8_t *mRam;
+	uint8_t *mExRam;
 	uint8_t *mCart;
 };
 
