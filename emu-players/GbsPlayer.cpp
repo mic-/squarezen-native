@@ -93,7 +93,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
     cart = new unsigned char[(uint32_t)numBanks << 14];
 
-    memset(cart, 0, (uint32_t)numBanks << 4);
+    memset(cart, 0, (uint32_t)numBanks << 14);
 	musicFile.read((char*)cart + mFileHeader.loadAddress, fileSize-0x70);
 	if (!musicFile) {
 		NativeLog(0, "GbsPlayer", "Read failed");
@@ -101,7 +101,7 @@ int GbsPlayer::Prepare(std::string fileName)
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-	NativeLog(0, "GbsPlayer.h", "File read done");
+	NativeLog(0, "GbsPlayer", "File read done");
 
 	musicFile.close();
 
