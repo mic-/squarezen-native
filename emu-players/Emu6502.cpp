@@ -39,6 +39,10 @@
 	             val <<= 1; \
 	             UPDATE_NZ(val)
 
+#define BIT(val) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_V | Emu6502::FLAG_N); \
+				 mRegs.F |= (((uint8_t)val & mRegs.A) == 0) ? Emu6502::FLAG_Z : 0; \
+				 mRegs.F |= (val & 0xC0)
+
 #define LSR(val) mRegs.F &= ~Emu6502::FLAG_C; \
 	             mRegs.F |= (val & 0x01) ? Emu6502::FLAG_C : 0; \
 	             val >>= 1; \
@@ -323,9 +327,42 @@ void Emu6502::Run(uint32_t maxCycles)
 			COND_BRANCH(mRegs.F & Emu6502::FLAG_Z);
 			break;
 
+// == BIT ==
+		case 0x24:		// BIT zp
+			operand = mMemory->ReadByte(ZP_ADDR());
+			BIT(operand);
+			mCycles += 3;
+			break;
+
+		case 0x2C:		// BIT abs
+			operand = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			BIT(operand);
+			mCycles += 4;
+			break;
+
+
+// ====
+		case 0x00:		// BRK
+			mRegs.PC++;
+			PUSHW(mRegs.PC);
+			temp8 = mRegs.F | (Emu6502::FLAG_B | 0x20);
+			PUSHB(temp8);
+			mRegs.F |= (Emu6502::FLAG_B | Emu6502::FLAG_I);
+			mRegs.PC = mMemory->ReadByte(0xFFFE);
+			mRegs.PC |= (uint16_t)mMemory->ReadByte(0xFFFF) << 8;
+			mCycles += 7;
+			break;
+
+
 // == CLx ==
 		case 0x18:		// CLC
 			mRegs.F &= ~Emu6502::FLAG_C;
+			mCycles += 2;
+			break;
+
+		case 0xD8:		// CLD
+			mRegs.F &= ~Emu6502::FLAG_D;
 			mCycles += 2;
 			break;
 
@@ -927,7 +964,16 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 7;
 			break;
 
+
 // ====
+		case 0x40:		// RTI
+			PULLB(mRegs.F);
+			PULLB(mRegs.PC);
+			PULLB(addr);
+			mRegs.PC += (addr << 8);
+			mCycles += 6;
+			break;
+
 		case 0x60:		// RTS
 			PULLB(mRegs.PC);
 			PULLB(addr);
@@ -935,9 +981,70 @@ void Emu6502::Run(uint32_t maxCycles)
 			mCycles += 6;
 			break;
 
+
+// == SBC ==
+		case 0xE9:		// SBC imm
+			operand = mMemory->ReadByte(mRegs.PC++) ^ 0xFF;
+			ADC(operand);
+			mCycles += 2;
+			break;
+
+		case 0xE5:		// SBC zp
+			operand = mMemory->ReadByte(ZP_ADDR()) ^ 0xFF;
+			ADC(operand);
+			mCycles += 3;
+			break;
+
+		case 0xF5:		// SBC zp,X
+			operand = mMemory->ReadByte(ZPX_ADDR()) ^ 0xFF;
+			ADC(operand);
+			mCycles += 4;
+			break;
+
+		case 0xED:		// SBC abs
+			operand = mMemory->ReadByte(ABS_ADDR()) ^ 0xFF;
+			mRegs.PC += 2;
+			ADC(operand);
+			mCycles += 4;
+			break;
+
+		case 0xFD:		// SBC abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(operand);
+			mCycles += 4;
+			break;
+
+		case 0xF9:		// SBC abs,Y
+			ABSY_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(operand);
+			mCycles += 4;
+			break;
+
+		case 0xE1:		// SBC (zp,X)
+			INDX_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(operand);
+			mCycles += 6;
+			break;
+
+		case 0xF1:		// SBC (zp),Y
+			INDY_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(operand);
+			mCycles += 5;
+			break;
+
+
 // == SEx ==
 		case 0x38:		// SEC
 			mRegs.F |= Emu6502::FLAG_C;
+			mCycles += 2;
+			break;
+
+		case 0xF8:		// SED
+			mRegs.F |= Emu6502::FLAG_D;
 			mCycles += 2;
 			break;
 
