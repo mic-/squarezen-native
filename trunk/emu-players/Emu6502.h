@@ -35,6 +35,8 @@ public:
 		FLAG_C = 0x01,
 		FLAG_Z = 0x02,
 		FLAG_I = 0x04,
+		FLAG_D = 0x08,
+		FLAG_B = 0x10,
 		FLAG_V = 0x40,
 		FLAG_N = 0x80,
 	};
