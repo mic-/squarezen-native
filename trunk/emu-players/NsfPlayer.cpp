@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <iostream>
+#include <fstream>
 #include "NativeLogger.h"
 #include "NsfPlayer.h"
 
@@ -27,6 +29,17 @@ NsfPlayer::NsfPlayer()
 }
 
 
+NsfPlayer::~NsfPlayer()
+{
+	delete m6502;
+	delete m2A03;
+	delete mMemory;
+	m6502 = NULL;
+	m2A03 = NULL;
+	mMemory = NULL;
+}
+
+
 int NsfPlayer::Reset()
 {
 	// TODO: fill out
@@ -35,23 +48,84 @@ int NsfPlayer::Reset()
 	delete [] mSynth;
 	mSynth = NULL;
 
+	delete m6502;
+	delete m2A03;
+	delete mMemory;
+	m6502 = NULL;
+	m2A03 = NULL;
+	mMemory = NULL;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
 
 int NsfPlayer::Prepare(std::string fileName)
 {
+	uint32_t  i;
+    size_t fileSize;
+    uint32_t numBanks;
+
+    if (MusicPlayer::STATE_CREATED != GetState()) {
+    	Reset();
+    }
+
+    mState = MusicPlayer::STATE_PREPARING;
+
+    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
+    if (!musicFile) {
+    	NativeLog(0, "NsfPlayer", "Failed to open file %S", fileName.c_str());
+    	return MusicPlayer::ERROR_FILE_IO;
+    }
+    musicFile.seekg(0, musicFile.end);
+    fileSize = musicFile.tellg();
+    musicFile.seekg(0, musicFile.beg);
+
+    musicFile.read((char*)&mFileHeader, sizeof(NsfFileHeader));
+    NativeLog(0, "NsfPlayer", "Reading NSF header");
+    NativeLog(0, "NsfPlayer", "ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
+    NativeLog(0, "NsfPlayer", "Load: %#x\nInit: %#x\nPlay: %#x",
+    		mFileHeader.loadAddress, mFileHeader.initAddress, mFileHeader.playAddress);
+
+    bool usesBankswitching = false;
+    for (i = 0; i < 8; i++) {
+    	if (mFileHeader.initialBanks[i]) {
+    		usesBankswitching = true;
+    		break;
+    	}
+    }
+
 	m6502 = new Emu6502;
 	m2A03 = new Emu2A03;
-	mMemory = new NsfMapper;
+
+    numBanks = ((fileSize + mFileHeader.loadAddress - sizeof(NsfFileHeader)) + 0xfff) >> 12;
+    NativeLog(0, "NsfPlayer", "Trying to allocate %d bytes (filesize = %d)", (uint32_t)numBanks << 12, fileSize);
+	mMemory = new NsfMapper(numBanks);
+
+    NativeLog(0, "NsfPlayer", "Loading to offset %#x", (mFileHeader.loadAddress & ((usesBankswitching) ? 0x0fff : 0xffff)));
+	musicFile.read((char*)(mMemory->GetRomPointer()) + (mFileHeader.loadAddress & ((usesBankswitching) ? 0x0fff : 0xffff)),
+			       fileSize - sizeof(NsfFileHeader));
+	if (!musicFile) {
+		NativeLog(0, "NsfPlayer", "Read failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+	NativeLog(0, "NsfPlayer", "File read done");
+
+	musicFile.close();
 
 	m6502->SetMapper(mMemory);
 	mMemory->Reset();
 	m6502->Reset();
 	m2A03->Reset();
 
+	// Set up ROM mapping
 	for (int i = 0; i < 8; i++) {
-		mMemory->WriteByte(0x5FF8 + i, mFileHeader.initialBanks[i]);
+		if (usesBankswitching) {
+			mMemory->WriteByte(0x5FF8 + i, mFileHeader.initialBanks[i]);
+		} else {
+			mMemory->WriteByte(0x5FF8 + i, i);
+		}
 	}
 
 	mBlipBuf = new Blip_Buffer();

@@ -76,6 +76,7 @@ public:
 	enum
 	{
 		STATE_CREATED,
+		STATE_PREPARING,
 		STATE_PREPARED,
 		STATE_PLAYING,
 	};

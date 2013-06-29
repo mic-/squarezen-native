@@ -33,6 +33,7 @@ class NsfPlayer : public MusicPlayer
 {
 public:
 	NsfPlayer();
+	virtual ~NsfPlayer();
 
 	typedef struct __attribute__ ((__packed__))
 	{
