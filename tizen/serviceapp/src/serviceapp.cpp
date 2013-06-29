@@ -16,6 +16,7 @@
 
 #include "serviceapp.h"
 #include "../../../emu-players/GbsPlayer.h"
+#include "../../../emu-players/NsfPlayer.h"
 #include "../../../emu-players/VgmPlayer.h"
 #include "../../../emu-players/YmPlayer.h"
 
@@ -74,7 +75,7 @@ serviceappApp::OnAppInitializing(AppRegistry& appRegistry)
     mBuffers[0].Construct(mMinBufferSize);
     mBuffers[1].Construct(mMinBufferSize);
 
-	return true;
+    return true;
 }
 
 
@@ -162,6 +163,8 @@ result serviceappApp::PlayFile(String *filePath) {
 		mPlayer = new VgmPlayer;
 	} else if (filePath->EndsWith(".YM") || filePath->EndsWith(".ym")) {
 		mPlayer = new YmPlayer;
+	} else if (filePath->EndsWith(".NSF") || filePath->EndsWith(".nsf")) {
+		mPlayer = new NsfPlayer;
 	} else if (filePath->EndsWith(".GBS") || filePath->EndsWith(".gbs")) {
 		mPlayer = new GbsPlayer;
 	} else {
