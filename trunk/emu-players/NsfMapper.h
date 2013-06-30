@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include "MemoryMapper.h"
+#include "Emu2A03.h"
 
 
 class NsfMapper : public MemoryMapper
@@ -36,6 +37,7 @@ public:
 	virtual void WriteByte(uint16_t addr, uint8_t data);
 
 	uint8_t *GetRomPointer() const { return mCart; }
+	void SetApu(Emu2A03 *apu) { mApu = apu; }
 
 private:
 	uint8_t ReadByte_0000(uint16_t addr);
@@ -60,6 +62,8 @@ private:
 	uint8_t *mRam;
 	uint8_t *mExRam;
 	uint8_t *mCart;
+	Emu2A03 *mApu;
+	uint8_t mCallCode[0x10];
 };
 
 #endif /* NSFMAPPER_H_ */

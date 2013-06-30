@@ -103,9 +103,12 @@ public:
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
 
+	void SetClock(uint32_t clockHz, uint32_t fps);
+
 	static const uint16_t VOL_TB[];
 
 	Emu2A03Channel mChannels[4];
+	uint32_t mCycleCount, mFrameCycles;
 	bool mGenerateFrameIRQ;
 	uint8_t mMaxFrameCount, mCurFrame;
 };

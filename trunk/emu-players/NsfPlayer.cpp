@@ -60,6 +60,23 @@ int NsfPlayer::Reset()
 	return MusicPlayer::OK;
 }
 
+
+void NsfPlayer::Execute6502(uint16_t address)
+{
+	// JSR loadAddress
+	mMemory->WriteByte(0x4f80, 0x20);
+	mMemory->WriteByte(0x4f81, address & 0xff);
+	mMemory->WriteByte(0x4f82, address >> 8);
+	// -: JMP -
+	mMemory->WriteByte(0x4f83, 0x4c);
+	mMemory->WriteByte(0x4f84, 0x83);
+	mMemory->WriteByte(0x4f85, 0x4f);
+	m6502->mRegs.PC = 0x4f80;
+	m6502->mCycles = 0;
+	m6502->Run(mFrameCycles);
+}
+
+
 int NsfPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
@@ -108,12 +125,17 @@ int NsfPlayer::Prepare(std::string fileName)
 	m6502 = new Emu6502;
 	m2A03 = new Emu2A03;
 
-    numBanks = ((fileSize + mFileHeader.loadAddress - sizeof(NsfFileHeader)) + 0xfff) >> 12;
-    NativeLog(0, "NsfPlayer", "Trying to allocate %d bytes (filesize = %d)", (uint32_t)numBanks << 12, fileSize);
+    numBanks = ((fileSize - sizeof(NsfFileHeader)) + 0xfff) >> 12;
+    NativeLog(0, "NsfPlayer", "Trying to allocate %d bytes (file size = %d)", (uint32_t)numBanks << 12, fileSize);
 	mMemory = new NsfMapper(numBanks);
+	mMemory->SetApu(m2A03);
 
-    NativeLog(0, "NsfPlayer", "Loading to offset %#x", (mFileHeader.loadAddress & ((usesBankswitching) ? 0x0fff : 0xffff)));
-	musicFile.read((char*)(mMemory->GetRomPointer()) + (mFileHeader.loadAddress & ((usesBankswitching) ? 0x0fff : 0xffff)),
+	uint32_t offset = mFileHeader.loadAddress & 0x0fff;
+	if (!usesBankswitching) {
+		offset = mFileHeader.loadAddress - 0x8000;
+	}
+    NativeLog(0, "NsfPlayer", "Loading to offset %#x", offset);
+	musicFile.read((char*)(mMemory->GetRomPointer()) + offset,
 			       fileSize - sizeof(NsfFileHeader));
 	if (!musicFile) {
 		NativeLog(0, "NsfPlayer", "Read failed");
@@ -128,6 +150,16 @@ int NsfPlayer::Prepare(std::string fileName)
 	m6502->SetMapper(mMemory);
 	mMemory->Reset();
 	m6502->Reset();
+
+	for (i = 0x4000; i < 0x4010; i++) {
+		m2A03->Write(i, 0);
+	}
+	m2A03->Write(0x4010, 0x10);
+	m2A03->Write(0x4011, 0x0);
+	m2A03->Write(0x4012, 0x0);
+	m2A03->Write(0x4013, 0x0);
+	m2A03->Write(0x4015, 0x0f);
+
 	m2A03->Reset();
 
 	// Set up ROM mapping
@@ -148,9 +180,11 @@ int NsfPlayer::Prepare(std::string fileName)
 	}
 	if (mFileHeader.region & NsfPlayer::REGION_PAL) {
 		mBlipBuf->clock_rate(1662607);
+		m2A03->SetClock(1662607, 50);
 		mFrameCycles = 1662607 / 200;
 	} else {
 		mBlipBuf->clock_rate(1789773);
+		m2A03->SetClock(1789773, 60);
 		mFrameCycles = 1789773 / 240;
 	}
 
@@ -163,11 +197,28 @@ int NsfPlayer::Prepare(std::string fileName)
 		mSynth[i].output(mBlipBuf);
 	}
 
+	m6502->mRegs.A = 0;  // Song
+	m6502->mRegs.X = 0;  // NTSC/PAL
+	Execute6502(mFileHeader.initAddress);
+
 	NativeLog(0, "NsfPlayer", "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 
 	return MusicPlayer::OK;
+}
+
+
+void NsfPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
+{
+	int count = in->samples_avail();
+
+	in->read_samples(out, count, 1);
+
+	// Copy each left channel sample to the right channel
+	for (int i = 0; i < count*2; i += 2) {
+		out[i+1] = out[i];
+	}
 }
 
 
@@ -186,11 +237,13 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
-			m2A03->Step();
+			//m2A03->Step();
+			//NativeLog(0, "NsfPlayer", "Stepping 2A03");
 			if (mPlayCounter == 3) {
-				// TODO: call NSF PLAY routine
+				Execute6502(mFileHeader.playAddress);
 			}
 			mPlayCounter = (mPlayCounter + 1) & 3;
+			NativeLog(0, "NsfPlayer", "mPlayCounter = %d", mPlayCounter);
 		}
 
 		m2A03->Step();
@@ -211,7 +264,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	}
 
 	mBlipBuf->end_frame(blipLen);
-	//PresentBuffer(buffer, mBlipBuf);
+	PresentBuffer(buffer, mBlipBuf);
 
 	return MusicPlayer::OK;
 }
