@@ -60,10 +60,17 @@ public:
 		delete [] mSynth; mSynth = NULL;
 	}
 
+	/*
+	 * Prepare playback of the file specified by fileName
+	 */
 	virtual int Prepare(std::string fileName) = 0;
 #ifdef __TIZEN__
 	virtual int Prepare(std::wstring fileName) { return Prepare(std::string(fileName.begin(), fileName.end())); }
 #endif
+
+	/*
+	 * Run the player for numSamples samples and store the output in buffer
+	 */
 	virtual int Run(uint32_t numSamples, int16_t *buffer) = 0;
 	virtual int Reset() = 0;
 
@@ -72,6 +79,9 @@ public:
 	const std::string& GetTitle() const { return mMetaData.mTitle; }
 	const std::string& GetAuthor() const { return mMetaData.mAuthor; }
 	const std::string& GetComment() const { return mMetaData.mComment; }
+
+	virtual uint32_t GetNumSubSongs() const { return 1; }
+	virtual void SetSubSong(uint32_t subSong) {}
 
 	enum
 	{

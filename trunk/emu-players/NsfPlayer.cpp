@@ -114,6 +114,10 @@ int NsfPlayer::Prepare(std::string fileName)
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
+    mMetaData.SetTitle((char*)mFileHeader.title);
+    mMetaData.SetAuthor((char*)mFileHeader.author);
+    mMetaData.SetComment((char*)mFileHeader.copyright);
+
     bool usesBankswitching = false;
     for (i = 0; i < 8; i++) {
     	if (mFileHeader.initialBanks[i]) {
@@ -151,6 +155,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	mMemory->Reset();
 	m6502->Reset();
 
+	// Initialize the APU registers
 	for (i = 0x4000; i < 0x4010; i++) {
 		m2A03->Write(i, 0);
 	}
@@ -197,7 +202,7 @@ int NsfPlayer::Prepare(std::string fileName)
 		mSynth[i].output(mBlipBuf);
 	}
 
-	m6502->mRegs.A = 0;  // Song
+	m6502->mRegs.A = mFileHeader.firstSong;  // Song
 	m6502->mRegs.X = 0;  // NTSC/PAL
 	Execute6502(mFileHeader.initAddress);
 
@@ -206,6 +211,18 @@ int NsfPlayer::Prepare(std::string fileName)
 	mState = MusicPlayer::STATE_PREPARED;
 
 	return MusicPlayer::OK;
+}
+
+
+uint32_t NsfPlayer::GetNumSubSongs()
+{
+	return mFileHeader.numSongs;
+}
+
+
+void NsfPlayer::SetSubSong(uint32_t subSong)
+{
+	// TODO: implement
 }
 
 

@@ -57,8 +57,12 @@ public:
 	void SetMasterVolume(int left, int right);
 	uint16_t GetLoadAddress() const { return mFileHeader.loadAddress; }
 
+	virtual uint32_t GetNumSubSongs();
+	virtual void SetSubSong(uint32_t subSong);
+
 private:
 	void PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR);
+	void ExecuteGbZ80(uint16_t address);
 
 	Blip_Buffer *mBlipBufRight;
 	Blip_Synth<blip_low_quality,82> *mSynthRight;

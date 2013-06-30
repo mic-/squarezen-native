@@ -74,6 +74,9 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
+	virtual uint32_t GetNumSubSongs();
+	virtual void SetSubSong(uint32_t subSong);
+
 private:
 	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 	void Execute6502(uint16_t address);
