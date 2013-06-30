@@ -75,6 +75,9 @@ public:
 	virtual int Reset();
 
 private:
+	void PresentBuffer(int16_t *out, Blip_Buffer *in);
+	void Execute6502(uint16_t address);
+
 	Emu6502 *m6502;
 	Emu2A03 *m2A03;
 	NsfMapper *mMemory;

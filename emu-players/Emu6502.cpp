@@ -110,7 +110,7 @@
 #define COND_BRANCH(cc) if ((cc)) { relAddr = mMemory->ReadByte(mRegs.PC++); \
 								    addr = mRegs.PC + relAddr; \
                                     mCycles += ((addr & 0x100) == (mRegs.PC & 0x100)) ? 1 : 2; \
-                                    mRegs.PC = addr; } \
+                                    mRegs.PC = addr; } else { mRegs.PC++; } \
                                   mCycles += 2
 
 #define PUSHB(val) mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, val); \
@@ -146,6 +146,9 @@ void Emu6502::Run(uint32_t maxCycles)
 
 	while (mCycles < maxCycles) {
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
+		NativeLog(0, "Emu6502", "Emu6502::Run: op %#x, PC %#x, A %#x, X %#x, Y %#x, F %#x",
+				  opcode, mRegs.PC-1, mRegs.A, mRegs.X, mRegs.Y, mRegs.F);
+
 		switch (opcode) {
 
 // == ADC ==
@@ -623,11 +626,16 @@ void Emu6502::Run(uint32_t maxCycles)
 
 // ====
 		case 0x4C:		// JMP abs
-			 addr = mMemory->ReadByte(mRegs.PC++);
-			 addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
-			 mRegs.PC = addr;
-			 mCycles += 3;
-			 break;
+			temp16 = mRegs.PC - 1;
+			addr = mMemory->ReadByte(mRegs.PC++);
+			addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
+			mRegs.PC = addr;
+			if (addr == temp16) {
+				// Special case for NSFs; exit early for infinite loops
+				return;
+			}
+			mCycles += 3;
+			break;
 
 		case 0x6C:		// JMP (abs)
 			addr = ABS_ADDR();
@@ -639,7 +647,6 @@ void Emu6502::Run(uint32_t maxCycles)
 		case 0x20:		// JSR abs
 			 addr = mMemory->ReadByte(mRegs.PC++);
 			 addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
-			 mRegs.PC--;
 			 PUSHW(mRegs.PC);
 			 mRegs.PC = addr;
 			 mCycles += 6;

@@ -79,30 +79,45 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 void Emu2A03::Reset()
 {
 	// TODO: fill out
+	mCycleCount = 0;
+	mMaxFrameCount = 3;
+}
+
+
+void Emu2A03::SetClock(uint32_t clockHz, uint32_t fps)
+{
+	mFrameCycles = clockHz / (fps * 4);
 }
 
 
 void Emu2A03::Step()
 {
-	if (mCurFrame < 4) {
-		if ((mCurFrame & 1) == (mMaxFrameCount & 1)) {
-			for (int i = 0; i < 4; i++) {
-				mChannels[i].mLC.Step();
-				if (i < 2) {
-					mChannels[i].mSU.Step();
+	if (mCycleCount == 0) {
+		if (mCurFrame < 4) {
+			if ((mCurFrame & 1) == (mMaxFrameCount & 1)) {
+				for (int i = 0; i < 4; i++) {
+					mChannels[i].mLC.Step();
+					if (i < 2) {
+						mChannels[i].mSU.Step();
+					}
 				}
 			}
+			for (int i = 0; i < 4; i++) {
+				mChannels[i].mEG.Step();
+			}
 		}
-		for (int i = 0; i < 4; i++) {
-			mChannels[i].mEG.Step();
+		if (mCurFrame == 3 && mMaxFrameCount == 3 && mGenerateFrameIRQ) {
+			// TODO: generate frame IRQ
+		}
+		mCurFrame++;
+		if (mCurFrame > mMaxFrameCount) {
+			mCurFrame = 0;
 		}
 	}
-	if (mCurFrame == 3 && mMaxFrameCount == 3 && mGenerateFrameIRQ) {
-		// TODO: generate frame IRQ
-	}
-	mCurFrame++;
-	if (mCurFrame > mMaxFrameCount) {
-		mCurFrame = 0;
+
+	mCycleCount++;
+	if (mCycleCount >= mFrameCycles) {
+		mCycleCount = 0;
 	}
 
 	for (int i = 0; i < 4; i++) {
