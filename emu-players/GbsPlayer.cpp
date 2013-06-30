@@ -62,6 +62,18 @@ int GbsPlayer::Reset()
 }
 
 
+void GbsPlayer::ExecuteGbZ80(uint16_t address)
+{
+	cart[0xF0] = 0xCD;	// CALL nn nn
+	cart[0xF1] = address & 0xFF;
+	cart[0xF2] = address >> 8;
+	cart[0xF3] = 0x76;	// HALT
+	cpu.regs.PC = 0xF0;
+	cpu.cycles = 0;
+	cpu_execute(mFrameCycles);
+}
+
+
 int GbsPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
@@ -149,21 +161,27 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	NativeLog(0, "GbsPlayer", "Reset done");
 
-	cart[0xF0] = 0xCD;	// CALL nn nn
-	cart[0xF1] = mFileHeader.initAddress & 0xFF;
-	cart[0xF2] = mFileHeader.initAddress >> 8;
-	cart[0xF3] = 0x76;	// HALT
-	cpu.regs.PC = 0xF0;
 	cpu.regs.SP = mFileHeader.SP;
-	cpu.regs.A = 1; // song number
-	cpu.cycles = 0;
-	cpu_execute(mFrameCycles);
+	cpu.regs.A = mFileHeader.firstSong; // song number
+	ExecuteGbZ80(mFileHeader.initAddress);
 
 	NativeLog(0, "GbsPlayer", "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 
 	return MusicPlayer::OK;
+}
+
+
+uint32_t GbsPlayer::GetNumSubSongs()
+{
+	return mFileHeader.numSongs;
+}
+
+
+void GbsPlayer::SetSubSong(uint32_t subSong)
+{
+	// TODO: implement
 }
 
 
@@ -199,13 +217,7 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		if (mCycleCount == 0) {
 			//NativeLog("Running GBZ80 %d cycles", mFrameCycles);
 			cpu.halted = 0;
-			cart[0xF0] = 0xCD;	// CALL nn nn
-			cart[0xF1] = mFileHeader.playAddress & 0xFF;
-			cart[0xF2] = mFileHeader.playAddress >> 8;
-			cart[0xF3] = 0x76;	// HALT
-			cpu.regs.PC = 0xF0;
-			cpu.cycles = 0;
-			cpu_execute(mFrameCycles);
+			ExecuteGbZ80(mFileHeader.playAddress);
 		}
 
 		mPapu.Step();
