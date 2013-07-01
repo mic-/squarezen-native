@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -85,7 +87,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
-    	NativeLog(0, "GbsPlayer", "Failed to open file %S", fileName.c_str());
+    	NLOGE("GbsPlayer", "Failed to open file %S", fileName.c_str());
     	return MusicPlayer::ERROR_FILE_IO;
     }
     musicFile.seekg(0, musicFile.end);
@@ -93,27 +95,27 @@ int GbsPlayer::Prepare(std::string fileName)
     musicFile.seekg(0, musicFile.beg);
 
     musicFile.read((char*)&mFileHeader, 0x70);
-    NativeLog(0, "GbsPlayer", "Reading GBS header");
-    NativeLog(0, "GbsPlayer", "ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
-    NativeLog(0, "GbsPlayer", "Load: %#x\nInit: %#x\nPlay: %#x",
+    NLOGD("GbsPlayer", "Reading GBS header");
+    NLOGD("GbsPlayer", "ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
+    NLOGD("GbsPlayer", "Load: %#x\nInit: %#x\nPlay: %#x",
     		mFileHeader.loadAddress, mFileHeader.initAddress, mFileHeader.playAddress);
-    NativeLog(0, "GbsPlayer", "Timer control %#x, timer modulo %#x", mFileHeader.timerCtrl, mFileHeader.timerMod);
+    NLOGD("GbsPlayer", "Timer control %#x, timer modulo %#x", mFileHeader.timerCtrl, mFileHeader.timerMod);
 
     numBanks = ((fileSize + mFileHeader.loadAddress - 0x70) + 0x3fff) >> 14;
 
-    NativeLog(0, "GbsPlayer", "Trying to allocate %d bytes (filesize = %d)", (uint32_t)numBanks << 14, fileSize);
+    NLOGD("GbsPlayer", "Trying to allocate %d bytes (filesize = %d)", (uint32_t)numBanks << 14, fileSize);
 
     cart = new unsigned char[(uint32_t)numBanks << 14];
 
     memset(cart, 0, (uint32_t)numBanks << 14);
 	musicFile.read((char*)cart + mFileHeader.loadAddress, fileSize-0x70);
 	if (!musicFile) {
-		NativeLog(0, "GbsPlayer", "Read failed");
+		NLOGE("GbsPlayer", "Read failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-	NativeLog(0, "GbsPlayer", "File read done");
+	NLOGD("GbsPlayer", "File read done");
 
 	musicFile.close();
 
@@ -122,7 +124,7 @@ int GbsPlayer::Prepare(std::string fileName)
 		mSynth = new Blip_Synth<blip_low_quality,82>[4];
 
 		if (mBlipBuf->set_sample_rate(44100)) {
-			//NativeLog("Failed to set blipbuffer sample rate");
+			NLOGE("GbsPlayer", "Failed to set blipbuffer sample rate");
 			return MusicPlayer::ERROR_UNKNOWN;
 		}
 		mBlipBuf->clock_rate(GBPAPU_EMULATION_CLOCK);
@@ -159,13 +161,13 @@ int GbsPlayer::Prepare(std::string fileName)
 	cpu_reset();
 	mPapu.Reset();
 
-	NativeLog(0, "GbsPlayer", "Reset done");
+	NLOGD("GbsPlayer", "Reset done");
 
-	cpu.regs.SP = mFileHeader.SP;
-	cpu.regs.A = mFileHeader.firstSong; // song number
-	ExecuteGbZ80(mFileHeader.initAddress);
+	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
 
-	NativeLog(0, "GbsPlayer", "Prepare finished");
+	SetSubSong(mFileHeader.firstSong);
+
+	NLOGD("GbsPlayer", "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 
@@ -173,15 +175,11 @@ int GbsPlayer::Prepare(std::string fileName)
 }
 
 
-uint32_t GbsPlayer::GetNumSubSongs()
-{
-	return mFileHeader.numSongs;
-}
-
-
 void GbsPlayer::SetSubSong(uint32_t subSong)
 {
-	// TODO: implement
+	cpu.regs.SP = mFileHeader.SP;
+	cpu.regs.A = subSong; // song number
+	ExecuteGbZ80(mFileHeader.initAddress);
 }
 
 
@@ -215,7 +213,7 @@ int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
-			//NativeLog("Running GBZ80 %d cycles", mFrameCycles);
+			//NLOGV("GbsPlayer", "Running GBZ80 %d cycles", mFrameCycles);
 			cpu.halted = 0;
 			ExecuteGbZ80(mFileHeader.playAddress);
 		}

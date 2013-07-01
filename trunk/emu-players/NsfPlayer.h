@@ -74,7 +74,6 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
-	virtual uint32_t GetNumSubSongs();
 	virtual void SetSubSong(uint32_t subSong);
 
 private:

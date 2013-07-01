@@ -21,6 +21,61 @@
 #ifndef NATIVELOGGER_H_
 #define NATIVELOGGER_H_
 
+enum
+{
+#ifdef __ANDROID__
+	NATIVELOG_VERBOSE = ANDROID_LOG_VERBOSE,
+	NATIVELOG_DEBUG = ANDROID_LOG_DEBUG,
+	NATIVELOG_WARNING = ANDROID_LOG_WARNING,
+	NATIVELOG_ERROR = ANDROID_LOG_ERROR,
+#else
+	NATIVELOG_VERBOSE = 0,
+	NATIVELOG_DEBUG,
+	NATIVELOG_WARNING,
+	NATIVELOG_ERROR,
+#endif
+};
+
 void NativeLog(int level, const char *tag, const char *fmt, ...);
+
+#ifdef __TIZEN__
+#include <FBase.h>
+#define NativeLogImpl(level, tag, fmt, ...) AppLog(fmt, ##__VA_ARGS__)
+#else
+#define NativeLogImpl(level, tag, fmt, ...) NativeLog(level, tag, fmt, ##__VA_ARGS__)
+#endif
+
+#if defined(NLOG_LEVEL_VERBOSE) && NLOG_LEVEL_VERBOSE == 0
+#define NLOGV(tag, fmt, ...) NativeLogImpl(NATIVELOG_VERBOSE, tag, fmt, ##__VA_ARGS__)
+#define NLOGD(tag, fmt, ...) NativeLogImpl(NATIVELOG_DEBUG, tag, fmt, ##__VA_ARGS__)
+#define NLOGW(tag, fmt, ...) NativeLogImpl(NATIVELOG_WARNING, tag, fmt, ##__VA_ARGS__)
+#define NLOGE(tag, fmt, ...) NativeLogImpl(NATIVELOG_ERROR, tag, fmt, ##__VA_ARGS__)
+#else
+#define NLOGV(tag, fmt, ...)
+#endif
+
+#if defined(NLOG_LEVEL_DEBUG) && NLOG_LEVEL_DEBUG == 0
+#define NLOGD(tag, fmt, ...) NativeLogImpl(NATIVELOG_DEBUG, tag, fmt, ##__VA_ARGS__)
+#define NLOGW(tag, fmt, ...) NativeLogImpl(NATIVELOG_WARNING, tag, fmt, ##__VA_ARGS__)
+#define NLOGE(tag, fmt, ...) NativeLogImpl(NATIVELOG_ERROR, tag, fmt, ##__VA_ARGS__)
+#else
+#undef NLOGD
+#define NLOGD(tag, fmt, ...)
+#endif
+
+#if defined(NLOG_LEVEL_WARNING) && NLOG_LEVEL_WARNING == 0
+#define NLOGW(tag, fmt, ...) NativeLogImpl(NATIVELOG_WARNING, tag, fmt, ##__VA_ARGS__)
+#define NLOGE(tag, fmt, ...) NativeLogImpl(NATIVELOG_ERROR, tag, fmt, ##__VA_ARGS__)
+#else
+#undef NLOGW
+#define NLOGW(tag, fmt, ...)
+#endif
+
+#if defined(NLOG_LEVEL_ERROR) && NLOG_LEVEL_ERROR == 0
+#define NLOGE(tag, fmt, ...) NativeLogImpl(NATIVELOG_ERROR, tag, fmt, ##__VA_ARGS__)
+#else
+#undef NLOGE
+#define NLOGE(tag, fmt, ...)
+#endif
 
 #endif /* NATIVELOGGER_H_ */

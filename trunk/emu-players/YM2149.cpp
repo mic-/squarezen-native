@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -120,7 +121,7 @@ void YmEnvelopeGenerator::Write(uint8_t *regs)
 			 mChip->mChannels[1].mMode |
 			 mChip->mChannels[2].mMode) ^ 0x10;
 
-	//AppLog("EG output = %d, attack = %d, cycle = %d", mOut, mAttack, mCycle);
+	//NLOGV("YM2149", "EG output = %d, attack = %d, cycle = %d", mOut, mAttack, mCycle);
 
 }
 

@@ -14,6 +14,11 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
+//#ifdef __TIZEN__
+//#include <FBase.h>
+//#endif
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -37,7 +42,7 @@ VgmPlayer::VgmPlayer()
 
 int VgmPlayer::Reset()
 {
-	//NativeLog(0, "VgmPlayer", "VgmPlayer::Reset");
+	NLOGV("VgmPlayer", "VgmPlayer::Reset");
 
 	delete mSN76489;
 	mSN76489 = NULL;
@@ -65,7 +70,7 @@ int VgmPlayer::Prepare(std::string fileName)
 
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
-    	NativeLog(0, "VgmPlayer", "Failed to open file %s", fileName.c_str());
+    	NLOGE("VgmPlayer", "Failed to open file %s", fileName.c_str());
     	return MusicPlayer::ERROR_FILE_IO;
     }
     musicFile.seekg(0, musicFile.end);
@@ -82,7 +87,7 @@ int VgmPlayer::Prepare(std::string fileName)
     char *buf = new char[fileSize];
 	musicFile.read(buf, fileSize);
 	if (!musicFile) {
-		NativeLog(0, "VgmPlayer", "ifstream::read failed");
+		NLOGE("VgmPlayer", "ifstream::read failed");
 		musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
@@ -92,20 +97,21 @@ int VgmPlayer::Prepare(std::string fileName)
 	mFileHeader = (VgmFileHeader*)buf;
 
 	if (strncmp(mFileHeader->ID, "Vgm", 3)) {
-		NativeLog(0, "VgmPlayer", "Unzipping file");
+		NLOGD("VgmPlayer", "Unzipping file");
+
 		delete [] buf;
 		gzFile inFileZ = gzopen(std::string(fileName.begin(), fileName.end()).c_str(), "rb");
 		if (inFileZ == NULL) {
-			NativeLog(0, "VgmPlayer", "Error: Failed to gzopen %s\n", std::string(fileName.begin(), fileName.end()).c_str());
+			NLOGE("VgmPlayer", "Error: Failed to gzopen %s\n", std::string(fileName.begin(), fileName.end()).c_str());
 			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
-		NativeLog(0, "VgmPlayer", "Opened file successfully");
+		NLOGD("VgmPlayer", "Opened file successfully");
 		std::vector<uint8_t> unzippedData;
 		int numUnzippedBytes = 0;
 		uint8_t *unzipBuffer = new uint8_t[8192];
 		while (unzipBuffer) {
 			numUnzippedBytes = gzread(inFileZ, unzipBuffer, 8192);
-			NativeLog(0, "VgmPlayer", "gzread returned %d bytes", numUnzippedBytes);
+			NLOGD("VgmPlayer", "gzread returned %d bytes", numUnzippedBytes);
 			if (numUnzippedBytes > 0) {
 				for (i = 0; i < numUnzippedBytes; i++) {
 					unzippedData.push_back(unzipBuffer[i]);
@@ -117,11 +123,11 @@ int VgmPlayer::Prepare(std::string fileName)
 		gzclose(inFileZ);
 		delete [] unzipBuffer;
 		fileSize = unzippedData.size();
-		NativeLog(0, "VgmPlayer", "Unzipped size: %d bytes", fileSize);
+		NLOGD("VgmPlayer", "Unzipped size: %d bytes", fileSize);
 		mVgmData = new uint8_t[fileSize];
 		memcpy(mVgmData, unzippedData.data(), fileSize);
 		if (strncmp((char*)mVgmData, "Vgm", 3)) {
-			NativeLog(0, "VgmPlayer", "Bad VGM header signature");
+			NLOGE("VgmPlayer", "Bad VGM header signature");
 			return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
 		}
 	} else {
@@ -148,7 +154,7 @@ int VgmPlayer::Prepare(std::string fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[4];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-    	NativeLog(0, "VgmPlayer", "Failed to set blipbuffer sample rate");
+    	NLOGE("VgmPlayer", "Failed to set blipbuffer sample rate");
 		return MusicPlayer::ERROR_UNKNOWN;
 	}
 	mBlipBuf->clock_rate(3579545);
@@ -162,10 +168,12 @@ int VgmPlayer::Prepare(std::string fileName)
 		mSynth[i].output(mBlipBuf);
 	}
 
+	mMetaData.SetLengthMs((mFileHeader->totalSamples * 10) / 441);
+
 	mSN76489 = new SnChip();
 	mSN76489->Reset();
 
-	NativeLog(0, "VgmPlayer", "Prepare done");
+	NLOGD("VgmPlayer", "Prepare done");
 	mState = MusicPlayer::STATE_PREPARED;
 
 	return MusicPlayer::OK;
@@ -195,7 +203,7 @@ void VgmPlayer::Step()
 
 	uint8_t c = GetData();
 
-	//NativeLog(0, "VgmPlayer", "Step got %#x from VGM file", c);
+	//NLOGV("VgmPlayer", "Step got %#x from VGM file", c);
 
 	switch (c) {
 	case 0x4F:
@@ -259,7 +267,7 @@ int VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
-	//NativeLog(0, "VgmPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
+	//NLOGV("VgmPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {

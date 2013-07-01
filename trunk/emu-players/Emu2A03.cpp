@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
+#include "NativeLogger.h"
 #include "Emu2A03.h"
 
 const uint16_t Emu2A03::VOL_TB[] = {

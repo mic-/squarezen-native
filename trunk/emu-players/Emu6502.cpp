@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include "NativeLogger.h"
 #include "Emu6502.h"
 
@@ -125,7 +127,7 @@
 	                dest = mMemory->ReadByte(0x100 + (uint16_t)mRegs.S)
 
 
-#define ILLEGAL_OP() NativeLog(0, "Emu6502", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
+#define ILLEGAL_OP() NLOGE("Emu6502", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
 					 mCycles += 2; \
 					 mRegs.PC++
 
@@ -146,7 +148,7 @@ void Emu6502::Run(uint32_t maxCycles)
 
 	while (mCycles < maxCycles) {
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
-		NativeLog(0, "Emu6502", "Emu6502::Run: op %#x, PC %#x, A %#x, X %#x, Y %#x, F %#x",
+		NLOGD("Emu6502", "Emu6502::Run: op %#x, PC %#x, A %#x, X %#x, Y %#x, F %#x",
 				  opcode, mRegs.PC-1, mRegs.A, mRegs.X, mRegs.Y, mRegs.F);
 
 		switch (opcode) {

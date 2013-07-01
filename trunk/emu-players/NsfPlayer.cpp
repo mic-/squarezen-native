@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include <iostream>
 #include <fstream>
 #include <string.h>
@@ -43,7 +45,8 @@ NsfPlayer::~NsfPlayer()
 
 int NsfPlayer::Reset()
 {
-	// TODO: fill out
+	NLOGV("NsfPlayer", "Reset");
+
 	delete mBlipBuf;
 	mBlipBuf = NULL;
 	delete [] mSynth;
@@ -91,26 +94,26 @@ int NsfPlayer::Prepare(std::string fileName)
 
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
-    	NativeLog(0, "NsfPlayer", "Failed to open file %S", fileName.c_str());
+    	NLOGE("NsfPlayer", "Failed to open file %S", fileName.c_str());
     	return MusicPlayer::ERROR_FILE_IO;
     }
     musicFile.seekg(0, musicFile.end);
     fileSize = musicFile.tellg();
     musicFile.seekg(0, musicFile.beg);
 
-    NativeLog(0, "NsfPlayer", "Reading NSF header");
+    NLOGD("NsfPlayer", "Reading NSF header");
     musicFile.read((char*)&mFileHeader, sizeof(NsfFileHeader));
 	if (!musicFile) {
-		NativeLog(0, "NsfPlayer", "Reading NSF header failed");
+		NLOGE("NsfPlayer", "Reading NSF header failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-    NativeLog(0, "NsfPlayer", "ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
-    NativeLog(0, "NsfPlayer", "Load: %#x\nInit: %#x\nPlay: %#x",
+    NLOGD("NsfPlayer", "ID: %c%c%c", mFileHeader.ID[0], mFileHeader.ID[1], mFileHeader.ID[2]);
+    NLOGD("NsfPlayer", "Load: %#x\nInit: %#x\nPlay: %#x",
     		mFileHeader.loadAddress, mFileHeader.initAddress, mFileHeader.playAddress);
     if (strncmp(mFileHeader.ID, "NESM", 4)) {
-    	NativeLog(0, "NsfPlayer", "Bad NSF header signature");
+    	NLOGE("NsfPlayer", "Bad NSF header signature");
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
@@ -130,7 +133,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	m2A03 = new Emu2A03;
 
     numBanks = ((fileSize - sizeof(NsfFileHeader)) + 0xfff) >> 12;
-    NativeLog(0, "NsfPlayer", "Trying to allocate %d bytes (file size = %d)", (uint32_t)numBanks << 12, fileSize);
+    NLOGD("NsfPlayer", "Trying to allocate %d bytes (file size = %d)", (uint32_t)numBanks << 12, fileSize);
 	mMemory = new NsfMapper(numBanks);
 	mMemory->SetApu(m2A03);
 
@@ -138,16 +141,16 @@ int NsfPlayer::Prepare(std::string fileName)
 	if (!usesBankswitching) {
 		offset = mFileHeader.loadAddress - 0x8000;
 	}
-    NativeLog(0, "NsfPlayer", "Loading to offset %#x", offset);
+    NLOGD("NsfPlayer", "Loading to offset %#x", offset);
 	musicFile.read((char*)(mMemory->GetRomPointer()) + offset,
 			       fileSize - sizeof(NsfFileHeader));
 	if (!musicFile) {
-		NativeLog(0, "NsfPlayer", "Read failed");
+		NLOGE("NsfPlayer", "Read failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-	NativeLog(0, "NsfPlayer", "File read done");
+	NLOGD("NsfPlayer", "File read done");
 
 	musicFile.close();
 
@@ -180,7 +183,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[4];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-    	NativeLog(0, "NsfPlayer", "Failed to set blipbuffer sample rate");
+    	NLOGE("NsfPlayer", "Failed to set blipbuffer sample rate");
 		return MusicPlayer::ERROR_UNKNOWN;
 	}
 	if (mFileHeader.region & NsfPlayer::REGION_PAL) {
@@ -202,21 +205,17 @@ int NsfPlayer::Prepare(std::string fileName)
 		mSynth[i].output(mBlipBuf);
 	}
 
+	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
+
 	m6502->mRegs.A = mFileHeader.firstSong;  // Song
 	m6502->mRegs.X = 0;  // NTSC/PAL
 	Execute6502(mFileHeader.initAddress);
 
-	NativeLog(0, "NsfPlayer", "Prepare finished");
+	NLOGD("NsfPlayer", "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 
 	return MusicPlayer::OK;
-}
-
-
-uint32_t NsfPlayer::GetNumSubSongs()
-{
-	return mFileHeader.numSongs;
 }
 
 
@@ -250,17 +249,15 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
-	//NativeLog(0, "NsfPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
+	//NLOGV("NsfPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {
-			//m2A03->Step();
-			//NativeLog(0, "NsfPlayer", "Stepping 2A03");
 			if (mPlayCounter == 3) {
 				Execute6502(mFileHeader.playAddress);
 			}
 			mPlayCounter = (mPlayCounter + 1) & 3;
-			NativeLog(0, "NsfPlayer", "mPlayCounter = %d", mPlayCounter);
+			NLOGV("NsfPlayer", "mPlayCounter = %d", mPlayCounter);
 		}
 
 		m2A03->Step();
