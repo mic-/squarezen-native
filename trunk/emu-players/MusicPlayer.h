@@ -38,7 +38,7 @@ public:
 
 	enum
 	{
-		SONG_LENGTH_INFINITE,
+		SONG_LENGTH_INFINITE = 0,
 	};
 
 	const std::string& GetTitle() const { return mTitle; }
@@ -91,7 +91,15 @@ public:
 	const std::string& GetTitle() const { return mMetaData.GetTitle(); }
 	const std::string& GetAuthor() const { return mMetaData.GetAuthor(); }
 	const std::string& GetComment() const { return mMetaData.GetComment(); }
+
+	/*
+	 * Get the number of subsongs in the prepared file
+	 */
 	uint32_t GetNumSubSongs() const { return mMetaData.GetNumSubSongs(); }
+
+	/*
+	 * Get the length of the current (sub)song in milliseconds
+	 */
 	int GetLengthMs() const { return mMetaData.GetLengthMs(); }
 
 	virtual void SetSubSong(uint32_t subSong) {}
