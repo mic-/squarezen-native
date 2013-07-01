@@ -66,6 +66,8 @@ int NsfPlayer::Reset()
 
 void NsfPlayer::Execute6502(uint16_t address)
 {
+	NLOGD("NsfPlayer", "Execute6502(%#x)", address);
+
 	// JSR loadAddress
 	mMemory->WriteByte(0x4f80, 0x20);
 	mMemory->WriteByte(0x4f81, address & 0xff);
@@ -207,9 +209,7 @@ int NsfPlayer::Prepare(std::string fileName)
 
 	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
 
-	m6502->mRegs.A = mFileHeader.firstSong;  // Song
-	m6502->mRegs.X = 0;  // NTSC/PAL
-	Execute6502(mFileHeader.initAddress);
+	SetSubSong(mFileHeader.firstSong);
 
 	NLOGD("NsfPlayer", "Prepare finished");
 
@@ -221,7 +221,11 @@ int NsfPlayer::Prepare(std::string fileName)
 
 void NsfPlayer::SetSubSong(uint32_t subSong)
 {
-	// TODO: implement
+	NLOGD("NsfPlayer", "SetSubSong(%d)", subSong);
+
+	m6502->mRegs.A = subSong;
+	m6502->mRegs.X = 0;  // NTSC/PAL
+	Execute6502(mFileHeader.initAddress);
 }
 
 
@@ -257,7 +261,6 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 				Execute6502(mFileHeader.playAddress);
 			}
 			mPlayCounter = (mPlayCounter + 1) & 3;
-			NLOGV("NsfPlayer", "mPlayCounter = %d", mPlayCounter);
 		}
 
 		m2A03->Step();

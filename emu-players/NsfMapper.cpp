@@ -105,6 +105,7 @@ void NsfMapper::WriteByte_5000(uint16_t addr, uint8_t data)
 {
 	if (addr >= 0x5FF8 && addr <= 0x5FFF) {
 		mRomTbl[addr - 0x5FF8] = mCart + data * 0x1000;
+		NLOGV("NsfMapper", "Mapping bank %d to #%x", data, 0x8000 + (addr - 0x5FF8) * 0x1000);
 	}
 }
 
