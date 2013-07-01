@@ -33,18 +33,30 @@ public:
 		mTitle("Unknown"),
 		mAuthor("Unknown"),
 		mComment("Unknown"),
-		mLengthMs(0) {}
+		mLengthMs(MetaData::SONG_LENGTH_INFINITE),
+		mSubSongs(1) {}
+
+	enum
+	{
+		SONG_LENGTH_INFINITE,
+	};
 
 	const std::string& GetTitle() const { return mTitle; }
 	const std::string& GetAuthor() const { return mAuthor; }
 	const std::string& GetComment() const { return mComment; }
+	uint32_t GetNumSubSongs() const { return mSubSongs; }
+	int GetLengthMs() const { return mLengthMs; }
 
 	void SetTitle(char *str) { mTitle = str; }
 	void SetAuthor(char *str) { mAuthor = str; }
 	void SetComment(char *str) { mComment = str; }
+	void SetNumSubSongs(uint32_t subSongs) { mSubSongs = subSongs; }
+	void SetLengthMs(int lengthMs) { mLengthMs = lengthMs; }
 
+private:
 	std::string mTitle, mAuthor, mComment;
 	int mLengthMs;
+	uint32_t mSubSongs;
 };
 
 
@@ -76,11 +88,12 @@ public:
 
 	virtual int GetState() const { return mState; }
 
-	const std::string& GetTitle() const { return mMetaData.mTitle; }
-	const std::string& GetAuthor() const { return mMetaData.mAuthor; }
-	const std::string& GetComment() const { return mMetaData.mComment; }
+	const std::string& GetTitle() const { return mMetaData.GetTitle(); }
+	const std::string& GetAuthor() const { return mMetaData.GetAuthor(); }
+	const std::string& GetComment() const { return mMetaData.GetComment(); }
+	uint32_t GetNumSubSongs() const { return mMetaData.GetNumSubSongs(); }
+	int GetLengthMs() const { return mMetaData.GetLengthMs(); }
 
-	virtual uint32_t GetNumSubSongs() const { return 1; }
 	virtual void SetSubSong(uint32_t subSong) {}
 
 	enum

@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include <string.h>
 #include <stddef.h>
+#include "NativeLogger.h"
 #include "NsfMapper.h"
 
 

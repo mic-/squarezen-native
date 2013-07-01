@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include "NativeLogger.h"
 #include "GbMemory.h"
 #include "GbPapu.h"
@@ -211,6 +213,7 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 
 	case 0xFF1C:	// NR32
 		mVol = (val >> 5) & 3;
+		NLOGD("GbPapu", "Waveform channel volume %d", mVol);
 		break;
 
 	case 0xFF13:	// NR13
@@ -224,7 +227,7 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		mPeriod = (mPeriod == 0) ? 2 : mPeriod;
 		mPeriod = ((val >> 4) < 14) ? (mPeriod << ((val >> 4) + 0)) : 0;
 		mLfsrWidth = (val & 8) ? 7 : 15;
-		NativeLog(0, "GbPapu", "Noise period = %d [s %d, r %d, w %d] (%d Hz)", mPeriod, val&7, val>>4, mLfsrWidth, (GBPAPU_EMULATION_CLOCK/mPeriod));
+		NLOGD("GbPapu", "Noise period = %d [s %d, r %d, w %d] (%d Hz)", mPeriod, val&7, val>>4, mLfsrWidth, (GBPAPU_EMULATION_CLOCK/mPeriod));
 		break;
 
 	case 0xFF14:	// NR14
@@ -240,12 +243,13 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		if (val & 0x80) {
 			// Restart
 			//NativeLog("Restarting channel %d (volume %d)", mIndex, mVol);
-			mWaveStep = 0;
+			//mWaveStep = 0;
+			mPos = 0;
 			mCurVol = mVol;
 			mLC.Reset();
 			mEG.Reset();
-			if (mIndex == 0) {
-				NativeLog(0, "GbPapu", "Restarting channel %d with period %d, duty %d, volume %d, EG dir %d, EG max %d", mIndex, 2048-mPeriod, mDuty, mVol, mEG.mDirection, mEG.mMax);
+			if (mIndex == 2) {
+				NLOGD("GbPapu", "Restarting channel %d with period %d, duty %d, volume %d, EG dir %d, EG max %d", mIndex, 2048-mPeriod, mDuty, mVol, mEG.mDirection, mEG.mMax);
 			}				
 			if (0xFF23 == addr) {
 				mLfsr = 0x7FFF;
@@ -326,6 +330,7 @@ void GbPapuChip::Write(uint32_t addr, uint8_t val)
 		mChannels[1].Write(addr, val);
 
 	} else if (addr >= 0xFF1A && addr <= 0xFF1E) {
+		NLOGD("GbPapu", "Writing to waveform channel: %#x, %#x", addr, val);
 		mChannels[2].Write(addr, val);
 
 	} else if (addr >= 0xFF20 && addr <= 0xFF23) {
@@ -333,13 +338,14 @@ void GbPapuChip::Write(uint32_t addr, uint8_t val)
 
 	} else if (0xFF25 == addr) {
 		mNR51 = val;
-		NativeLog(0, "GbPapu", "NR51 = %#x", val);
+		NLOGD("GbPapu", "NR51 = %#x", val);
 
 	} else if (0xFF26 == addr) {
 		mNR52 = val;
-		NativeLog(0, "Gbpapu", "NR52 = %#x", val);
+		NLOGD("GbPapu", "NR52 = %#x", val);
 
 	} else if (addr >= 0xFF30 && addr <= 0xFF3F) {
+		NLOGD("GbPapu", "Writing to waveform RAM %#x, %#x", addr, val);
 		mWaveformRAM[addr & 0x0F] = val;
 	}
 }

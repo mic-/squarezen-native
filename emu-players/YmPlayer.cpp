@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include <iostream>
 #include <fstream>
 #include <stddef.h>
@@ -27,6 +29,8 @@ FILE *pcmFile;
 int loggedBuffers;
 #endif
 
+static const char LH5_DECODER_NAME[] = "-lh5-";
+
 
 YmPlayer::YmPlayer()
 	: mYmData(NULL)
@@ -36,7 +40,7 @@ YmPlayer::YmPlayer()
 
 int YmPlayer::Reset()
 {
-	//NativeLog(0, "YmPlayer", "YmPlayer::Reset");
+	NLOGV("YmPlayer", "YmPlayer::Reset");
 
 	delete [] mYmData;
 	mYmData = NULL;
@@ -72,13 +76,15 @@ int YmPlayer::Prepare(std::string fileName)
     size_t fileSize;
     uint16_t  numDigiDrums;
 
+    NLOGV("YmPlayer", "Prepare(%s)", fileName.c_str());
+
     if (MusicPlayer::STATE_CREATED != GetState()) {
     	Reset();
     }
 
     std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {
-    	NativeLog(0, "YmPlayer", "Failed to open file %s", fileName.c_str());
+    	NLOGE("YmPlayer", "Failed to open file %s", fileName.c_str());
     	return MusicPlayer::ERROR_FILE_IO;
     }
     musicFile.seekg(0, musicFile.end);
@@ -87,7 +93,7 @@ int YmPlayer::Prepare(std::string fileName)
 
     if (fileSize < 7) {
     	musicFile.close();
-    	NativeLog(0, "YmPlayer", "File is too small (%d bytes)", fileSize);
+    	NLOGE("YmPlayer", "File is too small (%d bytes)", fileSize);
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
@@ -96,38 +102,36 @@ int YmPlayer::Prepare(std::string fileName)
     loggedBuffers = 0;
 #endif
 
-    //AppLog("Trying to allocate %d bytes", fileSize);
-
     mYmData = new unsigned char[fileSize];
     if (!mYmData) {
-    	//AppLog("Failed to allocate memory");
+    	NLOGE("YmPlayer", "Failed to allocate memory");
 		return MusicPlayer::ERROR_OUT_OF_MEMORY;
     }
 
-	//AppLog("Allocation ok");
+	NLOGV("YmPlayer","Allocation ok");
 
 	musicFile.read((char*)mYmData, fileSize);
 	if (!musicFile) {
-		NativeLog(0, "YmPlayer", "Failed to read data from file");
+		NLOGE("YmPlayer", "Failed to read data from file");
 		musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 	musicFile.close();
 
 	if (strncmp((char*)&mYmData[2], "-lh5", 4) == 0) {
-		NativeLog(0, "YmPlayer", "File is compressed; decoding..");
+		NLOGD("YmPlayer", "File is compressed; decoding..");
 		LHADecoderType *decoderType;
 		LHADecoder *decoder;
 		mLhHeader = (LhFileHeader*)mYmData;
 		mLhDataPos = 24 + mLhHeader->filenameLength;
 		mLhDataAvail = fileSize;
-		NativeLog(0, "YmPlayer", "Decompressed size: %d bytes", mLhHeader->uncompressedSize);
-		if (!(decoderType = lha_decoder_for_name("-lh5-"))) {
-			NativeLog(0, "YmPlayer", "Failed to get decoder type for \"-lh5-\"");
+		NLOGD("YmPlayer", "Decompressed size: %d bytes", mLhHeader->uncompressedSize);
+		if (!(decoderType = lha_decoder_for_name(const_cast<char*>(LH5_DECODER_NAME)))) {
+			NLOGE("YmPlayer", "Failed to get decoder type for \"-lh5-\"");
 			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
 		if (!(decoder = lha_decoder_new(decoderType, lhDecodeCallback, this, mLhHeader->uncompressedSize))) {
-			NativeLog(0, "YmPlayer", "Failed to get decoder for \"-lh5-\"");
+			NLOGE("YmPlayer", "Failed to get decoder for \"-lh5-\"");
 			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
 		uint8_t *decoded = new uint8_t[mLhHeader->uncompressedSize];
@@ -135,7 +139,7 @@ int YmPlayer::Prepare(std::string fileName)
 		while (lha_decoder_read(decoder, p, 4096) == 4096) {
 			p += 4096;
 		}
-		NativeLog(0, "YmPlayer", "Number of bytes decoded: %d", lha_decoder_get_length(decoder));
+		NLOGD("YmPlayer", "Number of bytes decoded: %d", lha_decoder_get_length(decoder));
 		lha_decoder_free(decoder);
 		delete [] mYmData;
 		mYmData = decoded;
@@ -177,7 +181,7 @@ int YmPlayer::Prepare(std::string fileName)
 	mSynth = new Blip_Synth<blip_low_quality,82>[3];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
-		NativeLog(0, "YmPlayer", "Failed to set blipbuffer sample rate");
+		NLOGE("YmPlayer", "Failed to set blipbuffer sample rate");
 		return MusicPlayer::ERROR_UNKNOWN;
 	}
 	mBlipBuf->clock_rate(2000000);
@@ -197,6 +201,7 @@ int YmPlayer::Prepare(std::string fileName)
 	mNumFrames = (uint32_t)mYmData[0x0E] << 8;
 	mNumFrames += mYmData[0x0F];
 
+	mMetaData.SetLengthMs(mNumFrames * 20);
 
     // Setup waves
 	for (i = 0; i < 3; i++) {
@@ -242,7 +247,7 @@ int YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
-	//NativeLog(0, "YmPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
+	//NLOGV("YmPlayer", "Run(%d, %p) -> %d clocks", numSamples, buffer, blipLen);
 
 	for (k = 0; k < blipLen; k++) {
 		if (mCycleCount == 0) {

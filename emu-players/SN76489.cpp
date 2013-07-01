@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include "SN76489.h"
 
 

@@ -38,6 +38,6 @@ void NativeLog(int level, const char *tag, const char *fmt, ...)
 	AppLog(buffer);
 #endif
 #ifdef  __ANDROID__
-	__android_log_write(ANDROID_LOG_VERBOSE, tag, buffer);
+	__android_log_write(level, tag, buffer);
 #endif
 }

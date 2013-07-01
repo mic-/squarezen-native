@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
 #include "NativeLogger.h"
 #include "GbMemory.h"
 #include "GbZ80.h"
@@ -60,7 +62,7 @@ void mem_write_8_0000_mbc1(unsigned short address,unsigned char data) {
     } else if (address>=0x2000) {
 		romSelect = (data==0)?1:(data&0x1F);
 		romSelect &= (numBanks-1);
-		NativeLog(0, "GbMemory", "ROM bank1 selection: %d", romSelect);
+		NLOGD("GbMemory", "ROM bank1 selection: %d", romSelect);
 		/*if (mbc1Layout == 0)
 			ROM1 = &cart[(romSelect+highRomBits)*0x4000];
 		else*/
@@ -87,7 +89,7 @@ void mem_write_8_0000_mbc3(unsigned short address,unsigned char data) {
     } else*/ if (address >= 0x2000) {
 		romSelect = (data==0)?1:(data&0x7F);
 		romSelect &= (numBanks-1);
-		NativeLog(0, "GbMemory", "New ROM at 0x4000: bank %d", romSelect);
+		NLOGD("GbMemory", "New ROM at 0x4000: bank %d", romSelect);
 		ROM1 = &cart[(romSelect)*0x4000];
     }
 }
@@ -115,7 +117,7 @@ void mem_write_8_4000_mbc1(unsigned short address,unsigned char data) {
 void mem_write_8_4000_mbc3(unsigned short address,unsigned char data) {
 	if (address<0x6000) {
 	    ramSelect = data&3;
-	    NativeLog(0, "GbMemory", "New EXRAM bank: %d", ramSelect);
+	    NLOGD("GbMemory", "New EXRAM bank: %d", ramSelect);
 	} else {
 	    // TODO: Handle RTC
 	}
@@ -342,7 +344,7 @@ unsigned char mem_read_8_F000(unsigned short address) {
 				return IOREGS[address-0xFF00] | NR4xSet[address-0xFF1F];
 			}
 			if (address >= 0xFF10 && address <= 0xFF3F) {
-				NativeLog(0, "GbMemory", "Read from PAPU area: %#x", address);
+				NLOGD("GbMemory", "Read from PAPU area: %#x", address);
 			}
  			return IOREGS[address-0xFF00];
         }
