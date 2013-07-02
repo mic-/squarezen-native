@@ -42,6 +42,19 @@ public:
 	bool mUse;
 };
 
+class Emu2A03LinearCounter : public Oscillator
+{
+public:
+	virtual ~Emu2A03LinearCounter() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	uint32_t mMax;
+	bool mUse;
+	bool mReload;
+};
+
 class Emu2A03EnvelopeGenerator : public Oscillator
 {
 public:
@@ -86,6 +99,7 @@ public:
 	void SetIndex(uint8_t index) { mIndex = index; }
 
 	Emu2A03LengthCounter mLC;
+	Emu2A03LinearCounter mLinC;
 	Emu2A03EnvelopeGenerator mEG;
 	Emu2A03SweepUnit mSU;
 	Emu2A03 *mChip;
@@ -103,12 +117,24 @@ public:
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
 
+	enum
+	{
+		PULSE1 = 0,
+		PULSE2 = 1,
+		TRIANGLE = 2,
+		NOISE = 3,
+		DMC = 4,
+	};
+
 	void SetClock(uint32_t clockHz, uint32_t fps);
 
+	static const uint8_t SQUARE_WAVES[4][8];
 	static const uint16_t VOL_TB[];
+	static const uint8_t Emu2A03::LENGTH_COUNTERS[32];
 
 	Emu2A03Channel mChannels[4];
 	uint32_t mCycleCount, mFrameCycles;
+	uint8_t mStatus;
 	bool mGenerateFrameIRQ;
 	uint8_t mMaxFrameCount, mCurFrame;
 };

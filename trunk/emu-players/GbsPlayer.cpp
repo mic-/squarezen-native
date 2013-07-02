@@ -171,6 +171,8 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 
+	SetSubSong(mFileHeader.firstSong);
+
 	return MusicPlayer::OK;
 }
 
