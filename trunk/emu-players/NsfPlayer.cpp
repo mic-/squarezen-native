@@ -123,6 +123,8 @@ int NsfPlayer::Prepare(std::string fileName)
     mMetaData.SetAuthor((char*)mFileHeader.author);
     mMetaData.SetComment((char*)mFileHeader.copyright);
 
+    NLOGD("NsfPlayer", "Prepare(): title and author is %s, %s", mMetaData.GetTitle().c_str(), mMetaData.GetAuthor().c_str());
+
     bool usesBankswitching = false;
     for (i = 0; i < 8; i++) {
     	if (mFileHeader.initialBanks[i]) {

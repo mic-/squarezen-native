@@ -59,23 +59,26 @@ void NativeLog(int level, const char *tag, const char *fmt, ...);
 #define NLOGW(tag, fmt, ...) NativeLogImpl(NATIVELOG_WARNING, tag, fmt, ##__VA_ARGS__)
 #define NLOGE(tag, fmt, ...) NativeLogImpl(NATIVELOG_ERROR, tag, fmt, ##__VA_ARGS__)
 #else
-#undef NLOGD
+#ifndef NLOGD
 #define NLOGD(tag, fmt, ...)
+#endif
 #endif
 
 #if defined(NLOG_LEVEL_WARNING) && NLOG_LEVEL_WARNING == 0
 #define NLOGW(tag, fmt, ...) NativeLogImpl(NATIVELOG_WARNING, tag, fmt, ##__VA_ARGS__)
 #define NLOGE(tag, fmt, ...) NativeLogImpl(NATIVELOG_ERROR, tag, fmt, ##__VA_ARGS__)
 #else
-#undef NLOGW
+#ifndef NLOGW
 #define NLOGW(tag, fmt, ...)
+#endif
 #endif
 
 #if defined(NLOG_LEVEL_ERROR) && NLOG_LEVEL_ERROR == 0
 #define NLOGE(tag, fmt, ...) NativeLogImpl(NATIVELOG_ERROR, tag, fmt, ##__VA_ARGS__)
 #else
-#undef NLOGE
+#ifndef NLOGE
 #define NLOGE(tag, fmt, ...)
+#endif
 #endif
 
 #endif /* NATIVELOGGER_H_ */
