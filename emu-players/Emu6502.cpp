@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_VERBOSE 0
+#define NLOG_LEVEL_ERROR 0 //VERBOSE 0
 
 #include "NativeLogger.h"
 #include "Emu6502.h"

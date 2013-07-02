@@ -130,7 +130,7 @@ public:
 
 	static const uint8_t SQUARE_WAVES[4][8];
 	static const uint16_t VOL_TB[];
-	static const uint8_t Emu2A03::LENGTH_COUNTERS[32];
+	static const uint8_t LENGTH_COUNTERS[32];
 
 	Emu2A03Channel mChannels[4];
 	uint32_t mCycleCount, mFrameCycles;
