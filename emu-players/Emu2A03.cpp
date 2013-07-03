@@ -50,13 +50,16 @@ void Emu2A03LengthCounter::Reset()
 
 void Emu2A03LengthCounter::Step()
 {
-	if (mChannel->mChip->mRegs[0x15] & (1 << mChannel->mIndex)) {
-		if (mStep) {
-			mStep--;
-		}
-		if (mChannel->mIndex != Emu2A03::TRIANGLE) {
-			// This is handled in Emu2A03LinearCounter::Step for the triangle channel
-			mChannel->mOutputMask = mStep ? 0xFFFF : 0;
+	if (mChannel->mChip->mRegs[Emu2A03::R_STATUS] & (1 << mChannel->mIndex)) {
+		uint8_t reg = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
+		if (!(reg & ((mChannel->mIndex == Emu2A03::CHN_TRIANGLE) ? 0x80 : 0x20))) {
+			if (mStep) {
+				mStep--;
+			}
+			if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
+				// This is handled in Emu2A03LinearCounter::Step for the triangle channel
+				mChannel->mOutputMask = mStep ? 0xFFFF : 0;
+			}
 		}
 	}
 }
@@ -89,8 +92,8 @@ void Emu2A03EnvelopeGenerator::Reset()
 
 void Emu2A03EnvelopeGenerator::Step()
 {
-	if (mChannel->mIndex != Emu2A03::TRIANGLE) {
-		uint8_t reg = mChannel->mChip->mRegs[mChannel->mIndex * 4];
+	if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
+		uint8_t reg = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
 		if (!(reg & 0x10)) {
 			mStep--;
 			if (!mStep) {
@@ -140,6 +143,7 @@ void Emu2A03Channel::Reset()
 	mPeriod = 0;
 	mDuty = 0;
 	mOut = -1;
+	mPos = 0;
 	mVol = mCurVol = 0;
 	//mLfsr = 0x7FFF;
 	//mLfsrWidth = 15;
@@ -149,8 +153,8 @@ void Emu2A03Channel::Reset()
 void Emu2A03Channel::Step()
 {
 	mPos++;
-	if (mIndex <= Emu2A03::PULSE2) {
-		if (mPos >= mPeriod) {
+	if (mIndex <= Emu2A03::CHN_PULSE2) {
+		if (mPos >= mPeriod*2) {
 			mPos = 0;
 			if (mWaveStep == 8) {
 				mWaveStep = 0;
@@ -166,13 +170,13 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 	uint8_t reg = addr & 0x0F;
 
 	switch (reg) {
-	case 0x00:
-	case 0x04:
-	case 0x0C:
+	case Emu2A03::R_PULSE1_DUTY_ENVE:
+	case Emu2A03::R_PULSE2_DUTY_ENVE:
+	case Emu2A03::R_NOISE_ENVE:
 		if (val & 0x10) {
 			mVol = val & 0x0F;
 		}
-		if (reg == 0x0C) {
+		if (reg == Emu2A03::R_NOISE_ENVE) {
 			// Noise channel
 		} else {
 			// Pulse channels
@@ -180,23 +184,24 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 		}
 		break;
 
-	case 0x02:
-	case 0x06:
+	case Emu2A03::R_PULSE1_PERLO:
+	case Emu2A03::R_PULSE2_PERLO:
 		mPeriod = (mPeriod & 0x700) | val;
 		break;
 
-	case 0x03:
-	case 0x07:
+	case Emu2A03::R_PULSE1_PERHI_LEN:
+	case Emu2A03::R_PULSE2_PERHI_LEN:
 	case 0x0B:
-	case 0x0F:
-		if (0x0F != reg) {
+	case Emu2A03::R_NOISE_LEN:
+		if (Emu2A03::R_NOISE_LEN != reg) {
 			mPeriod = (mPeriod & 0xff) | ((uint16_t)(val & 7) << 8);
 		}
 		if (0x0B == reg) {
 			mLinC.mReload = true;
 		}
-		if (mChip->mRegs[0x15] & (1 << mIndex)) {
-			mLC.mPos = Emu2A03::LENGTH_COUNTERS[val >> 3];
+		if (mChip->mRegs[Emu2A03::R_STATUS] & (1 << mIndex)) {
+			mLC.mStep = Emu2A03::LENGTH_COUNTERS[val >> 3];
+			mOutputMask = mLC.mStep ? 0xFFFF : 0;
 		}
 		break;
 
@@ -206,7 +211,7 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 
 void Emu2A03::Reset()
 {
-	for (int i = Emu2A03::PULSE1; i <= Emu2A03::NOISE; i++) {
+	for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
 		mChannels[i].SetChip(this);
 		mChannels[i].SetIndex(i);
 		mChannels[i].Reset();
@@ -228,17 +233,17 @@ void Emu2A03::Step()
 	if (mCycleCount == 0) {
 		if (mCurFrame < 4) {
 			if ((mCurFrame & 1) == (mMaxFrameCount & 1)) {
-				for (int i = Emu2A03::PULSE1; i <= Emu2A03::NOISE; i++) {
+				for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
 					mChannels[i].mLC.Step();
-					if (i <= Emu2A03::PULSE2) {
+					if (i <= Emu2A03::CHN_PULSE2) {
 						mChannels[i].mSU.Step();
 					}
 				}
 			}
-			for (int i = Emu2A03::PULSE1; i <= Emu2A03::NOISE; i++) {
+			for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
 				mChannels[i].mEG.Step();
 			}
-			mChannels[Emu2A03::TRIANGLE].mLinC.Step();
+			mChannels[Emu2A03::CHN_TRIANGLE].mLinC.Step();
 		}
 		if (mCurFrame == 3 && mMaxFrameCount == 3 && mGenerateFrameIRQ) {
 			// TODO: generate frame IRQ
@@ -254,7 +259,7 @@ void Emu2A03::Step()
 		mCycleCount = 0;
 	}
 
-	for (int i = Emu2A03::PULSE1; i <= Emu2A03::NOISE; i++) {
+	for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
 		mChannels[i].Step();
 	}
 }
@@ -268,17 +273,19 @@ void Emu2A03::Write(uint32_t addr, uint8_t data)
 		mRegs[addr - 0x4000] = data;
 	}
 
-	if (addr >= 0x4000 && addr <= 0x4003) {
-		mChannels[Emu2A03::PULSE1].Write(addr, data);
+	uint8_t reg = addr & 0x1F;
 
-	} else if (addr >= 0x4004 && addr <= 0x4007) {
-		mChannels[Emu2A03::PULSE2].Write(addr, data);
+	if (reg >= Emu2A03::R_PULSE1_DUTY_ENVE && reg <= Emu2A03::R_PULSE1_PERHI_LEN) {
+		mChannels[Emu2A03::CHN_PULSE1].Write(addr, data);
+
+	} else if (reg >= Emu2A03::R_PULSE2_DUTY_ENVE && reg <= Emu2A03::R_PULSE2_PERHI_LEN) {
+		mChannels[Emu2A03::CHN_PULSE2].Write(addr, data);
 
 	} else if (addr >= 0x4008 && addr <= 0x400B) {
-		mChannels[Emu2A03::TRIANGLE].Write(addr, data);
+		mChannels[Emu2A03::CHN_TRIANGLE].Write(addr, data);
 
 	} else if (addr >= 0x400C && addr <= 0x400F) {
-		mChannels[Emu2A03::NOISE].Write(addr, data);
+		mChannels[Emu2A03::CHN_NOISE].Write(addr, data);
 
 	} else if (addr == 0x4017) {
 		mGenerateFrameIRQ = ((data & 0x40) == 0);
