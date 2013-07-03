@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_ERROR 0 //VERBOSE 0
+#define NLOG_LEVEL_VERBOSE 0
 
 #include "NativeLogger.h"
 #include "Emu6502.h"
@@ -139,7 +139,6 @@ void Emu6502::Reset()
 	// TODO: fill out
 }
 
-
 void Emu6502::Run(uint32_t maxCycles)
 {
 	uint16_t addr, temp16;
@@ -147,9 +146,12 @@ void Emu6502::Run(uint32_t maxCycles)
     int8_t relAddr;
 
 	while (mCycles < maxCycles) {
+		Disassemble(mRegs.PC);
+		//NLOGD("Emu6502", "A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x", mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
+
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
-		NLOGD("Emu6502", "Emu6502::Run: op %#x, PC %#x, A %#x, X %#x, Y %#x, F %#x",
-				  opcode, mRegs.PC-1, mRegs.A, mRegs.X, mRegs.Y, mRegs.F);
+		/*NLOGD("Emu6502", "Emu6502::Run: op %#x, PC %#x, A %#x, X %#x, Y %#x, F %#x",
+				  opcode, mRegs.PC-1, mRegs.A, mRegs.X, mRegs.Y, mRegs.F);*/
 
 		switch (opcode) {
 
@@ -1198,3 +1200,320 @@ void Emu6502::Run(uint32_t maxCycles)
 		}
 	}
 }
+
+
+
+
+void Emu6502::Disassemble(uint16_t address)
+{
+	uint8_t opcode = mMemory->ReadByte(address);
+	uint8_t operand1, operand2;
+	std::string opcodeStr, machineCodeStr;
+	char temp[16];
+	char operandStr[16];
+	operand1 = mMemory->ReadByte(address+1);
+	operand2 = mMemory->ReadByte(address+2);
+
+	snprintf(temp, 16, "%02x", opcode);
+	machineCodeStr = temp;
+
+	switch (opcode) {
+	case 0x69: case 0x65: case 0x75:
+	case 0x6D: case 0x7D: case 0x79:
+	case 0x61: case 0x71:
+		opcodeStr = "ADC";
+		break;
+
+	case 0x29: case 0x25: case 0x35:
+	case 0x2D: case 0x3D: case 0x39:
+	case 0x21: case 0x31:
+		opcodeStr = "AND";
+		break;
+
+	case 0x0A: case 0x06: case 0x16:
+	case 0x0E: case 0x1E:
+		opcodeStr = "ASL";
+		break;
+
+	case 0x10:
+		opcodeStr = "BPL";
+		break;
+	case 0x30:
+		opcodeStr = "BMI";
+		break;
+	case 0x50:
+		opcodeStr = "BVC";
+		break;
+	case 0x70:
+		opcodeStr = "BVS";
+		break;
+	case 0x90:
+		opcodeStr = "BCC";
+		break;
+	case 0xB0:
+		opcodeStr = "BCS";
+		break;
+	case 0xD0:
+		opcodeStr = "BNE";
+		break;
+	case 0xF0:
+		opcodeStr = "BEQ";
+		break;
+
+	case 0x24: case 0x2C:
+		opcodeStr = "BIT";
+
+	case 0x00:
+		opcodeStr = "BRK";
+		break;
+
+	case 0x18:
+		opcodeStr = "CLC";
+		break;
+	case 0xD8:
+		opcodeStr = "CLD";
+		break;
+	case 0x58:
+		opcodeStr = "CLI";
+		break;
+	case 0xB8:
+		opcodeStr = "CLV";
+		break;
+
+	case 0xC9: case 0xC5: case 0xD5:
+	case 0xCD: case 0xDD: case 0xD9:
+	case 0xC1: case 0xD1:
+		opcodeStr = "CMP";
+		break;
+
+	case 0xE0: case 0xE4: case 0xEC:
+		opcodeStr = "CPX";
+		break;
+
+	case 0xC0: case 0xC4: case 0xCC:
+		opcodeStr = "CPY";
+		break;
+
+	case 0xC6: case 0xD6: case 0xCE:
+	case 0xDE:
+		opcodeStr = "DEC";
+		break;
+
+	case 0xCA:
+		opcodeStr = "DEX";
+		break;
+
+	case 0x88:
+		opcodeStr = "DEY";
+		break;
+
+	case 0x49: case 0x45: case 0x55:
+	case 0x4D: case 0x5D: case 0x59:
+	case 0x41: case 0x51:
+		opcodeStr = "EOR";
+		break;
+
+	case 0xE6: case 0xF6: case 0xEE:
+	case 0xFE:
+		opcodeStr = "INC";
+		break;
+	case 0xE8:
+		opcodeStr = "INX";
+		break;
+	case 0xC8:
+		opcodeStr = "INY";
+		break;
+
+	case 0x4C: case 0x6C:
+		opcodeStr = "JMP";
+		break;
+	case 0x20:
+		opcodeStr = "JSR";
+		 break;
+
+	case 0xA9: case 0xA5: case 0xB5:
+	case 0xAD: case 0xBD: case 0xB9:
+	case 0xA1: case 0xB1:
+		opcodeStr = "LDA";
+		break;
+
+	case 0xA2: case 0xA6: case 0xB6:
+	case 0xAE: case 0xBE:
+		opcodeStr = "LDX";
+		break;
+
+	case 0xA0: case 0xA4: case 0xB4:
+	case 0xAC: case 0xBC:
+		opcodeStr = "LDY";
+		break;
+
+	case 0x4A: case 0x46: case 0x56:
+	case 0x4E: case 0x5E:
+		opcodeStr = "LSR";
+		break;
+
+	case 0x09: case 0x05: case 0x15:
+	case 0x0D: case 0x1D: case 0x19:
+	case 0x01: case 0x11:
+		opcodeStr = "ORA";
+		break;
+
+	case 0x48:
+		opcodeStr = "PHA";
+		break;
+	case 0x08:
+		opcodeStr = "PHP";
+		break;
+
+	case 0x68:
+		opcodeStr = "PLA";
+		break;
+	case 0x28:
+		opcodeStr = "PLP";
+		break;
+
+	case 0x2A: case 0x26: case 0x36:
+	case 0x2E: case 0x3E:
+		opcodeStr = "ROL";
+		break;
+
+	case 0x6A: case 0x66: case 0x76:
+	case 0x6E: case 0x7E:
+		opcodeStr = "ROR";
+		break;
+
+	case 0x40:
+		opcodeStr = "RTI";
+		break;
+	case 0x60:
+		opcodeStr = "RTS";
+		break;
+
+	case 0xE9: case 0xE5: case 0xF5:
+	case 0xED: case 0xFD: case 0xF9:
+	case 0xE1: case 0xF1:
+		opcodeStr = "SBC";
+		break;
+
+	case 0x38:
+		opcodeStr = "SEC";
+		break;
+	case 0xF8:
+		opcodeStr = "SED";
+		break;
+	case 0x78:
+		opcodeStr = "SEI";
+		break;
+
+	case 0x85: case 0x95: case 0x8D:
+	case 0x9D: case 0x99: case 0x81:
+	case 0x91:
+		opcodeStr = "STA";
+		break;
+
+	case 0x86: case 0x96: case 0x8E:
+		opcodeStr = "STX";
+		break;
+
+	case 0x84: case 0x94: case 0x8C:
+		opcodeStr = "STY";
+		break;
+
+	case 0xAA:
+		opcodeStr = "TAX";
+		break;
+	case 0xA8:
+		opcodeStr = "TAY";
+		break;
+	case 0xBA:
+		opcodeStr = "TSX";
+		break;
+	case 0x8A:
+		opcodeStr = "TXA";
+		break;
+	case 0x9A:
+		opcodeStr = "TXS";
+		break;
+	case 0x98:
+		opcodeStr = "TYA";
+		break;
+
+	case 0xEA:
+		opcodeStr = "NOP";
+		break;
+
+	default:
+		opcodeStr = "ILLEGAL";
+		break;
+	}
+
+	switch (opcode) {
+	case 0x09: case 0x29: case 0x49: case 0x69:
+	case 0xA0: case 0xA2: case 0xA9: case 0xC0:
+	case 0xC9: case 0xE0: case 0xE9:
+		snprintf(operandStr, 16, " #$%02x", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+
+	case 0x05: case 0x06: case 0x24: case 0x25:
+	case 0x26: case 0x45: case 0x46: case 0x65:
+	case 0x66: case 0x84: case 0x85: case 0x86:
+	case 0xA4: case 0xA5: case 0xA6: case 0xC4:
+	case 0xC5: case 0xC6: case 0xE4: case 0xE5:
+	case 0xE6:
+		snprintf(operandStr, 16, " $%02x", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+
+	case 0x15: case 0x16: case 0x35: case 0x36:
+	case 0x55: case 0x56: case 0x75: case 0x76:
+	case 0x94: case 0x95: case 0xB4: case 0xB5:
+	case 0xD5: case 0xD6: case 0xF5: case 0xF6:
+		snprintf(operandStr, 16, " $%02x,X", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+
+	case 0x96: case 0xB6:
+		snprintf(operandStr, 16, " $%02x,Y", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+
+	case 0x0D: case 0x0E: case 0x2C: case 0x2D:
+	case 0x2E: case 0x4C: case 0x4D: case 0x4E:
+	case 0x6D: case 0x6E: case 0x8C: case 0x8D:
+	case 0x8E: case 0xAC: case 0xAD: case 0xAE:
+	case 0xCC: case 0xCD: case 0xCE: case 0xEC:
+	case 0xED: case 0xEE: case 0x20:
+		snprintf(operandStr, 16, " $%02x%02x", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
+		break;
+
+	case 0x1D: case 0x1E: case 0x3D: case 0x3E:
+	case 0x5D: case 0x5E: case 0x7D: case 0x7E:
+	case 0x9D: case 0xBC: case 0xBD: case 0xDD:
+	case 0xDE: case 0xFD: case 0xFE:
+		snprintf(operandStr, 16, " $%02x%02x,X", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
+		break;
+
+	case 0x10: case 0x30: case 0x50: case 0x70:
+	case 0x90: case 0xB0: case 0xD0: case 0xF0:
+		snprintf(operandStr, 16, " <$%04x", address + 2 + (int8_t)operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+
+	default:
+		snprintf(operandStr, 16, "");
+		break;
+	}
+
+	NLOGD("Emu6502", "%#x: %s | %s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x", address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
+}
+
