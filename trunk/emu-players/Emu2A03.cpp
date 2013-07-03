@@ -50,8 +50,14 @@ void Emu2A03LengthCounter::Reset()
 
 void Emu2A03LengthCounter::Step()
 {
-	if (mStep) {
-		mStep--;
+	if (mChannel->mChip->mRegs[0x15] & (1 << mChannel->mIndex)) {
+		if (mStep) {
+			mStep--;
+		}
+		if (mChannel->mIndex != Emu2A03::TRIANGLE) {
+			// This is handled in Emu2A03LinearCounter::Step for the triangle channel
+			mChannel->mOutputMask = mStep ? 0xFFFF : 0;
+		}
 	}
 }
 
@@ -63,20 +69,43 @@ void Emu2A03LinearCounter::Reset()
 
 void Emu2A03LinearCounter::Step()
 {
-	if (mStep) {
+	if (mReload) {
+		mStep = mChannel->mChip->mRegs[0x08] & 0x7F;
+	} else if (mStep) {
 		mStep--;
 	}
+	if (!(mChannel->mChip->mRegs[0x08] & 0x80)) {
+		mReload = false;
+	}
+	mChannel->mOutputMask = (mStep && mChannel->mLC.mStep) ? 0xFFFF : 0;
 }
 
 
 void Emu2A03EnvelopeGenerator::Reset()
 {
-	// TODO: fill out
+	mStep = 0;
+	mOut = 0;
 }
 
 void Emu2A03EnvelopeGenerator::Step()
 {
-	// TODO: fill out
+	if (mChannel->mIndex != Emu2A03::TRIANGLE) {
+		uint8_t reg = mChannel->mChip->mRegs[mChannel->mIndex * 4];
+		if (!(reg & 0x10)) {
+			mStep--;
+			if (!mStep) {
+				mStep = (reg = 0x0F) + 1;
+				if (!mOut) {
+					if (reg & 0x20) {
+						// Looping envelope
+						mOut = 0x0F;
+					}
+				}
+				mChannel->mVol = mOut;
+				mOut--;
+			}
+		}
+	}
 }
 
 
@@ -93,35 +122,84 @@ void Emu2A03SweepUnit::Step()
 
 void Emu2A03Channel::Reset()
 {
-	// TODO: fill out
+	mLC.Reset();
+	mLC.SetChannel(this);
+	mLC.mUse = false;
+	mLC.mMax = 0;
+
+	mEG.Reset();
+	mEG.SetChannel(this);
+	mEG.mMax = 0;
+	mEG.mDirection = 0;
+
+	mLinC.Reset();
+	mLinC.SetChannel(this);
+
+	mWaveStep = 0;
+	mPhase = 0;
+	mPeriod = 0;
+	mDuty = 0;
+	mOut = -1;
+	mVol = mCurVol = 0;
+	//mLfsr = 0x7FFF;
+	//mLfsrWidth = 15;
 }
 
 
 void Emu2A03Channel::Step()
 {
-	// TODO: fill out
+	mPos++;
+	if (mIndex <= Emu2A03::PULSE2) {
+		if (mPos >= mPeriod) {
+			mPos = 0;
+			if (mWaveStep == 8) {
+				mWaveStep = 0;
+			}
+			mPhase = Emu2A03::SQUARE_WAVES[mDuty][mWaveStep++];
+		}
+
+	}
 }
 
 void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 {
 	uint8_t reg = addr & 0x0F;
 
-	switch (mIndex) {
-	case Emu2A03::PULSE1:
-		break;
-	case Emu2A03::PULSE2:
-		break;
-	case Emu2A03::TRIANGLE:
-		if (0x0B == reg) {
-			mPeriod = (mPeriod & 0xff) | ((uint16_t)(val & 7) << 8);
-			mLinC.mReload = true;
-			if (mChip->mStatus & (1 << Emu2A03::TRIANGLE)) {
-				mLC.mPos = Emu2A03::LENGTH_COUNTERS[val >> 3] >> 1;
-			}
+	switch (reg) {
+	case 0x00:
+	case 0x04:
+	case 0x0C:
+		if (val & 0x10) {
+			mVol = val & 0x0F;
+		}
+		if (reg == 0x0C) {
+			// Noise channel
+		} else {
+			// Pulse channels
+			mDuty = val >> 6;
 		}
 		break;
-	case Emu2A03::NOISE:
+
+	case 0x02:
+	case 0x06:
+		mPeriod = (mPeriod & 0x700) | val;
 		break;
+
+	case 0x03:
+	case 0x07:
+	case 0x0B:
+	case 0x0F:
+		if (0x0F != reg) {
+			mPeriod = (mPeriod & 0xff) | ((uint16_t)(val & 7) << 8);
+		}
+		if (0x0B == reg) {
+			mLinC.mReload = true;
+		}
+		if (mChip->mRegs[0x15] & (1 << mIndex)) {
+			mLC.mPos = Emu2A03::LENGTH_COUNTERS[val >> 3];
+		}
+		break;
+
 	}
 }
 
@@ -184,6 +262,12 @@ void Emu2A03::Step()
 
 void Emu2A03::Write(uint32_t addr, uint8_t data)
 {
+	NLOGD("Emu2A03", "Write(%#x, %#x)", addr, data);
+
+	if (addr >= 0x4000 && addr <= 0x4017) {
+		mRegs[addr - 0x4000] = data;
+	}
+
 	if (addr >= 0x4000 && addr <= 0x4003) {
 		mChannels[Emu2A03::PULSE1].Write(addr, data);
 
