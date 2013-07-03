@@ -30,6 +30,7 @@ public:
 	void Reset();
 	void Run(uint32_t maxCycles);
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+	void Disassemble(uint16_t address);
 
 	enum {
 		FLAG_C = 0x01,
