@@ -129,11 +129,26 @@ public:
 
 	enum
 	{
-		PULSE1 = 0,
-		PULSE2 = 1,
-		TRIANGLE = 2,
-		NOISE = 3,
-		DMC = 4,
+		CHN_PULSE1 = 0,
+		CHN_PULSE2 = 1,
+		CHN_TRIANGLE = 2,
+		CHN_NOISE = 3,
+		CHN_DMC = 4,
+	};
+
+	enum
+	{
+		R_PULSE1_DUTY_ENVE = 0x00,
+		R_PULSE1_SWEEP = 0x01,
+		R_PULSE1_PERLO = 0x02,
+		R_PULSE1_PERHI_LEN = 0x03,
+		R_PULSE2_DUTY_ENVE = 0x04,
+		R_PULSE2_SWEEP = 0x05,
+		R_PULSE2_PERLO = 0x06,
+		R_PULSE2_PERHI_LEN = 0x07,
+		R_NOISE_ENVE = 0x0C,
+		R_NOISE_LEN = 0x0F,
+		R_STATUS = 0x15,
 	};
 
 	void SetClock(uint32_t clockHz, uint32_t fps);

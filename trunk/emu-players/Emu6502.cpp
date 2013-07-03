@@ -24,7 +24,7 @@
 				       mRegs.F |= (val & 0x80)
 
 #define UPDATE_NZC(val, val2) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N | Emu6502::FLAG_C); \
-				       mRegs.F |= ((uint8_t)val == 0) ? Emu6502::FLAG_Z : 0; \
+				       mRegs.F |= ((uint8_t)val == (uint8_t)val2) ? Emu6502::FLAG_Z : 0; \
 				       mRegs.F |= (val & 0x80); \
 				       mRegs.F |= (val >= val2) ? FLAG_C : 0
 
@@ -146,8 +146,7 @@ void Emu6502::Run(uint32_t maxCycles)
     int8_t relAddr;
 
 	while (mCycles < maxCycles) {
-		Disassemble(mRegs.PC);
-		//NLOGD("Emu6502", "A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x", mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
+		//Disassemble(mRegs.PC);
 
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
 		/*NLOGD("Emu6502", "Emu6502::Run: op %#x, PC %#x, A %#x, X %#x, Y %#x, F %#x",
@@ -1262,6 +1261,7 @@ void Emu6502::Disassemble(uint16_t address)
 
 	case 0x24: case 0x2C:
 		opcodeStr = "BIT";
+		break;
 
 	case 0x00:
 		opcodeStr = "BRK";
@@ -1482,6 +1482,20 @@ void Emu6502::Disassemble(uint16_t address)
 		machineCodeStr += temp;
 		break;
 
+	case 0x01: case 0x21: case 0x41: case 0x61:
+	case 0x81: case 0xA1: case 0xC1: case 0xE1:
+		snprintf(operandStr, 16, " ($%02x,X)", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+
+	case 0x11: case 0x31: case 0x51: case 0x71:
+	case 0x91: case 0xB1: case 0xD1: case 0xF1:
+		snprintf(operandStr, 16, " ($%02x),Y", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+
 	case 0x0D: case 0x0E: case 0x2C: case 0x2D:
 	case 0x2E: case 0x4C: case 0x4D: case 0x4E:
 	case 0x6D: case 0x6E: case 0x8C: case 0x8D:
@@ -1514,6 +1528,6 @@ void Emu6502::Disassemble(uint16_t address)
 		break;
 	}
 
-	NLOGD("Emu6502", "%#x: %s | %s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x", address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
+	NLOGD("Emu6502", "%#x: %s %s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x", address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
 }
 

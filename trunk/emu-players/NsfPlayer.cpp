@@ -213,7 +213,8 @@ int NsfPlayer::Prepare(std::string fileName)
 
 	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
 
-	SetSubSong(mFileHeader.firstSong);
+	m6502->mRegs.S = 0xFF;
+	SetSubSong(mFileHeader.firstSong - 1);
 
 	NLOGD("NsfPlayer", "Prepare finished");
 
@@ -269,7 +270,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		m2A03->Step();
 
-		for (i = Emu2A03::PULSE1; i <= Emu2A03::NOISE; i++) {
+		for (i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
 			out = (-m2A03->mChannels[i].mPhase) & Emu2A03::VOL_TB[m2A03->mChannels[i].mVol & 0x0F];
 			out &= m2A03->mChannels[i].mOutputMask;
 
