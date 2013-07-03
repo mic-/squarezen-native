@@ -36,8 +36,11 @@ public:
 	virtual void Reset();
 	virtual void Step();
 
+	void SetChannel(Emu2A03Channel *channel) { mChannel = channel; }
+
 	int GetMask() const;
 
+	Emu2A03Channel *mChannel;
 	uint32_t mMax;
 	bool mUse;
 };
@@ -50,6 +53,9 @@ public:
 	virtual void Reset();
 	virtual void Step();
 
+	void SetChannel(Emu2A03Channel *channel) { mChannel = channel; }
+
+	Emu2A03Channel *mChannel;
 	uint32_t mMax;
 	bool mUse;
 	bool mReload;
@@ -68,6 +74,7 @@ public:
 	Emu2A03Channel *mChannel;
 	uint32_t mMax;
 	int16_t mDirection;
+	uint8_t mOut;
 	bool mUse;
 };
 
@@ -104,9 +111,12 @@ public:
 	Emu2A03SweepUnit mSU;
 	Emu2A03 *mChip;
 	int16_t mOut;
+	uint8_t mWaveStep;
+	uint16_t mOutputMask;
 	uint16_t mIndex;
 	uint16_t mVol, mCurVol;
 	uint8_t mPhase;
+	uint8_t mDuty;
 };
 
 
@@ -133,6 +143,7 @@ public:
 	static const uint8_t LENGTH_COUNTERS[32];
 
 	Emu2A03Channel mChannels[4];
+	uint8_t mRegs[0x18];
 	uint32_t mCycleCount, mFrameCycles;
 	uint8_t mStatus;
 	bool mGenerateFrameIRQ;

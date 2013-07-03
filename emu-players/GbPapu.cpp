@@ -134,7 +134,7 @@ void GbPapuChannel::Reset()
 void GbPapuChannel::Step()
 {
 	mPos++;
-	if (mIndex < 2) {
+	if (mIndex <= GbPapuChip::PULSE2) {
 		// Square wave channels
 		mLC.Step();
 		mEG.Step();
@@ -146,7 +146,7 @@ void GbPapuChannel::Step()
 			mPhase = GbPapuChip::SQUARE_WAVES[mDuty][mWaveStep++];
 		}
 
-	} else if (mIndex == 2) {
+	} else if (mIndex == GbPapuChip::WAVE) {
 		// Waveform channel
 		mPos++;
 		mLC.Step();
@@ -163,7 +163,7 @@ void GbPapuChannel::Step()
 			else if (3 == mVol) mCurVol >>= 2;
 		}
 
-	} else if (mIndex == 3) {
+	} else if (mIndex == GbPapuChip::NOISE) {
 		mLC.Step();
 		mEG.Step();
 		if (mPeriod && mPos >= mPeriod) {
@@ -231,7 +231,7 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 		break;
 
 	case 0xFF14:	// NR14
-	case 0xFF19:	// Nr24
+	case 0xFF19:	// NR24
 	case 0xFF1E:	// NR34
 	case 0xFF23:	// NR44
 		if (0xFF23 != addr) {
@@ -248,7 +248,7 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 			mCurVol = mVol;
 			mLC.Reset();
 			mEG.Reset();
-			if (mIndex == 2) {
+			if (mIndex == GbPapuChip::WAVE) {
 				NLOGD("GbPapu", "Restarting channel %d with period %d, duty %d, volume %d, EG dir %d, EG max %d", mIndex, 2048-mPeriod, mDuty, mVol, mEG.mDirection, mEG.mMax);
 			}				
 			if (0xFF23 == addr) {
@@ -265,7 +265,7 @@ void GbPapuChannel::Write(uint32_t addr, uint8_t val)
 
 void GbPapuChip::Reset()
 {
-	for (int i = 0; i < 4; i++) {
+	for (int i = GbPapuChip::PULSE1; i <= GbPapuChip::NOISE; i++) {
 		mChannels[i].SetChip(this);
 		mChannels[i].SetIndex(i);
 		mChannels[i].Reset();
@@ -300,7 +300,7 @@ void GbPapuChip::Reset()
 
 void GbPapuChip::Step()
 {
-	for (int i = 0; i < 4; i++) {
+	for (int i = GbPapuChip::PULSE1; i <= GbPapuChip::NOISE; i++) {
 		mChannels[i].Step();
 	}
 }
@@ -324,17 +324,17 @@ void GbPapuChip::Write(uint32_t addr, uint8_t val)
 	//NativeLog("GbPapu::Write(%#x, %#x)", addr, val);
 
 	if (addr >= 0xFF10 && addr <= 0xFF14) {
-		mChannels[0].Write(addr, val);
+		mChannels[GbPapuChip::PULSE1].Write(addr, val);
 
 	} else if (addr >= 0xFF16 && addr <= 0xFF19) {
-		mChannels[1].Write(addr, val);
+		mChannels[GbPapuChip::PULSE2].Write(addr, val);
 
 	} else if (addr >= 0xFF1A && addr <= 0xFF1E) {
 		NLOGD("GbPapu", "Writing to waveform channel: %#x, %#x", addr, val);
-		mChannels[2].Write(addr, val);
+		mChannels[GbPapuChip::WAVE].Write(addr, val);
 
 	} else if (addr >= 0xFF20 && addr <= 0xFF23) {
-		mChannels[3].Write(addr, val);
+		mChannels[GbPapuChip::NOISE].Write(addr, val);
 
 	} else if (0xFF25 == addr) {
 		mNR51 = val;

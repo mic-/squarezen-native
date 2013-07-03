@@ -97,6 +97,14 @@ public:
 	int ChannelEnabledLeft(uint8_t index) const;
 	int ChannelEnabledRight(uint8_t index) const;
 
+	enum
+	{
+		PULSE1 = 0,
+		PULSE2 = 1,
+		WAVE = 2,
+		NOISE = 3,
+	};
+
 	static const uint8_t SQUARE_WAVES[4][8];
 	static const uint16_t VOL_TB[];
 

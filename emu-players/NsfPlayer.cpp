@@ -123,7 +123,7 @@ int NsfPlayer::Prepare(std::string fileName)
     mMetaData.SetAuthor((char*)mFileHeader.author);
     mMetaData.SetComment((char*)mFileHeader.copyright);
 
-    NLOGD("NsfPlayer", "Prepare(): title and author is %s, %s", mMetaData.GetTitle().c_str(), mMetaData.GetAuthor().c_str());
+    //NLOGD("NsfPlayer", "Prepare(): title and author is %s, %s", mMetaData.GetTitle().c_str(), mMetaData.GetAuthor().c_str());
 
     bool usesBankswitching = false;
     for (i = 0; i < 8; i++) {
@@ -162,6 +162,10 @@ int NsfPlayer::Prepare(std::string fileName)
 	mMemory->Reset();
 	m6502->Reset();
 
+	NLOGD("NsfPlayer", "Initializing APU registers");
+
+	m2A03->Reset();
+
 	// Initialize the APU registers
 	for (i = 0x4000; i < 0x4010; i++) {
 		m2A03->Write(i, 0);
@@ -171,8 +175,6 @@ int NsfPlayer::Prepare(std::string fileName)
 	m2A03->Write(0x4012, 0x0);
 	m2A03->Write(0x4013, 0x0);
 	m2A03->Write(0x4015, 0x0f);
-
-	m2A03->Reset();
 
 	// Set up ROM mapping
 	for (int i = 0; i < 8; i++) {
@@ -267,8 +269,9 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		m2A03->Step();
 
-		for (i = 0; i < 4; i++) {
+		for (i = Emu2A03::PULSE1; i <= Emu2A03::NOISE; i++) {
 			out = (-m2A03->mChannels[i].mPhase) & Emu2A03::VOL_TB[m2A03->mChannels[i].mVol & 0x0F];
+			out &= m2A03->mChannels[i].mOutputMask;
 
 			if (out != m2A03->mChannels[i].mOut) {
 				mSynth[i].update(k, out);
