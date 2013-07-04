@@ -78,7 +78,7 @@ protected:
     virtual void OnAudioOutReleased(Tizen::Media::AudioOut& src) {}
     virtual void OnAudioOutAudioFocusChanged(Tizen::Media::AudioOut& src) {}
 
-    result PlayFile(Tizen::Base::String *fileName);
+    result PlayFile(Tizen::Base::String &fileName);
 
 private:
     Tizen::Base::Runtime::Mutex mPlayerMutex;

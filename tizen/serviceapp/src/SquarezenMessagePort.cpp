@@ -56,9 +56,7 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		App* app = App::GetInstance();
 		String *arg = static_cast<String *>(message->GetValue(String(L"SqzFilename")));
 		AppLog("SquarezenService: With argument: %S", arg->GetPointer());
-		AppLog("SquarezenMessagePort: RemoveAll");
 		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAll();
-		AppLog("SquarezenMessagePort: Add");
 		mMessageArgList->Add(new String(*arg));
 		AppLog("SquarezenMessagePort: Add");
 		//mMessageArgList->Add(remoteMessagePort);

@@ -18,6 +18,7 @@
 #include "serviceapp.h"
 #include "../../../emu-players/GbsPlayer.h"
 #include "../../../emu-players/NsfPlayer.h"
+#include "../../../emu-players/SidPlayer.h"
 #include "../../../emu-players/VgmPlayer.h"
 #include "../../../emu-players/YmPlayer.h"
 #include <vector>
@@ -150,7 +151,7 @@ void serviceappApp::OnAudioOutBufferEndReached(Tizen::Media::AudioOut& src)
 }
 
 
-result serviceappApp::PlayFile(String *filePath) {
+result serviceappApp::PlayFile(String &filePath) {
 	mPlayerMutex.Acquire();
 
 	if (AUDIOOUT_STATE_PLAYING == mAudioOut.GetState()) {
@@ -165,20 +166,22 @@ result serviceappApp::PlayFile(String *filePath) {
 		delete mPlayer;
 	}
 
-	if (filePath->EndsWith(".VGM") || filePath->EndsWith(".vgm")) {
+	if (filePath.EndsWith(".VGM") || filePath.EndsWith(".vgm")) {
 		mPlayer = new VgmPlayer;
-	} else if (filePath->EndsWith(".YM") || filePath->EndsWith(".ym")) {
+	} else if (filePath.EndsWith(".YM") || filePath.EndsWith(".ym")) {
 		mPlayer = new YmPlayer;
-	} else if (filePath->EndsWith(".NSF") || filePath->EndsWith(".nsf")) {
+	} else if (filePath.EndsWith(".NSF") || filePath.EndsWith(".nsf")) {
 		mPlayer = new NsfPlayer;
-	} else if (filePath->EndsWith(".GBS") || filePath->EndsWith(".gbs")) {
+	} else if (filePath.EndsWith(".SID") || filePath.EndsWith(".sid")) {
+		mPlayer = new SidPlayer;
+	} else if (filePath.EndsWith(".GBS") || filePath.EndsWith(".gbs")) {
 		mPlayer = new GbsPlayer;
 	} else {
-		AppLog("Unrecognized file type: %S", filePath->GetPointer());
+		AppLog("Unrecognized file type: %S", filePath.GetPointer());
 		return E_FAILURE;
 	}
 
-	std::wstring ws = std::wstring(filePath->GetPointer());
+	std::wstring ws = std::wstring(filePath.GetPointer());
 	if (IsFailed(mPlayer->Prepare(ws))) {
     	AppLog("Prepare failed");
     	return E_FAILURE;
@@ -215,7 +218,8 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 	switch (requestId) {
 	case PLAYBACK_REQUEST:
 		if (pArgs && pArgs->GetCount() >= 1) {
-			PlayFile(static_cast<String *>(pArgs->GetAt(0)));
+			String filePath(*(static_cast<String*>(pArgs->GetAt(0))));
+			PlayFile(filePath);
 
 			map = new HashMap(SingleObjectDeleter);
 			map->Construct();
