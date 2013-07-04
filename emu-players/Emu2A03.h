@@ -113,6 +113,7 @@ public:
 	int16_t mOut;
 	uint8_t mWaveStep;
 	uint16_t mOutputMask;
+	uint16_t mLfsr, mLfsrWidth;
 	uint16_t mIndex;
 	uint16_t mVol, mCurVol;
 	uint8_t mPhase;
@@ -146,7 +147,10 @@ public:
 		R_PULSE2_SWEEP = 0x05,
 		R_PULSE2_PERLO = 0x06,
 		R_PULSE2_PERHI_LEN = 0x07,
+		R_TRIANGLE_PERLO = 0x0A,
+		R_TRIANGLE_PERHI_LEN = 0x0B,
 		R_NOISE_ENVE = 0x0C,
+		R_NOISE_MODE_PER = 0x0E,
 		R_NOISE_LEN = 0x0F,
 		R_STATUS = 0x15,
 	};
@@ -154,8 +158,10 @@ public:
 	void SetClock(uint32_t clockHz, uint32_t fps);
 
 	static const uint8_t SQUARE_WAVES[4][8];
+	static const uint8_t TRIANGLE_WAVE[32];
 	static const uint16_t VOL_TB[];
 	static const uint8_t LENGTH_COUNTERS[32];
+	static const uint16_t NOISE_PERIODS[2][16];
 
 	Emu2A03Channel mChannels[4];
 	uint8_t mRegs[0x18];

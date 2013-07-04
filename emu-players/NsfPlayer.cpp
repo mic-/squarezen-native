@@ -214,7 +214,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
 
 	m6502->mRegs.S = 0xFF;
-	SetSubSong(mFileHeader.firstSong - 1);
+	SetSubSong(3); //mFileHeader.firstSong - 1);
 
 	NLOGD("NsfPlayer", "Prepare finished");
 

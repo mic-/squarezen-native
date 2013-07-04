@@ -21,12 +21,17 @@
 
 const uint8_t Emu2A03::SQUARE_WAVES[4][8] =
 {
-	{0,0,0,0, 0,0,0,1},
-	{1,0,0,0, 0,0,0,1},
-	{1,0,0,0, 0,1,1,1},
-	{0,1,1,1, 1,1,1,0}
+	{0,1,0,0,0,0,0,0},
+	{0,1,1,0,0,0,0,0},
+	{0,1,1,1,1,0,0,0},
+	{1,0,0,1,1,1,1,1}
 };
 
+const uint8_t Emu2A03::TRIANGLE_WAVE[32] =
+{
+	15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4,3,2,1,0,
+	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10,11,12,13,14,15
+};
 
 const uint16_t Emu2A03::VOL_TB[] = {
 	0,5,10,15,
@@ -42,6 +47,11 @@ const uint8_t Emu2A03::LENGTH_COUNTERS[32] =
 	12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
 
+const uint16_t Emu2A03::NOISE_PERIODS[2][16] =
+{
+	{4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068},	// NTSC
+	{4, 8, 14, 30, 60, 88, 118, 148, 188, 236, 354, 472, 708,  944, 1890, 3778}		// PAL
+};
 
 void Emu2A03LengthCounter::Reset()
 {
@@ -86,8 +96,10 @@ void Emu2A03LinearCounter::Step()
 
 void Emu2A03EnvelopeGenerator::Reset()
 {
-	mStep = 0;
-	mOut = 0;
+	if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
+		mStep = (mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4] & 0x0F) + 1;
+		mOut = 0x0F;
+	}
 }
 
 void Emu2A03EnvelopeGenerator::Step()
@@ -125,18 +137,18 @@ void Emu2A03SweepUnit::Step()
 
 void Emu2A03Channel::Reset()
 {
-	mLC.Reset();
 	mLC.SetChannel(this);
+	mLC.Reset();
 	mLC.mUse = false;
 	mLC.mMax = 0;
 
-	mEG.Reset();
 	mEG.SetChannel(this);
+	mEG.Reset();
 	mEG.mMax = 0;
 	mEG.mDirection = 0;
 
-	mLinC.Reset();
 	mLinC.SetChannel(this);
+	mLinC.Reset();
 
 	mWaveStep = 0;
 	mPhase = 0;
@@ -145,7 +157,7 @@ void Emu2A03Channel::Reset()
 	mOut = -1;
 	mPos = 0;
 	mVol = mCurVol = 0;
-	//mLfsr = 0x7FFF;
+	mLfsr = 0x0001;
 	//mLfsrWidth = 15;
 }
 
@@ -160,8 +172,29 @@ void Emu2A03Channel::Step()
 				mWaveStep = 0;
 			}
 			mPhase = Emu2A03::SQUARE_WAVES[mDuty][mWaveStep++];
+			if (mPeriod < 8) mPhase = 0;
 		}
 
+	} else if (mIndex == Emu2A03::CHN_TRIANGLE) {
+		if (mPos >= mPeriod*2 + 2) {
+			mPos = 0;
+			if (mWaveStep == 32) {
+				mWaveStep = 0;
+			}
+			mPhase = 1;
+			mVol = Emu2A03::TRIANGLE_WAVE[mWaveStep++];
+		}
+
+	} else if (mIndex == Emu2A03::CHN_NOISE) {
+		if (mPeriod && mPos >= mPeriod) {
+			mPos = 0;
+			mPhase = (mLfsr & 1) ^ 1;
+			if (mChip->mRegs[Emu2A03::R_NOISE_MODE_PER] & 0x80) {
+				mLfsr = (mLfsr >> 1) | (((mLfsr ^ (mLfsr >> 6)) & 1) << 14);
+			} else {
+				mLfsr = (mLfsr >> 1) | (((mLfsr ^ (mLfsr >> 1)) & 1) << 14);
+			}
+		}
 	}
 }
 
@@ -186,18 +219,27 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 
 	case Emu2A03::R_PULSE1_PERLO:
 	case Emu2A03::R_PULSE2_PERLO:
+	case Emu2A03::R_TRIANGLE_PERLO:
 		mPeriod = (mPeriod & 0x700) | val;
+		break;
+
+	case Emu2A03::R_NOISE_MODE_PER:
+		mPeriod = Emu2A03::NOISE_PERIODS[0][val & 0x0F];
 		break;
 
 	case Emu2A03::R_PULSE1_PERHI_LEN:
 	case Emu2A03::R_PULSE2_PERHI_LEN:
-	case 0x0B:
+	case Emu2A03::R_TRIANGLE_PERHI_LEN:
 	case Emu2A03::R_NOISE_LEN:
 		if (Emu2A03::R_NOISE_LEN != reg) {
 			mPeriod = (mPeriod & 0xff) | ((uint16_t)(val & 7) << 8);
 		}
-		if (0x0B == reg) {
+		if (Emu2A03::R_TRIANGLE_PERHI_LEN == reg) {
 			mLinC.mReload = true;
+		} else {
+			mEG.Reset();
+			mPos = 0;
+			//mWaveStep = 0;
 		}
 		if (mChip->mRegs[Emu2A03::R_STATUS] & (1 << mIndex)) {
 			mLC.mStep = Emu2A03::LENGTH_COUNTERS[val >> 3];
