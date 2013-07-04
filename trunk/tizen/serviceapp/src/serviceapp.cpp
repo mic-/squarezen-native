@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#include <FBase.h>
 #include "serviceapp.h"
 #include "../../../emu-players/GbsPlayer.h"
 #include "../../../emu-players/NsfPlayer.h"
 #include "../../../emu-players/VgmPlayer.h"
 #include "../../../emu-players/YmPlayer.h"
+#include <vector>
 
 using namespace Tizen::App;
 using namespace Tizen::Base;
@@ -100,6 +102,8 @@ serviceappApp::OnAppWillTerminate(void)
 bool
 serviceappApp::OnAppTerminating(AppRegistry& appRegistry, bool forcedTermination)
 {
+	mPlayerMutex.Acquire();
+
 	mAudioOut.Stop();
 	mAudioOut.Unprepare();
 	if (mPlayer) {
@@ -107,6 +111,8 @@ serviceappApp::OnAppTerminating(AppRegistry& appRegistry, bool forcedTermination
 		delete mPlayer;
 		mPlayer = NULL;
 	}
+
+	mPlayerMutex.Release();
 
 	return true;
 }
@@ -191,6 +197,8 @@ result serviceappApp::PlayFile(String *filePath) {
 
 	mAudioPlaybackSession++;
 
+	mMessagePort->SetPlayerObject(mPlayer);
+
 	mPlayerMutex.Release();
 
 	return E_SUCCESS;
@@ -202,10 +210,40 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 {
 	AppLog("SquarezenService: OnUserEventReceivedN called. requestId is %d", requestId);
 
+	HashMap *map;
+
 	switch (requestId) {
 	case PLAYBACK_REQUEST:
 		if (pArgs && pArgs->GetCount() >= 1) {
 			PlayFile(static_cast<String *>(pArgs->GetAt(0)));
+
+			map = new HashMap(SingleObjectDeleter);
+			map->Construct();
+			map->Add(new String(L"SquarezenService"), new String(L"play_started"));
+			if (IsFailed(mMessagePort->SendMessage(map))) {
+				AppLog("Squarezen failed to send message");
+			}
+			delete map;
+		}
+		break;
+
+	case SET_SUBSONG_REQUEST:
+		if (pArgs && pArgs->GetCount() >= 1) {
+			mPlayerMutex.Acquire();
+			if (mPlayer && mPlayer->GetNumSubSongs() > 1) {
+				int subSong;
+				Integer::Decode(*(static_cast<String*>(pArgs->GetAt(0))), subSong);
+				mPlayer->SetSubSong(subSong);
+			}
+			mPlayerMutex.Release();
+
+			/*map = new HashMap(SingleObjectDeleter);
+			map->Construct();
+			map->Add(new String(L"SquarezenService"), new String(L"play_started"));
+			if (IsFailed(mMessagePort->SendMessage(map))) {
+				AppLog("Squarezen failed to send message");
+			}
+			delete map;*/
 		}
 		break;
 
@@ -216,7 +254,50 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 		mPlayerMutex.Acquire();
 		mAudioOut.Stop();
 		mPlayerMutex.Release();
+
+		map = new HashMap(SingleObjectDeleter);
+		map->Construct();
+		map->Add(new String(L"SquarezenService"), new String(L"play_stopped"));
+		if (IsFailed(mMessagePort->SendMessage(map))) {
+			AppLog("Squarezen failed to send message");
+		}
+		delete map;
 		break;
+
+	case SONG_METADATA_REQUEST:
+		AppLog("Squarezen got metadata request");
+		map = new HashMap(SingleObjectDeleter);
+		map->Construct();
+		map->Add(new String(L"SquarezenService"), new String(L"song_metadata"));
+		mPlayerMutex.Acquire();
+		if (mPlayer) {
+			map->Add(new String(L"SongTitle"), new String(mPlayer->GetTitle().c_str()));
+			map->Add(new String(L"SongAuthor"), new String(mPlayer->GetAuthor().c_str()));
+			String *numSongs = new String();
+			numSongs->Format(10, L"%d", mPlayer->GetNumSubSongs());
+			String *songLength = new String();
+			songLength->Format(10, L"%d", mPlayer->GetLengthMs());
+			String *defaultSong = new String();
+			defaultSong->Format(10, L"%d", mPlayer->GetDefaultSong());
+			map->Add(new String(L"SubSongs"), numSongs);
+			map->Add(new String(L"SongLength"), songLength);
+			map->Add(new String(L"DefaultSong"), defaultSong);
+		} else {
+			map->Add(new String(L"SongTitle"), new String(L"empty"));
+			map->Add(new String(L"SongAuthor"), new String(L"empty"));
+			map->Add(new String(L"SubSongs"), new String(L"0"));
+			map->Add(new String(L"SongLength"), new String(L"0"));
+			map->Add(new String(L"DefaultSong"), new String(L"0"));
+		}
+		mPlayerMutex.Release();
+		AppLog("Squarezen Sending song_metadata message to serviceproxy");
+		result r;
+		if (IsFailed(r = mMessagePort->SendMessage(map))) {
+			AppLog("Squarezen failed to send message (%s)", GetErrorMessage(r));
+		}
+		delete map;
+		break;
+
 
 	/*case EXIT :
 		Terminate();

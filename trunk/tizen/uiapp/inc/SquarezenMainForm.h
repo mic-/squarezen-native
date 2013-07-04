@@ -58,6 +58,7 @@ public:
 class SquarezenMainForm
 	: public Tizen::Ui::Controls::Form
 	, public Tizen::Ui::IActionEventListener
+    , public Tizen::Ui::IAdjustmentEventListener
 	, public Tizen::Ui::Controls::IFormBackEventListener
  	, public Tizen::Ui::Scenes::ISceneEventListener
     , public Tizen::Ui::Controls::IListViewItemEventListener
@@ -90,12 +91,16 @@ public:
     virtual bool DeleteItem(int index, Tizen::Ui::Controls::ListItemBase* pItem, int itemWidth);
     virtual int GetItemCount(void);
 
+    // IAdjustmentEventListener
+    virtual void OnAdjustmentValueChanged(const Tizen::Ui::Control& source, int adjustment);
+
     Tizen::Ui::Controls::ListContextItem *mItemContext;
     Tizen::Base::Collection::ArrayList *mFileList;
     Tizen::Base::Collection::ArrayList *mMessageArgList;
     Tizen::Base::String mExtStoragePath;
     Tizen::Base::Runtime::Mutex mFileListMutex;
     int mNumFiles;
+    int mSongLengthMs, mNumSubSongs, mCurrSubSong;
 
 protected:
     FileScannerThread mFileScanner;

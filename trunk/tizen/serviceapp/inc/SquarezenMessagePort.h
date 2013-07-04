@@ -24,6 +24,7 @@
 #include <FApp.h>
 #include <FBase.h>
 #include <FIo.h>
+#include "../../../emu-players/MusicPlayer.h"
 
 static const RequestId PLAYBACK_REQUEST = 4;
 static const RequestId PLAYBACK_STARTED = 5;
@@ -32,6 +33,11 @@ static const RequestId PAUSE_UNPAUSE_REQUEST = 7;
 static const RequestId PAUSED_UNPAUSED = 8;
 static const RequestId STOP_REQUEST = 9;
 static const RequestId STOPPED = 10;
+
+static const RequestId SONG_METADATA_REQUEST = 20;
+static const RequestId SET_SUBSONG_REQUEST = 22;
+static const RequestId SUBSONG_SET = 23;
+
 
 class SquarezenMessagePort
 	: public Tizen::Io::IMessagePortListener
@@ -47,10 +53,13 @@ public :
 
 	result SendMessage(const Tizen::Base::Collection::IMap* message);
 
+	void SetPlayerObject(MusicPlayer *player) { mPlayer = player; }
+
 private :
 	Tizen::Io::LocalMessagePort *mLocalMessagePort;
 	Tizen::Io::RemoteMessagePort *mRemoteMessagePort;
 	Tizen::Base::Collection::ArrayList *mMessageArgList;
+	MusicPlayer *mPlayer;
 };
 
 

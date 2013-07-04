@@ -177,6 +177,20 @@ SquarezenApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 		}
 		break;
 
+	case STATE_SET_SUBSONG_REQUEST :
+		if (mServiceReady) {
+			HashMap *map =	new HashMap(SingleObjectDeleter);
+			map->Construct();
+			map->Add(new String(L"Squarezen"), new String(L"set_subsong"));
+			if (pArgs != null) {
+				map->Add(new String(L"SqzSubSong"), (String*)(pArgs->GetAt(0)));
+			}
+			r = mServiceProxy->SendMessage(map);
+			delete map;
+			TryReturnVoid(!IsFailed(r), "SquarezenApp: [%s] MessagePort Operation Failed", GetErrorMessage(r));
+		}
+		break;
+
 	case STATE_STOP_REQUEST :
 		if (mServiceReady) {
 			HashMap *map =	new HashMap(SingleObjectDeleter);
@@ -191,6 +205,23 @@ SquarezenApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 	case STATE_STOPPED:
 		if (mServiceReady) {
 			mForm->SendUserEvent(STATE_STOPPED, null);
+		}
+		break;
+
+	case STATE_SONG_METADATA_REQUEST :
+		if (mServiceReady) {
+			HashMap *map =	new HashMap(SingleObjectDeleter);
+			map->Construct();
+			map->Add(new String(L"Squarezen"), new String(L"get_song_metadata"));
+			r = mServiceProxy->SendMessage(map);
+			delete map;
+			TryReturnVoid(!IsFailed(r), "SquarezenApp: [%s] MessagePort Operation Failed", GetErrorMessage(r));
+		}
+		break;
+
+	case STATE_SONG_METADATA_RECEIVED :
+		if (mServiceReady) {
+			mForm->SendUserEvent(STATE_SONG_METADATA_RECEIVED, pArgs);
 		}
 		break;
 

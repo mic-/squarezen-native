@@ -37,6 +37,12 @@ static const RequestId STATE_STOPPED = 10;
 static const RequestId STATE_EXIT = 11;
 static const RequestId STATE_FAIL = 12;
 
+static const RequestId STATE_SONG_METADATA_REQUEST = 20;
+static const RequestId STATE_SONG_METADATA_RECEIVED = 21;
+static const RequestId STATE_SET_SUBSONG_REQUEST = 22;
+static const RequestId STATE_SUBSONG_SET = 23;
+
+
 class SquarezenServiceProxy
 	: public Tizen::Io::IMessagePortListener
 {
@@ -55,6 +61,7 @@ private:
 	Tizen::Io::LocalMessagePort* mLocalMessagePort;
 	Tizen::Io::RemoteMessagePort* mRemoteMessagePort;
 	Tizen::App::AppId mAppId;
+	Tizen::Base::Collection::ArrayList *mMessageArgList;
 };
 
 #endif /* SQUAREZENSERVICEPROXY_H_ */

@@ -7,7 +7,9 @@ using namespace Tizen::Io;
 
 
 SquarezenMessagePort::SquarezenMessagePort(void)
-	: mLocalMessagePort(null), mRemoteMessagePort(null)
+	: mLocalMessagePort(null)
+	, mRemoteMessagePort(null)
+	, mPlayer(null)
 {
 }
 
@@ -39,6 +41,10 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 
 	AppLog("SquarezenService: Received data: %S", data->GetPointer());
 
+	if (mRemoteMessagePort == null && remoteMessagePort != null) {
+		mRemoteMessagePort = remoteMessagePort;
+	}
+
 	HashMap *map =	new HashMap(SingleObjectDeleter);
 	map->Construct();
 
@@ -50,16 +56,52 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		App* app = App::GetInstance();
 		String *arg = static_cast<String *>(message->GetValue(String(L"SqzFilename")));
 		AppLog("SquarezenService: With argument: %S", arg->GetPointer());
-		mMessageArgList->RemoveAll();
+		AppLog("SquarezenMessagePort: RemoveAll");
+		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAll();
+		AppLog("SquarezenMessagePort: Add");
 		mMessageArgList->Add(new String(*arg));
+		AppLog("SquarezenMessagePort: Add");
+		//mMessageArgList->Add(remoteMessagePort);
+		//AppLog("SquarezenMessagePort: SendUserEvent");
 
 		app->SendUserEvent(PLAYBACK_REQUEST, mMessageArgList);
-		map->Add(new String(L"SquarezenService"), new String(L"play_started"));
+		delete map;
+		delete message;
+		// The reply will be sent from serviceappApp::OnUserEventReceivedN
+		return;
+
+	} else if (data->CompareTo(L"set_subsong") == 0) {
+		App* app = App::GetInstance();
+		String *arg = static_cast<String *>(message->GetValue(String(L"SqzSubSong")));
+		AppLog("SquarezenService: With argument: %S", arg->GetPointer());
+		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAll();
+		AppLog("SquarezenService: Add");
+		mMessageArgList->Add(new String(*arg));
+		//mMessageArgList->Add(remoteMessagePort);
+		AppLog("SquarezenService: SendUserEvent");
+		app->SendUserEvent(SET_SUBSONG_REQUEST, mMessageArgList);
+		delete map;
+		delete message;
+		AppLog("SquarezenService: UserEvent sent");
+		// The reply will be sent from serviceappApp::OnUserEventReceivedN
+		return;
+
+
+	} else if (data->CompareTo(L"get_song_metadata") == 0) {
+		App* app = App::GetInstance();
+		app->SendUserEvent(SONG_METADATA_REQUEST, null);
+		delete map;
+		delete message;
+		// The reply will be sent from serviceappApp::OnUserEventReceivedN
+		return;
 
 	} else if (data->CompareTo(L"stop") == 0) {
 		App* app = App::GetInstance();
 		app->SendUserEvent(STOP_REQUEST, null);
-		map->Add(new String(L"SquarezenService"), new String(L"play_stopped"));
+		delete map;
+		delete message;
+		// The reply will be sent from serviceappApp::OnUserEventReceivedN
+		return;
 
 	} else if (data->CompareTo(L"exit") == 0) {
 		App* app = App::GetInstance();
@@ -70,20 +112,23 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		map->Add(new String(L"SquarezenService"), new String(L"unsupported"));
 	}
 
-	remoteMessagePort->SendMessage(mLocalMessagePort, map);
+	if (remoteMessagePort != null) {
+		remoteMessagePort->SendMessage(mLocalMessagePort, map);
+	}
 
 	delete map;
-
 	delete message;
 }
+
 
 result SquarezenMessagePort::SendMessage(const IMap* message)
 {
 	result r = E_SUCCESS;
 
-	if (mRemoteMessagePort != null) {
+	if (mRemoteMessagePort != null) { // && mLocalMessagePort != null && message != null) {
 		r = mRemoteMessagePort->SendMessage(mLocalMessagePort, message);
 	} else {
+		AppLog("Squarezen no remote message port set");
 		r = E_FAILURE;
 	}
 
