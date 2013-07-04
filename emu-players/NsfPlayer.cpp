@@ -49,11 +49,15 @@ int NsfPlayer::Reset()
 
 	delete mBlipBuf;
 	mBlipBuf = NULL;
+	NLOGV("NsfPlayer", "Deleting synths");
 	delete [] mSynth;
 	mSynth = NULL;
 
+	NLOGV("NsfPlayer", "Deleting CPU");
 	delete m6502;
+	NLOGV("NsfPlayer", "Deleting APU");
 	delete m2A03;
+	NLOGV("NsfPlayer", "Deleting mapper");
 	delete mMemory;
 	m6502 = NULL;
 	m2A03 = NULL;
@@ -66,7 +70,7 @@ int NsfPlayer::Reset()
 
 void NsfPlayer::Execute6502(uint16_t address)
 {
-	NLOGD("NsfPlayer", "Execute6502(%#x)", address);
+	//NLOGD("NsfPlayer", "Execute6502(%#x)", address);
 
 	// JSR loadAddress
 	mMemory->WriteByte(0x4f80, 0x20);
@@ -136,15 +140,16 @@ int NsfPlayer::Prepare(std::string fileName)
 	m6502 = new Emu6502;
 	m2A03 = new Emu2A03;
 
-    numBanks = ((fileSize - sizeof(NsfFileHeader)) + 0xfff) >> 12;
-    NLOGD("NsfPlayer", "Trying to allocate %d bytes (file size = %d)", (uint32_t)numBanks << 12, fileSize);
-	mMemory = new NsfMapper(numBanks);
-	mMemory->SetApu(m2A03);
-
 	uint32_t offset = mFileHeader.loadAddress & 0x0fff;
 	if (!usesBankswitching) {
 		offset = mFileHeader.loadAddress - 0x8000;
 	}
+
+    numBanks = ((fileSize + offset - sizeof(NsfFileHeader)) + 0xfff) >> 12;
+    NLOGD("NsfPlayer", "Trying to allocate %d bytes (file size = %d)", (uint32_t)numBanks << 12, fileSize);
+	mMemory = new NsfMapper(numBanks);
+	mMemory->SetApu(m2A03);
+
     NLOGD("NsfPlayer", "Loading to offset %#x", offset);
 	musicFile.read((char*)(mMemory->GetRomPointer()) + offset,
 			       fileSize - sizeof(NsfFileHeader));
@@ -212,9 +217,10 @@ int NsfPlayer::Prepare(std::string fileName)
 	}
 
 	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
+	mMetaData.SetDefaultSong(mFileHeader.firstSong);
 
 	m6502->mRegs.S = 0xFF;
-	SetSubSong(3); //mFileHeader.firstSong - 1);
+	SetSubSong(mFileHeader.firstSong - 1);
 
 	NLOGD("NsfPlayer", "Prepare finished");
 

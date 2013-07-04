@@ -34,7 +34,8 @@ public:
 		mAuthor("Unknown"),
 		mComment("Unknown"),
 		mLengthMs(MetaData::SONG_LENGTH_INFINITE),
-		mSubSongs(1) {}
+		mSubSongs(1),
+		mDefaultSong(1) {}
 
 	enum
 	{
@@ -45,18 +46,22 @@ public:
 	const std::string& GetAuthor() const { return mAuthor; }
 	const std::string& GetComment() const { return mComment; }
 	uint32_t GetNumSubSongs() const { return mSubSongs; }
+	uint32_t GetDefaultSong() const { return mDefaultSong; }
+
 	int GetLengthMs() const { return mLengthMs; }
 
 	void SetTitle(char *str) { mTitle = str; }
 	void SetAuthor(char *str) { mAuthor = str; }
 	void SetComment(char *str) { mComment = str; }
 	void SetNumSubSongs(uint32_t subSongs) { mSubSongs = subSongs; }
+	void SetDefaultSong(uint32_t defaultSong) { mDefaultSong = defaultSong; }
 	void SetLengthMs(int lengthMs) { mLengthMs = lengthMs; }
 
 private:
 	std::string mTitle, mAuthor, mComment;
 	int mLengthMs;
 	uint32_t mSubSongs;
+	uint32_t mDefaultSong;
 };
 
 
@@ -96,6 +101,8 @@ public:
 	 * Get the number of subsongs in the prepared file
 	 */
 	uint32_t GetNumSubSongs() const { return mMetaData.GetNumSubSongs(); }
+
+	uint32_t GetDefaultSong() const { return mMetaData.GetDefaultSong(); }
 
 	/*
 	 * Get the length of the current (sub)song in milliseconds

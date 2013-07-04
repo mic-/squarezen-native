@@ -164,6 +164,7 @@ int GbsPlayer::Prepare(std::string fileName)
 	NLOGD("GbsPlayer", "Reset done");
 
 	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
+	mMetaData.SetDefaultSong(mFileHeader.firstSong);
 
 	SetSubSong(mFileHeader.firstSong);
 

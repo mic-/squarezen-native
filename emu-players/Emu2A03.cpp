@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_VERBOSE 0
+//#define NLOG_LEVEL_VERBOSE 0
 
 #include "NativeLogger.h"
 #include "Emu2A03.h"
@@ -176,7 +176,7 @@ void Emu2A03Channel::Step()
 		}
 
 	} else if (mIndex == Emu2A03::CHN_TRIANGLE) {
-		if (mPos >= mPeriod*2 + 2) {
+		if (mPos >= mPeriod + 1) {
 			mPos = 0;
 			if (mWaveStep == 32) {
 				mWaveStep = 0;
