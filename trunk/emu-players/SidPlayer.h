@@ -24,6 +24,8 @@
 #include <string>
 #include <stdint.h>
 #include "Emu6502.h"
+#include "Mos6581.h"
+#include "SidMapper.h"
 #include "MusicPlayer.h"
 
 
@@ -60,6 +62,9 @@ class SidPlayer : MusicPlayer
 
 private:
 	Emu6502 *m6502;
+	Mos6581 *mSid;
+	SidMapper *mMemory;
+
 	PsidFileHeader mFileHeader;
 };
 
