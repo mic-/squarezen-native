@@ -18,6 +18,7 @@
 #include "SquarezenServiceProxy.h"
 #include "AppResourceId.h"
 #include <FIo.h>
+#include <FText.h>
 
 using namespace Tizen::Base;
 using namespace Tizen::Base::Collection;
@@ -26,13 +27,14 @@ using namespace Tizen::Io;
 using namespace Tizen::Ui;
 using namespace Tizen::Ui::Controls;
 using namespace Tizen::Ui::Scenes;
-
+using namespace Tizen::Text;
 
 SquarezenMainForm::SquarezenMainForm(void) :
 		mItemContext(NULL),
 		mFileList(NULL),
 		mMessageArgList(NULL),
-		mNumFiles(0)
+		mNumFiles(0),
+		mNumSubSongs(0)
 {
 }
 
@@ -55,6 +57,7 @@ Object *FileScannerThread::Run()
 {
 	return null;
  }
+
 
 
 result
@@ -116,6 +119,11 @@ SquarezenMainForm::OnInitializing(void)
     listView->SetItemProvider(*this);
     listView->AddListViewItemEventListener(*this);
 
+    Tizen::Ui::Controls::Slider *pSlider = static_cast<Slider*>(GetControl(IDC_SLIDER1));
+    pSlider->SetRange(0, 1);
+    pSlider->SetValue(0);
+    pSlider->AddAdjustmentEventListener(*this);
+
     mItemContext = new ListContextItem();
 	mItemContext->Construct();
 
@@ -159,11 +167,9 @@ SquarezenMainForm::OnListViewItemStateChanged(ListView &listView, int index, int
 		UiApp* app = UiApp::GetInstance();
 		AppAssert(app);
 		AppLog("RemoveAll");
-		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAt(0);
+		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAll();
 		String *path = new String(String(mExtStoragePath) + *(String*)(mFileList->GetAt(index)));
-		AppLog("Add");
 		mMessageArgList->Add(path);
-		AppLog("SendUserEvent");
 		app->SendUserEvent(STATE_PLAYBACK_REQUEST, mMessageArgList);
 
 		AppLog("Clicked %S", ((String*)mFileList->GetAt(index))->GetPointer());
@@ -264,12 +270,45 @@ SquarezenMainForm::OnUserEventReceivedN(RequestId requestId, IList* args)
 		break;
 
 	case STATE_PLAYBACK_STARTED :
+		app = UiApp::GetInstance();
+		AppAssert(app);
+		app->SendUserEvent(STATE_SONG_METADATA_REQUEST, null);
 		break;
 
 	case STATE_STOPPED:
 		app = UiApp::GetInstance();
 		AppAssert(app);
 		app->Terminate();
+		break;
+
+	case STATE_SONG_METADATA_RECEIVED:
+		app = UiApp::GetInstance();
+		AppAssert(app);
+		AppLog("Squarezen mainform got metadata with %d args", args->GetCount());
+		if (args->GetCount() >= 5) {
+			Tizen::Ui::Controls::Label *pArtistLabel = static_cast<Label*>(GetControl(IDC_ARTIST_LABEL));
+			Tizen::Ui::Controls::Label *pTitleLabel = static_cast<Label*>(GetControl(IDC_TITLE_LABEL));
+			AppLog("Title is %S", ((String*)(args->GetAt(0)))->GetPointer());
+
+			pTitleLabel->SetText(*(String*)(args->GetAt(0)));
+			pArtistLabel->SetText(*(String*)(args->GetAt(1)));
+
+			Integer::Decode(*(static_cast<String*>(args->GetAt(2))), mSongLengthMs);
+			Integer::Decode(*(static_cast<String*>(args->GetAt(3))), mNumSubSongs);
+			Integer::Decode(*(static_cast<String*>(args->GetAt(4))), mCurrSubSong);
+
+			Tizen::Ui::Controls::Slider *pSlider = static_cast<Slider*>(GetControl(IDC_SLIDER1));
+			if (mNumSubSongs > 1) {
+				pSlider->SetRange(1, mNumSubSongs);
+				pSlider->SetValue(mCurrSubSong);
+			} else if (mSongLengthMs > 1000) {
+				pSlider->SetRange(1, mSongLengthMs/1000);
+				pSlider->SetValue(0);
+			}
+
+			AppLog("Length and #songs is %d, %d", mSongLengthMs, mNumSubSongs);
+			Invalidate(true);
+		}
 		break;
 
 	default:
@@ -301,5 +340,23 @@ SquarezenMainForm::OnSceneDeactivated(const Tizen::Ui::Scenes::SceneId& currentS
 	// TODO:
 	// Add your scene deactivate code here
 	AppLog("OnSceneDeactivated");
+}
+
+
+void
+SquarezenMainForm::OnAdjustmentValueChanged(const Control& source, int adjustment)
+{
+	AppLog("New slider value: %d", adjustment);
+
+	if (mNumSubSongs > 1) {
+		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAll();
+		String *subSong = new String();
+		subSong->Format(8, L"%d", adjustment - 1);
+		mMessageArgList->Add(subSong);
+		UiApp* app = UiApp::GetInstance();
+		AppAssert(app);
+		app->SendUserEvent(STATE_SET_SUBSONG_REQUEST, mMessageArgList);
+		mCurrSubSong = adjustment;
+	}
 }
 

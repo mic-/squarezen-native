@@ -68,6 +68,8 @@ result SquarezenServiceProxy::Construct(const AppId& appId, const String& remote
 	mRemoteMessagePort = MessagePortManager::RequestRemoteMessagePort(appId, remotePortName);
 	TryReturn(mRemoteMessagePort != null, E_FAILURE, "[E_FAILURE] Failed to get LocalMessagePort instance.");
 
+	mMessageArgList = new ArrayList(NoOpDeleter);
+	mMessageArgList->Construct();
 
 	AppLog("LocalMessagePort(\"%ls\") is ready", mLocalMessagePort->GetName().GetPointer());
 
@@ -111,6 +113,18 @@ void SquarezenServiceProxy::OnMessageReceivedN(RemoteMessagePort* remoteMessageP
 
 		} else if (data->CompareTo(L"play_stopped") == 0) {
 			app->SendUserEvent(STATE_STOPPED, null);
+
+		} else if (data->CompareTo(L"song_metadata") == 0) {
+			AppLog("Squarezen serviceproxy got metadata");
+			if (mMessageArgList->GetCount()) {
+				mMessageArgList->RemoveAll();
+			}
+			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SongTitle"))))  );
+			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SongAuthor")))) );
+			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SongLength")))) );
+			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SubSongs"))))   );
+			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"DefaultSong"))))   );
+			app->SendUserEvent(STATE_SONG_METADATA_RECEIVED, mMessageArgList);
 
 		} else if (data->CompareTo(L"exit") == 0) {
 			app->SendUserEvent(STATE_EXIT, null);
