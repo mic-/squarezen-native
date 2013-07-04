@@ -22,25 +22,31 @@
 #include "SidMapper.h"
 
 
-SidMapper::SidMapper(uint32_t numRomBanks)
+SidMapper::SidMapper()
 {
 	// TODO: implement
+	mRam = new uint8_t[64 * 1024];
 }
 
 SidMapper::~SidMapper()
 {
 	// TODO: implement
+	delete [] mRam;
+	mRam = NULL;
 }
 
 uint8_t SidMapper::ReadByte(uint16_t addr)
 {
-	// TODO: implement
-	return 0;
+	// TODO: handle special addresses?
+	return mRam[addr];
 }
 
 void SidMapper::WriteByte(uint16_t addr, uint8_t data)
 {
-	// TODO: implement
+	mRam[addr] = data;
+	if (addr >= Mos6581::REGISTER_BASE && addr <= Mos6581::REGISTER_BASE + Mos6581::R_FILTER_MODEVOL) {
+		mSid->Write(addr, data);
+	}
 }
 
 

@@ -22,6 +22,8 @@
 #include "NativeLogger.h"
 #include "SidPlayer.h"
 
+#define BYTESWAP(w) w = (w>>8) | (w << 8)
+
 SidPlayer::SidPlayer()
 	: m6502(NULL)
 	, mSid(NULL)
@@ -91,6 +93,14 @@ int SidPlayer::Prepare(std::string fileName)
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
+	BYTESWAP(mFileHeader.version);
+	BYTESWAP(mFileHeader.dataOffset);
+	BYTESWAP(mFileHeader.loadAddress);
+	BYTESWAP(mFileHeader.initAddress);
+	BYTESWAP(mFileHeader.playAddress);
+	BYTESWAP(mFileHeader.numSongs);
+	BYTESWAP(mFileHeader.firstSong);
+
 	if (mFileHeader.version == 2) {
 	    NLOGD("SidPlayer", "Reading PSID v2 header fields");
 	    musicFile.read(((char*)&mFileHeader) + 0x76, sizeof(mFileHeader) - 0x76);
@@ -101,12 +111,108 @@ int SidPlayer::Prepare(std::string fileName)
 		}
 	}
 
+	i = musicFile.tellg();
+	NLOGD("SidPlayer", "Data offset: %d, current position: %d", mFileHeader.dataOffset, i);
+
+	if (mFileHeader.loadAddress == 0) {
+		// First two bytes of data contain the load address
+		musicFile.read((char*)&mFileHeader.loadAddress, 2);
+		NLOGD("SidPlayer", "LOAD: %#x (0)", mFileHeader.loadAddress);
+		fileSize -= 2;
+	} else {
+		NLOGD("SidPlayer", "LOAD: %#x", mFileHeader.loadAddress);
+	}
+	NLOGD("SidPlayer", "INIT: %#x", mFileHeader.initAddress);
+	NLOGD("SidPlayer", "PLAY: %#x", mFileHeader.playAddress);
+
+    mMetaData.SetTitle((char*)mFileHeader.title);
+    mMetaData.SetAuthor((char*)mFileHeader.author);
+    mMetaData.SetComment((char*)mFileHeader.copyright);
+
+	mMemory = new SidMapper();
+
+	musicFile.read((char*)mMemory->GetRamPointer() + mFileHeader.loadAddress, fileSize - mFileHeader.dataOffset);
+	if (!musicFile) {
+		NLOGE("SidPlayer", "Read failed");
+		delete mMemory;
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+	NLOGD("SidPlayer", "File read done");
 	musicFile.close();
 
-	// TODO: finish
+    if (!mFileHeader.initAddress) mFileHeader.initAddress = mFileHeader.loadAddress;
+    if (!mFileHeader.playAddress) {
+    	NLOGE("SidPlayer", "PlayAddress==0 is not supported");
+		delete mMemory;
+    	return MusicPlayer::ERROR_UNKNOWN;
+    }
+
+	mBlipBuf = new Blip_Buffer();
+	mSynth = new Blip_Synth<blip_low_quality,82>[3];
+	if (mBlipBuf->set_sample_rate(44100)) {
+		NLOGE("SidPlayer", "Failed to set blipbuffer sample rate");
+		delete mMemory;
+		return MusicPlayer::ERROR_UNKNOWN;
+	}
+	mBlipBuf->clock_rate(1000000);
+	for (i = 0; i < 3; i++) {
+		mSynth[i].volume(0.30);
+		mSynth[i].output(mBlipBuf);
+	}
+
+	mFrameCycles = 1000000 / 50;
+	mCycleCount = 0;
+
+	m6502 = new Emu6502;
+	mSid = new Mos6581;
+	mMemory->SetSid(mSid);
+	m6502->SetMapper(mMemory);
+
+	mMemory->Reset();
+	m6502->Reset();
+	mSid->Reset();
+
+	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
+	mMetaData.SetDefaultSong(mFileHeader.firstSong);
+
+	m6502->mRegs.S = 0xFF;
+	SetSubSong(mFileHeader.firstSong);
+
+	NLOGD("SidPlayer", "Prepare finished");
+
+	Execute6502(mFileHeader.playAddress);
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
+}
+
+
+void SidPlayer::SetSubSong(uint32_t subSong)
+{
+	NLOGD("NsfPlayer", "SetSubSong(%d)", subSong);
+
+	m6502->mRegs.A = subSong;
+	Execute6502(mFileHeader.initAddress);
+}
+
+
+void SidPlayer::Execute6502(uint16_t address)
+{
+	NLOGD("NsfPlayer", "Execute6502(%#x)", address);
+
+	// JSR loadAddress
+	mMemory->WriteByte(0xbf80, 0x20);
+	mMemory->WriteByte(0xbf81, address & 0xff);
+	mMemory->WriteByte(0xbf82, address >> 8);
+	// -: JMP -
+	mMemory->WriteByte(0xbf83, 0x4c);
+	mMemory->WriteByte(0xbf84, 0x83);
+	mMemory->WriteByte(0xbf85, 0xbf);
+	m6502->mRegs.PC = 0xbf80;
+	m6502->mCycles = 0;
+	m6502->Run(mFrameCycles);
 }
 
 
