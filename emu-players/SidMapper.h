@@ -28,12 +28,19 @@
 class SidMapper : public MemoryMapper
 {
 public:
-	SidMapper(uint32_t numRomBanks);
+	SidMapper();
 	virtual ~SidMapper();
+
+	uint8_t *GetRamPointer() const { return mRam; }
+	void SetSid(Mos6581 *sid) { mSid = sid; }
 
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint16_t addr);
 	virtual void WriteByte(uint16_t addr, uint8_t data);
+
+private:
+	uint8_t *mRam;
+	Mos6581 *mSid;
 };
 
 

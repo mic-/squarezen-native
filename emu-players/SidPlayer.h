@@ -29,8 +29,9 @@
 #include "MusicPlayer.h"
 
 
-class SidPlayer : MusicPlayer
+class SidPlayer : public MusicPlayer
 {
+public:
 	SidPlayer();
 	virtual ~SidPlayer();
 
@@ -60,11 +61,15 @@ class SidPlayer : MusicPlayer
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
+	virtual void SetSubSong(uint32_t subSong);
+
 private:
+	void Execute6502(uint16_t address);
+
 	Emu6502 *m6502;
 	Mos6581 *mSid;
 	SidMapper *mMemory;
-
+	uint32_t mFrameCycles, mCycleCount;
 	PsidFileHeader mFileHeader;
 };
 

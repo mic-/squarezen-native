@@ -21,6 +21,7 @@
 
 void Mos6581::Reset()
 {
+	NLOGD("Mos6581", "Reset");
 	// TODO: implement
 }
 
