@@ -83,11 +83,11 @@ void Emu2A03LinearCounter::Reset()
 void Emu2A03LinearCounter::Step()
 {
 	if (mReload) {
-		mStep = mChannel->mChip->mRegs[0x08] & 0x7F;
+		mStep = mChannel->mChip->mRegs[Emu2A03::R_TRIANGLE_LIN] & 0x7F;
 	} else if (mStep) {
 		mStep--;
 	}
-	if (!(mChannel->mChip->mRegs[0x08] & 0x80)) {
+	if (!(mChannel->mChip->mRegs[Emu2A03::R_TRIANGLE_LIN] & 0x80)) {
 		mReload = false;
 	}
 	mChannel->mOutputMask = (mStep && mChannel->mLC.mStep) ? 0xFFFF : 0;
@@ -105,13 +105,13 @@ void Emu2A03EnvelopeGenerator::Reset()
 void Emu2A03EnvelopeGenerator::Step()
 {
 	if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
-		uint8_t reg = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
-		if (!(reg & 0x10)) {
+		uint8_t enve = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
+		if (!(enve & 0x10)) {
 			mStep--;
 			if (!mStep) {
-				mStep = (reg = 0x0F) + 1;
+				mStep = (enve = 0x0F) + 1;
 				if (!mOut) {
-					if (reg & 0x20) {
+					if (enve & 0x20) {
 						// Looping envelope
 						mOut = 0x0F;
 					}

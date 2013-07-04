@@ -24,7 +24,8 @@
 
 SidPlayer::SidPlayer()
 	: m6502(NULL)
-{
+	, mSid(NULL)
+	, mMemory(NULL){
 	// TODO: fill out
 }
 
@@ -32,7 +33,11 @@ SidPlayer::SidPlayer()
 SidPlayer::~SidPlayer()
 {
 	delete m6502;
+	delete mSid;
+	delete mMemory;
 	m6502 = NULL;
+	mSid = NULL;
+	mMemory = NULL;
 }
 
 
@@ -46,7 +51,11 @@ int SidPlayer::Reset()
 	mSynth = NULL;
 
 	delete m6502;
+	delete mSid;
+	delete mMemory;
 	m6502 = NULL;
+	mSid = NULL;
+	mMemory = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
@@ -80,6 +89,16 @@ int SidPlayer::Prepare(std::string fileName)
 		NLOGE("SidPlayer", "Reading PSID v1 header failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+	if (mFileHeader.version == 2) {
+	    NLOGD("SidPlayer", "Reading PSID v2 header fields");
+	    musicFile.read(((char*)&mFileHeader) + 0x76, sizeof(mFileHeader) - 0x76);
+		if (!musicFile) {
+			NLOGE("SidPlayer", "Reading PSID v2 header fields failed");
+	        musicFile.close();
+			return MusicPlayer::ERROR_FILE_IO;
+		}
 	}
 
 	musicFile.close();
