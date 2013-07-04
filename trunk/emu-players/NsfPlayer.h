@@ -40,13 +40,13 @@ public:
 		char ID[5];
 		uint8_t version;
 		uint8_t numSongs;
-		uint8_t firstSong;
+		uint8_t firstSong;		// 1-based
 		uint16_t loadAddress;
 		uint16_t initAddress;
 		uint16_t playAddress;
-		char title[32];
-		char author[32];
-		char copyright[32];
+		char title[32];			// ASCIIZ
+		char author[32];		// ...
+		char copyright[32];		// ...
 		uint16_t ntscSpeedUs;
 		uint8_t initialBanks[8];
 		uint16_t palSpeedUs;

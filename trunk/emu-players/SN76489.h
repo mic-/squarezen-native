@@ -80,6 +80,14 @@ public:
 		CMD_LATCH_MASK = 0x80,
 	};
 
+	enum
+	{
+		CHN_TONE0 = 0,
+		CHN_TONE1 = 1,
+		CHN_TONE2 = 2,
+		CHN_NOISE = 3,
+	};
+
 	uint8_t mLatchedByte;
 	SnChannel mChannels[4];
 };

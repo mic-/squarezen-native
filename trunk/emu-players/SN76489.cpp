@@ -37,7 +37,7 @@ void SnChannel::Reset()
 void SnChannel::Step()
 {
 	mPos++;
-	if (mIndex < 3) {
+	if (mIndex != SnChip::CHN_NOISE) {
 		// Tone
 		if (mPos >= mPeriod*16) {
 			mPos = 0;
@@ -98,7 +98,7 @@ void SnChannel::Write(uint32_t addr, uint8_t val)
 
 void SnChip::Reset()
 {
-	for (int i = 0; i < 4; i++) {
+	for (int i = SnChip::CHN_TONE0; i <= SnChip::CHN_NOISE; i++) {
 		mChannels[i].SetChip(this);
 		mChannels[i].SetIndex(i);
 		mChannels[i].Reset();
@@ -108,7 +108,7 @@ void SnChip::Reset()
 
 void SnChip::Step()
 {
-	for (int i = 0; i < 4; i++) {
+	for (int i = SnChip::CHN_TONE0; i <= SnChip::CHN_NOISE; i++) {
 		mChannels[i].Step();
 	}
 }
