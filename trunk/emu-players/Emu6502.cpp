@@ -16,6 +16,8 @@
 
 #define NLOG_LEVEL_VERBOSE 0
 
+#include <string>
+#include <stdio.h>
 #include "NativeLogger.h"
 #include "Emu6502.h"
 
