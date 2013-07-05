@@ -20,13 +20,17 @@
 #include <stddef.h>
 #include "NativeLogger.h"
 #include "SidMapper.h"
+#include "SidPlayer.h"
 
 
 SidMapper::SidMapper()
+	: mSid(NULL)
+	, mSidPlayer(NULL)
 {
 	// TODO: implement
 	mRam = new uint8_t[64 * 1024];
 }
+
 
 SidMapper::~SidMapper()
 {
@@ -35,17 +39,24 @@ SidMapper::~SidMapper()
 	mRam = NULL;
 }
 
+
 uint8_t SidMapper::ReadByte(uint16_t addr)
 {
 	// TODO: handle special addresses?
 	return mRam[addr];
 }
 
+
 void SidMapper::WriteByte(uint16_t addr, uint8_t data)
 {
+	// TODO: handle ROM areas?
+
 	mRam[addr] = data;
 	if (addr >= Mos6581::REGISTER_BASE && addr <= Mos6581::REGISTER_BASE + Mos6581::R_FILTER_MODEVOL) {
 		mSid->Write(addr, data);
+		if (addr == Mos6581::REGISTER_BASE + Mos6581::R_FILTER_MODEVOL) {
+			mSidPlayer->SetMasterVolume(data & 0x0F);
+		}
 	}
 }
 

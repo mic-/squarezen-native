@@ -97,8 +97,12 @@ void Emu2A03LinearCounter::Step()
 void Emu2A03EnvelopeGenerator::Reset()
 {
 	if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
-		mStep = (mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4] & 0x0F) + 1;
+		uint8_t enve = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
+		mStep = (enve & 0x0F) + 1;
 		mOut = 0x0F;
+		if (!(enve & 0x10)) {
+			mChannel->mVol = 0x0F;
+		}
 	}
 }
 

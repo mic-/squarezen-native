@@ -158,9 +158,10 @@ int SidPlayer::Prepare(std::string fileName)
 	}
 	mBlipBuf->clock_rate(1000000);
 	for (i = 0; i < 3; i++) {
-		mSynth[i].volume(0.30);
+		//mSynth[i].volume(0.30);
 		mSynth[i].output(mBlipBuf);
 	}
+	SetMasterVolume(0);
 
 	mFrameCycles = 1000000 / 50;
 	mCycleCount = 0;
@@ -186,6 +187,14 @@ int SidPlayer::Prepare(std::string fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
+}
+
+
+void SidPlayer::SetMasterVolume(int masterVol)
+{
+	for (int i = 0; i < 3; i++) {
+		mSynth[i].volume(0.02 * (float)masterVol);
+	}
 }
 
 
