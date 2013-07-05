@@ -111,7 +111,7 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     	gettimeofday(&t2, NULL);
 #ifdef HAVE_NEON
     	sprintf(temp, "Player::Run took %d us for %d samples", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4);
-    	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
+    	//__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
 #endif
     }
 
