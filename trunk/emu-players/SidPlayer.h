@@ -62,6 +62,7 @@ public:
 	virtual int Reset();
 
 	virtual void SetSubSong(uint32_t subSong);
+	void SetMasterVolume(int masterVol);
 
 private:
 	void Execute6502(uint16_t address);

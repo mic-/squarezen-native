@@ -25,6 +25,8 @@
 #include "MemoryMapper.h"
 #include "Mos6581.h"
 
+class SidPlayer;
+
 class SidMapper : public MemoryMapper
 {
 public:
@@ -33,6 +35,7 @@ public:
 
 	uint8_t *GetRamPointer() const { return mRam; }
 	void SetSid(Mos6581 *sid) { mSid = sid; }
+	void SetSidPlayer(SidPlayer *sidPlayer) { mSidPlayer = sidPlayer; }
 
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint16_t addr);
@@ -41,6 +44,7 @@ public:
 private:
 	uint8_t *mRam;
 	Mos6581 *mSid;
+	SidPlayer *mSidPlayer;
 };
 
 

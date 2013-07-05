@@ -172,14 +172,14 @@ int NsfPlayer::Prepare(std::string fileName)
 	m2A03->Reset();
 
 	// Initialize the APU registers
-	for (i = 0x4000; i < 0x4010; i++) {
+	/*for (i = 0x4000; i < 0x4010; i++) {
 		m2A03->Write(i, 0);
 	}
 	m2A03->Write(0x4010, 0x10);
 	m2A03->Write(0x4011, 0x0);
 	m2A03->Write(0x4012, 0x0);
 	m2A03->Write(0x4013, 0x0);
-	m2A03->Write(0x4015, 0x0f);
+	m2A03->Write(0x4015, 0x0f);*/
 
 	// Set up ROM mapping
 	for (int i = 0; i < 8; i++) {
@@ -233,6 +233,16 @@ int NsfPlayer::Prepare(std::string fileName)
 void NsfPlayer::SetSubSong(uint32_t subSong)
 {
 	NLOGD("NsfPlayer", "SetSubSong(%d)", subSong);
+
+	// Initialize the APU registers
+	for (int i = 0x4000; i < 0x4010; i++) {
+		m2A03->Write(i, 0);
+	}
+	m2A03->Write(0x4010, 0x10);
+	m2A03->Write(0x4011, 0x0);
+	m2A03->Write(0x4012, 0x0);
+	m2A03->Write(0x4013, 0x0);
+	m2A03->Write(0x4015, 0x0f);
 
 	m6502->mRegs.A = subSong;
 	m6502->mRegs.X = 0;  // NTSC/PAL

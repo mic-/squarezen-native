@@ -24,6 +24,26 @@
 #include <stdint.h>
 #include "Oscillator.h"
 
+class Mos6581;
+
+
+class Mos6581Channel : public Oscillator
+{
+public:
+	virtual ~Mos6581Channel() {}
+
+	virtual void Reset();
+	virtual void Step();
+	virtual void Write(uint32_t addr, uint8_t val);
+
+	void SetChip(Mos6581 *chip) { mChip = chip; }
+	void SetIndex(uint8_t index) { mIndex = index; }
+
+	Mos6581 *mChip;
+	uint8_t mIndex;
+};
+
+
 class Mos6581
 {
 public:
@@ -64,6 +84,21 @@ public:
 		R_FILTER_RESFIL   = 0x17,
 		R_FILTER_MODEVOL  = 0x18,
 	};
+
+	// For R_VOICEx_CTRL
+	enum
+	{
+		VOICE_CTRL_GATE = 0x01,
+		VOICE_CTRL_SYNC = 0x02,	// 1+3, 2+1, 3+2
+		VOICE_CTRL_RMOD = 0x04, // ...
+		VOICE_CTRL_TEST = 0x08,
+		VOICE_CTRL_TRIANGLE = 0x10,
+		VOICE_CTRL_SAW = 0x20,
+		VOICE_CTRL_PULSE = 0x40,
+		VOICE_CTRL_NOISE = 0x80,
+	};
+
+	Mos6581Channel mChannels[3];
 };
 
 #endif
