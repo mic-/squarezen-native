@@ -23,12 +23,21 @@
 #include "NsfPlayer.h"
 
 
+static float pulseTable[31];
+static float tndTable[203];
+
+
 NsfPlayer::NsfPlayer()
 	: m6502(NULL)
 	, m2A03(NULL)
 	, mMemory(NULL)
 {
-	// TODO: fill out
+	for (int i = 0; i < 31; i++) {
+		pulseTable[i] = 95.52f / (8128.0f / (float)i + 100.0);
+	}
+	for (int i = 0; i < 203; i++) {
+		tndTable[i] = 163.67f / (24329.0f / (float)i + 100.0);
+	}
 }
 
 
@@ -188,7 +197,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	}
 
 	mBlipBuf = new Blip_Buffer();
-	mSynth = new Blip_Synth<blip_low_quality,82>[5];
+	mSynth = new Blip_Synth<blip_low_quality,82>[2]; //5];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
     	NLOGE("NsfPlayer", "Failed to set blipbuffer sample rate");
@@ -208,8 +217,8 @@ int NsfPlayer::Prepare(std::string fileName)
 	mPlayCounter = 0;
 
     // Setup waves
-	for (int i = 0; i < 5; i++) {
-		mSynth[i].volume(0.17);
+	for (int i = 0; i < 2; i++) {
+		mSynth[i].volume(0.88); //0.17);
 		mSynth[i].output(mBlipBuf);
 	}
 
@@ -262,8 +271,8 @@ void NsfPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 
 int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
-	int32_t i, k;
-    int16_t out;
+	int32_t k;
+    int16_t pulseOut, tndOut;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return MusicPlayer::ERROR_BAD_STATE;
@@ -283,14 +292,31 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		m2A03->Step();
 
-		for (i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_DMC; i++) {
-			out = (-m2A03->mChannels[i].mPhase) & Emu2A03::VOL_TB[m2A03->mChannels[i].mVol & 0x0F];
-			out &= m2A03->mChannels[i].mOutputMask;
+		pulseOut = (-m2A03->mChannels[Emu2A03::CHN_PULSE1].mPhase)
+					& (m2A03->mChannels[Emu2A03::CHN_PULSE1].mVol & 0x0F)
+					& m2A03->mChannels[Emu2A03::CHN_PULSE1].mOutputMask;
+		pulseOut += (-m2A03->mChannels[Emu2A03::CHN_PULSE2].mPhase)
+					& (m2A03->mChannels[Emu2A03::CHN_PULSE2].mVol & 0x0F)
+					& m2A03->mChannels[Emu2A03::CHN_PULSE2].mOutputMask;
+		pulseOut = (uint16_t)(pulseTable[pulseOut] * 82.0f);
 
-			if (out != m2A03->mChannels[i].mOut) {
-				mSynth[i].update(k, out);
-				m2A03->mChannels[i].mOut = out;
-			}
+		tndOut = ((-m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mPhase)
+					& (m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mVol & 0x0F)
+					& m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mOutputMask) * 3;
+		tndOut += ((-m2A03->mChannels[Emu2A03::CHN_NOISE].mPhase)
+					& (m2A03->mChannels[Emu2A03::CHN_NOISE].mVol & 0x0F)
+					& m2A03->mChannels[Emu2A03::CHN_NOISE].mOutputMask) * 2;
+		tndOut += ((m2A03->mChannels[Emu2A03::CHN_DMC].mDuty)
+					& m2A03->mChannels[Emu2A03::CHN_DMC].mOutputMask);
+		tndOut = (uint16_t)(tndTable[tndOut] * 82.0f);
+
+		if (pulseOut != m2A03->mChannels[0].mOut) {
+			mSynth[0].update(k, pulseOut);
+			m2A03->mChannels[0].mOut = pulseOut;
+		}
+		if (tndOut != m2A03->mChannels[1].mOut) {
+			mSynth[1].update(k, tndOut);
+			m2A03->mChannels[1].mOut = tndOut;
 		}
 
 		mCycleCount++;

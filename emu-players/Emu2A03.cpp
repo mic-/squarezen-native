@@ -121,6 +121,7 @@ void Emu2A03EnvelopeGenerator::Step()
 			mStep--;
 			if (!mStep) {
 				mStep = (enve = 0x0F) + 1;
+				if (mOut) mOut--;
 				if (!mOut) {
 					if (enve & 0x20) {
 						// Looping envelope
@@ -128,7 +129,6 @@ void Emu2A03EnvelopeGenerator::Step()
 					}
 				}
 				mChannel->mVol = mOut;
-				mOut--;
 			}
 		}
 	}
@@ -228,6 +228,8 @@ void Emu2A03Channel::Step()
 					if (mWaveStep >= mSampleLen) {
 						if (mChip->mRegs[Emu2A03::R_DMC_PER_LOOP] & 0x40) {
 							mWaveStep = 0;
+						} else {
+							mOutputMask = 0;
 						}
 					}
 					mSampleBits = 8;
@@ -296,7 +298,7 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 		}
 		if (mChip->mRegs[Emu2A03::R_STATUS] & (1 << mIndex)) {
 			mLC.mStep = Emu2A03::LENGTH_COUNTERS[val >> 3];
-			mOutputMask = mLC.mStep ? 0xFFFF : 0;
+			mOutputMask = (mLC.mStep && (mChip->mRegs[Emu2A03::R_STATUS] & (1 << mIndex))) ? 0xFFFF : 0;
 		}
 		break;
 
@@ -312,12 +314,12 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 
 	case Emu2A03::R_DMC_SMPADR:
 		mSampleAddr = (val << 6) | 0xC000;
-		NLOGE("Emu2A03", "DMC sample address = %#x", mSampleAddr);
+		NLOGV("Emu2A03", "DMC sample address = %#x", mSampleAddr);
 		break;
 
 	case Emu2A03::R_DMC_SMPLEN:
 		mSampleLen = (val << 4) + 1;
-		NLOGE("Emu2A03", "DMC sample length = %d bytes", mSampleLen);
+		NLOGV("Emu2A03", "DMC sample length = %d bytes", mSampleLen);
 		break;
 
 	default:
@@ -408,6 +410,12 @@ void Emu2A03::Write(uint32_t addr, uint8_t data)
 		//NLOGE("Emu2A03", "DMC Write(%#x, %#x)", addr, data);
 		mChannels[CHN_DMC].Write(addr, data);
 
+	} else if (reg == R_STATUS) {
+		for (int i = CHN_PULSE1; i <= CHN_DMC; i++) {
+			if (!(data & (1 << i))) {
+				mChannels[i].mOutputMask = 0;
+			}
+		}
 	} else if (reg == R_FRAMECNT) {
 		mGenerateFrameIRQ = ((data & 0x40) == 0);
 		mMaxFrameCount = (data & 0x80) ? 4 : 3;
