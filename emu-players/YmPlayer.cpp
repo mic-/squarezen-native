@@ -22,7 +22,12 @@
 #include <string.h>
 #include "NativeLogger.h"
 #include "YmPlayer.h"
+#ifdef __TIZEN__
 #include "../lha/lha_decoder.h"
+#endif
+#ifdef __ANDROID__
+#include "../tizen/serviceapp/lha/lha_decoder.h"
+#endif
 
 #ifdef LOG_PCM
 FILE *pcmFile;
