@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include "Oscillator.h"
+#include "MemoryMapper.h"
 
 class Emu2A03;
 class Emu2A03Channel;
@@ -113,6 +114,8 @@ public:
 	int16_t mOut;
 	uint8_t mWaveStep;
 	uint16_t mOutputMask;
+	uint16_t mSampleAddr, mSampleLen;
+	uint8_t mSample, mSampleBits;
 	uint16_t mLfsr, mLfsrWidth;
 	uint16_t mIndex;
 	uint16_t mVol, mCurVol;
@@ -127,33 +130,41 @@ public:
 	void Reset();
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
+	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
+	// Channel enumerators
 	enum
 	{
-		CHN_PULSE1 = 0,
-		CHN_PULSE2 = 1,
+		CHN_PULSE1   = 0,
+		CHN_PULSE2   = 1,
 		CHN_TRIANGLE = 2,
-		CHN_NOISE = 3,
-		CHN_DMC = 4,
+		CHN_NOISE    = 3,
+		CHN_DMC      = 4,
 	};
 
+	// Register enumerators
 	enum
 	{
 		R_PULSE1_DUTY_ENVE = 0x00,
-		R_PULSE1_SWEEP = 0x01,
-		R_PULSE1_PERLO = 0x02,
+		R_PULSE1_SWEEP     = 0x01,
+		R_PULSE1_PERLO     = 0x02,
 		R_PULSE1_PERHI_LEN = 0x03,
 		R_PULSE2_DUTY_ENVE = 0x04,
-		R_PULSE2_SWEEP = 0x05,
-		R_PULSE2_PERLO = 0x06,
+		R_PULSE2_SWEEP     = 0x05,
+		R_PULSE2_PERLO     = 0x06,
 		R_PULSE2_PERHI_LEN = 0x07,
-		R_TRIANGLE_LIN = 0x08,
-		R_TRIANGLE_PERLO = 0x0A,
+		R_TRIANGLE_LIN     = 0x08,
+		R_TRIANGLE_PERLO   = 0x0A,
 		R_TRIANGLE_PERHI_LEN = 0x0B,
-		R_NOISE_ENVE = 0x0C,
-		R_NOISE_MODE_PER = 0x0E,
-		R_NOISE_LEN = 0x0F,
-		R_STATUS = 0x15,
+		R_NOISE_ENVE       = 0x0C,
+		R_NOISE_MODE_PER   = 0x0E,
+		R_NOISE_LEN        = 0x0F,
+		R_DMC_PER_LOOP     = 0x10,
+		R_DMC_DIRLD        = 0x11,
+		R_DMC_SMPADR       = 0x12,
+		R_DMC_SMPLEN       = 0x13,
+		R_STATUS           = 0x15,
+		R_FRAMECNT         = 0x17,
 	};
 
 	void SetClock(uint32_t clockHz, uint32_t fps);
@@ -163,13 +174,15 @@ public:
 	static const uint16_t VOL_TB[];
 	static const uint8_t LENGTH_COUNTERS[32];
 	static const uint16_t NOISE_PERIODS[2][16];
+	static const uint16_t DMC_PERIODS[2][16];
 
-	Emu2A03Channel mChannels[4];
-	uint8_t mRegs[0x18];
+	Emu2A03Channel mChannels[5];
+	uint8_t mRegs[R_FRAMECNT+1];
 	uint32_t mCycleCount, mFrameCycles;
 	uint8_t mStatus;
 	bool mGenerateFrameIRQ;
 	uint8_t mMaxFrameCount, mCurFrame;
+	MemoryMapper *mMemory;
 };
 
 

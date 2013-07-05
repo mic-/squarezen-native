@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-//#define NLOG_LEVEL_VERBOSE 0
+#define NLOG_LEVEL_DEBUG 0
 
 #include "NativeLogger.h"
 #include "Emu2A03.h"
@@ -52,6 +52,13 @@ const uint16_t Emu2A03::NOISE_PERIODS[2][16] =
 	{4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068},	// NTSC
 	{4, 8, 14, 30, 60, 88, 118, 148, 188, 236, 354, 472, 708,  944, 1890, 3778}		// PAL
 };
+
+const uint16_t Emu2A03::DMC_PERIODS[2][16] =
+{
+	{428, 380, 340, 320, 286, 254, 226, 214, 190, 160, 142, 128, 106, 84, 72, 54},	// NTSC
+	{398, 354, 316, 298, 276, 236, 210, 198, 176, 148, 132, 118, 98, 78, 66, 50}	// PAL
+};
+
 
 void Emu2A03LengthCounter::Reset()
 {
@@ -162,7 +169,11 @@ void Emu2A03Channel::Reset()
 	mPos = 0;
 	mVol = mCurVol = 0;
 	mLfsr = 0x0001;
-	//mLfsrWidth = 15;
+
+	mSampleAddr = 0;
+	mSampleLen = 0;
+	mSample = 0;
+	mSampleBits = 0;
 }
 
 
@@ -199,12 +210,50 @@ void Emu2A03Channel::Step()
 				mLfsr = (mLfsr >> 1) | (((mLfsr ^ (mLfsr >> 1)) & 1) << 14);
 			}
 		}
+
+	} else if (mIndex == Emu2A03::CHN_DMC) {
+		if (mSampleLen && (mChip->mRegs[Emu2A03::R_STATUS] & (1 << Emu2A03::CHN_DMC))) {
+			if (mPos >= mPeriod) {
+				mPos = 0;
+
+				mPhase = 1;
+				mOutputMask = 0xFFFF;
+
+				if (!mSampleBits) {
+					// Load another sample byte
+					if (mWaveStep < mSampleLen) {
+						mSample = mChip->mMemory->ReadByte(mSampleAddr + mWaveStep);
+						mWaveStep++;
+					}
+					if (mWaveStep >= mSampleLen) {
+						if (mChip->mRegs[Emu2A03::R_DMC_PER_LOOP] & 0x40) {
+							mWaveStep = 0;
+						}
+					}
+					mSampleBits = 8;
+				}
+
+				if (mSample & 1) {
+					if (mDuty < 126) mDuty += 2;
+				} else {
+					if (mDuty > 1) mDuty -= 2;
+				}
+				mSample >>= 1;
+				mSampleBits--;
+
+				mVol = mDuty >> 3;
+			}
+		} else {
+			mOutputMask = 0;
+		}
 	}
 }
 
 void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 {
-	uint8_t reg = addr & 0x0F;
+	uint8_t reg = addr & 0x1F;
+
+	NLOGV("Emu2A03Channel", "Write(%#x, %#x)", addr, val);
 
 	switch (reg) {
 	case Emu2A03::R_PULSE1_DUTY_ENVE:
@@ -251,13 +300,35 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 		}
 		break;
 
+	case Emu2A03::R_DMC_PER_LOOP:
+		mPeriod = Emu2A03::DMC_PERIODS[0][val & 0x0F];
+		break;
+
+	case Emu2A03::R_DMC_DIRLD:
+		mDuty = val & 0x7F;
+		mPhase = 1;
+		mVol = mDuty >> 3;
+		break;
+
+	case Emu2A03::R_DMC_SMPADR:
+		mSampleAddr = (val << 6) | 0xC000;
+		NLOGE("Emu2A03", "DMC sample address = %#x", mSampleAddr);
+		break;
+
+	case Emu2A03::R_DMC_SMPLEN:
+		mSampleLen = (val << 4) + 1;
+		NLOGE("Emu2A03", "DMC sample length = %d bytes", mSampleLen);
+		break;
+
+	default:
+		break;
 	}
 }
 
 
 void Emu2A03::Reset()
 {
-	for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
+	for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_DMC; i++) {
 		mChannels[i].SetChip(this);
 		mChannels[i].SetIndex(i);
 		mChannels[i].Reset();
@@ -305,7 +376,7 @@ void Emu2A03::Step()
 		mCycleCount = 0;
 	}
 
-	for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
+	for (int i = CHN_PULSE1; i <= CHN_DMC; i++) {
 		mChannels[i].Step();
 	}
 }
@@ -313,27 +384,31 @@ void Emu2A03::Step()
 
 void Emu2A03::Write(uint32_t addr, uint8_t data)
 {
-	NLOGD("Emu2A03", "Write(%#x, %#x)", addr, data);
-
-	if (addr >= 0x4000 && addr <= 0x4017) {
-		mRegs[addr - 0x4000] = data;
-	}
+	NLOGV("Emu2A03", "Write(%#x, %#x)", addr, data);
 
 	uint8_t reg = addr & 0x1F;
 
-	if (reg >= Emu2A03::R_PULSE1_DUTY_ENVE && reg <= Emu2A03::R_PULSE1_PERHI_LEN) {
-		mChannels[Emu2A03::CHN_PULSE1].Write(addr, data);
+	if (reg >= R_PULSE1_DUTY_ENVE && reg <= R_FRAMECNT) {
+		mRegs[addr - 0x4000] = data;
+	}
 
-	} else if (reg >= Emu2A03::R_PULSE2_DUTY_ENVE && reg <= Emu2A03::R_PULSE2_PERHI_LEN) {
-		mChannels[Emu2A03::CHN_PULSE2].Write(addr, data);
+	if (reg >= R_PULSE1_DUTY_ENVE && reg <= R_PULSE1_PERHI_LEN) {
+		mChannels[CHN_PULSE1].Write(addr, data);
 
-	} else if (addr >= 0x4008 && addr <= 0x400B) {
-		mChannels[Emu2A03::CHN_TRIANGLE].Write(addr, data);
+	} else if (reg >= R_PULSE2_DUTY_ENVE && reg <= R_PULSE2_PERHI_LEN) {
+		mChannels[CHN_PULSE2].Write(addr, data);
 
-	} else if (addr >= 0x400C && addr <= 0x400F) {
-		mChannels[Emu2A03::CHN_NOISE].Write(addr, data);
+	} else if (reg >= R_TRIANGLE_LIN && reg <= R_TRIANGLE_PERHI_LEN) {
+		mChannels[CHN_TRIANGLE].Write(addr, data);
 
-	} else if (addr == 0x4017) {
+	} else if (reg >= R_NOISE_ENVE && reg <= R_NOISE_LEN) {
+		mChannels[CHN_NOISE].Write(addr, data);
+
+	} else if (reg >= R_DMC_PER_LOOP && reg <= R_DMC_SMPLEN) {
+		//NLOGE("Emu2A03", "DMC Write(%#x, %#x)", addr, data);
+		mChannels[CHN_DMC].Write(addr, data);
+
+	} else if (reg == R_FRAMECNT) {
 		mGenerateFrameIRQ = ((data & 0x40) == 0);
 		mMaxFrameCount = (data & 0x80) ? 4 : 3;
 	}

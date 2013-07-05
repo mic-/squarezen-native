@@ -21,7 +21,10 @@
 
 void Mos6581Channel::Reset()
 {
+	NLOGD("Mos6581Channel", "Reset");
+
 	// TODO: implement
+	mPeriod = 0;
 }
 
 void Mos6581Channel::Step()
@@ -32,12 +35,39 @@ void Mos6581Channel::Step()
 void Mos6581Channel::Write(uint32_t addr, uint8_t val)
 {
 	// TODO: implement
+	uint8_t reg = addr - Mos6581::REGISTER_BASE;
+	uint32_t f;
+
+	switch (reg) {
+	case Mos6581::R_VOICE1_FREQ_LO:
+	case Mos6581::R_VOICE2_FREQ_LO:
+	case Mos6581::R_VOICE3_FREQ_LO:
+		f = val | ((uint16_t)mChip->mRegs[Mos6581::R_VOICE1_FREQ_HI + mIndex * 7] << 8);
+		mPeriod =  16777216 / (f ? f : 1);
+		NLOGD("Mos6581Channel", "Period = %d", mPeriod);
+		break;
+
+	case Mos6581::R_VOICE1_FREQ_HI:
+	case Mos6581::R_VOICE2_FREQ_HI:
+	case Mos6581::R_VOICE3_FREQ_HI:
+		f = ((uint16_t)val << 8) | mChip->mRegs[Mos6581::R_VOICE1_FREQ_LO + mIndex * 7];
+		mPeriod =  16777216 / (f ? f : 1);
+		NLOGD("Mos6581Channel", "Period = %d", mPeriod);
+		break;
+	}
 }
 
 
 void Mos6581::Reset()
 {
 	NLOGD("Mos6581", "Reset");
+
+	for (int i = 0; i < 3; i++) {
+		mChannels[i].SetChip(this);
+		mChannels[i].SetIndex(i);
+		mChannels[i].Reset();
+	}
+
 	// TODO: implement
 }
 
@@ -53,6 +83,7 @@ void Mos6581::Write(uint32_t addr, uint8_t data)
 	NLOGD("Mos6581", "Write(%#x, %#x)", addr, data);
 
 	uint8_t reg = addr - Mos6581::REGISTER_BASE;
+	mRegs[reg] = data;
 
 	if (reg >= Mos6581::R_VOICE1_FREQ_LO && reg <= Mos6581::R_VOICE1_SR) {
 		mChannels[0].Write(addr, data);

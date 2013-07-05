@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_VERBOSE 0
+#define NLOG_LEVEL_DEBUG 0
 
 #include <string.h>
 #include <stddef.h>
@@ -50,6 +50,8 @@ uint8_t SidMapper::ReadByte(uint16_t addr)
 void SidMapper::WriteByte(uint16_t addr, uint8_t data)
 {
 	// TODO: handle ROM areas?
+
+	NLOGV("SidMapper", "Write(%#x, %#x)", addr, data);
 
 	mRam[addr] = data;
 	if (addr >= Mos6581::REGISTER_BASE && addr <= Mos6581::REGISTER_BASE + Mos6581::R_FILTER_MODEVOL) {

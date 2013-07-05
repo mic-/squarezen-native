@@ -99,6 +99,7 @@ public:
 	};
 
 	Mos6581Channel mChannels[3];
+	uint8_t mRegs[R_FILTER_MODEVOL + 1];
 };
 
 #endif

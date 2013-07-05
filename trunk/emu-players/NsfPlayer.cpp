@@ -49,15 +49,11 @@ int NsfPlayer::Reset()
 
 	delete mBlipBuf;
 	mBlipBuf = NULL;
-	NLOGV("NsfPlayer", "Deleting synths");
 	delete [] mSynth;
 	mSynth = NULL;
 
-	NLOGV("NsfPlayer", "Deleting CPU");
 	delete m6502;
-	NLOGV("NsfPlayer", "Deleting APU");
 	delete m2A03;
-	NLOGV("NsfPlayer", "Deleting mapper");
 	delete mMemory;
 	m6502 = NULL;
 	m2A03 = NULL;
@@ -164,6 +160,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	musicFile.close();
 
 	m6502->SetMapper(mMemory);
+	m2A03->SetMapper(mMemory);
 	mMemory->Reset();
 	m6502->Reset();
 
@@ -191,7 +188,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	}
 
 	mBlipBuf = new Blip_Buffer();
-	mSynth = new Blip_Synth<blip_low_quality,82>[4];
+	mSynth = new Blip_Synth<blip_low_quality,82>[5];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
     	NLOGE("NsfPlayer", "Failed to set blipbuffer sample rate");
@@ -211,8 +208,8 @@ int NsfPlayer::Prepare(std::string fileName)
 	mPlayCounter = 0;
 
     // Setup waves
-	for (int i = 0; i < 4; i++) {
-		mSynth[i].volume(0.22);
+	for (int i = 0; i < 5; i++) {
+		mSynth[i].volume(0.17);
 		mSynth[i].output(mBlipBuf);
 	}
 
@@ -286,7 +283,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		m2A03->Step();
 
-		for (i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
+		for (i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_DMC; i++) {
 			out = (-m2A03->mChannels[i].mPhase) & Emu2A03::VOL_TB[m2A03->mChannels[i].mVol & 0x0F];
 			out &= m2A03->mChannels[i].mOutputMask;
 
