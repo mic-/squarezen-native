@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_ERROR 0
+#define NLOG_LEVEL_VERBOSE 0
 
 #include <string.h>
 #include <stddef.h>
@@ -94,7 +94,7 @@ void NsfMapper::WriteByte_0000(uint16_t addr, uint8_t data)
 void NsfMapper::WriteByte_4000(uint16_t addr, uint8_t data)
 {
 	if (addr <= 0x4017) {
-		NLOGV("NsfMapper", "APU write (%#x, %#x)", addr, data);
+		//NLOGV("NsfMapper", "APU write (%#x, %#x)", addr, data);
 		mApu->Write(addr, data);
 	} else 	if (addr >= 0x4f80 && addr < 0x4f90) {
 		mCallCode[addr - 0x4f80] = data;
