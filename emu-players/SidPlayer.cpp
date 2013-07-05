@@ -68,7 +68,6 @@ int SidPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
-    uint32_t numBanks;
 
     if (MusicPlayer::STATE_CREATED != GetState()) {
     	Reset();
@@ -169,6 +168,7 @@ int SidPlayer::Prepare(std::string fileName)
 	m6502 = new Emu6502;
 	mSid = new Mos6581;
 	mMemory->SetSid(mSid);
+	mMemory->SetSidPlayer(this);
 	m6502->SetMapper(mMemory);
 
 	mMemory->Reset();
@@ -200,7 +200,7 @@ void SidPlayer::SetMasterVolume(int masterVol)
 
 void SidPlayer::SetSubSong(uint32_t subSong)
 {
-	NLOGD("NsfPlayer", "SetSubSong(%d)", subSong);
+	NLOGD("SidPlayer", "SetSubSong(%d)", subSong);
 
 	m6502->mRegs.A = subSong;
 	Execute6502(mFileHeader.initAddress);
@@ -209,7 +209,7 @@ void SidPlayer::SetSubSong(uint32_t subSong)
 
 void SidPlayer::Execute6502(uint16_t address)
 {
-	NLOGD("NsfPlayer", "Execute6502(%#x)", address);
+	NLOGD("SidPlayer", "Execute6502(%#x)", address);
 
 	// JSR loadAddress
 	mMemory->WriteByte(0xbf80, 0x20);
