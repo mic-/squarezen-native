@@ -25,6 +25,47 @@
 #include "Oscillator.h"
 
 class Mos6581;
+class Mos6581Channel;
+
+class Mos6581Mixer
+{
+public:
+	void Reset(uint16_t mixLevel);
+	void AddSample(uint16_t sample);
+	uint16_t Mix();
+
+private:
+	uint16_t mSamples[4];
+	uint16_t mNumSamples;
+	uint16_t mMixLevel;
+};
+
+
+class Mos6581EnvelopeGenerator : public Oscillator
+{
+public:
+	virtual ~Mos6581EnvelopeGenerator() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	void SetChannel(Mos6581Channel *channel) { mChannel = channel; }
+
+	// Envelope phases
+	typedef enum
+	{
+		ATTACK = 0,
+		DECAY,
+		SUSTAIN,
+		RELEASE,
+	} Phase;
+
+	Mos6581Channel *mChannel;
+	uint8_t mOut;
+	uint16_t mSustainLevel;
+	Phase mPhase;
+	bool mClocked;
+};
 
 
 class Mos6581Channel : public Oscillator
@@ -40,6 +81,11 @@ public:
 	void SetIndex(uint8_t index) { mIndex = index; }
 
 	Mos6581 *mChip;
+	Mos6581EnvelopeGenerator mEG;
+	Mos6581Mixer mMixer;
+	int16_t mOut;
+	uint16_t mDuty;
+	uint16_t mVol;
 	uint8_t mIndex;
 };
 
@@ -61,7 +107,7 @@ public:
 		R_VOICE1_PW_HI    = 0x03,	// ...
 		R_VOICE1_CTRL     = 0x04,
 		R_VOICE1_AD       = 0x05,  // Attack rates: 2, 8, 16, 24, 38, 56, 68, 80, 100, 250, 500, 800, 1000, 3000, 5000, 8000 ms
-		R_VOICE1_SR       = 0x06,  // DSR rates: 6, 24, 48, 72, 114, 168, 204, 240, 300, 750, 1500, 2400, 3000, 9000, 15000, 24000 ms
+		R_VOICE1_SR       = 0x06,  // DR rates: 6, 24, 48, 72, 114, 168, 204, 240, 300, 750, 1500, 2400, 3000, 9000, 15000, 24000 ms
 
 		R_VOICE2_FREQ_LO  = 0x07,
 		R_VOICE2_FREQ_HI  = 0x08,
