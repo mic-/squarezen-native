@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_VERBOSE 0
+#define NLOG_LEVEL_DEBUG 0
 
 #include <iostream>
 #include <fstream>
@@ -142,11 +142,11 @@ int SidPlayer::Prepare(std::string fileName)
 	musicFile.close();
 
     if (!mFileHeader.initAddress) mFileHeader.initAddress = mFileHeader.loadAddress;
-    if (!mFileHeader.playAddress) {
+    /*if (!mFileHeader.playAddress) {
     	NLOGE("SidPlayer", "PlayAddress==0 is not supported");
 		delete mMemory;
     	return MusicPlayer::ERROR_UNKNOWN;
-    }
+    }*/
 
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,82>[3];
@@ -179,11 +179,9 @@ int SidPlayer::Prepare(std::string fileName)
 	mMetaData.SetDefaultSong(mFileHeader.firstSong);
 
 	m6502->mRegs.S = 0xFF;
-	SetSubSong(mFileHeader.firstSong);
+	SetSubSong(mFileHeader.firstSong - 1);
 
 	NLOGD("SidPlayer", "Prepare finished");
-
-	Execute6502(mFileHeader.playAddress);
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
@@ -209,19 +207,49 @@ void SidPlayer::SetSubSong(uint32_t subSong)
 
 void SidPlayer::Execute6502(uint16_t address)
 {
-	NLOGD("SidPlayer", "Execute6502(%#x)", address);
+	NLOGV("SidPlayer", "Execute6502(%#x)", address);
 
-	// JSR loadAddress
-	mMemory->WriteByte(0xbf80, 0x20);
-	mMemory->WriteByte(0xbf81, address & 0xff);
-	mMemory->WriteByte(0xbf82, address >> 8);
-	// -: JMP -
-	mMemory->WriteByte(0xbf83, 0x4c);
-	mMemory->WriteByte(0xbf84, 0x83);
-	mMemory->WriteByte(0xbf85, 0xbf);
-	m6502->mRegs.PC = 0xbf80;
-	m6502->mCycles = 0;
-	m6502->Run(mFrameCycles);
+	if (address) {
+		// JSR loadAddress
+		mMemory->WriteByte(0xbf80, 0x20);
+		mMemory->WriteByte(0xbf81, address & 0xff);
+		mMemory->WriteByte(0xbf82, address >> 8);
+		// -: JMP -
+		mMemory->WriteByte(0xbf83, 0x4c);
+		mMemory->WriteByte(0xbf84, 0x83);
+		mMemory->WriteByte(0xbf85, 0xbf);
+		m6502->mRegs.PC = 0xbf80;
+		m6502->mCycles = 0;
+		m6502->Run(mFrameCycles);
+	} else {
+		uint8_t bankSelect = mMemory->ReadByte(0x01) & 3;
+		if (bankSelect >= 2) {
+			m6502->SetBrkVector(0x314);
+		}
+		// BRK
+		mMemory->WriteByte(0xbf80, 0x00);
+		// -: JMP -
+		mMemory->WriteByte(0xbf81, 0x4c);
+		mMemory->WriteByte(0xbf82, 0x81);
+		mMemory->WriteByte(0xbf83, 0xbf);
+		m6502->mRegs.PC = 0xbf80;
+		m6502->mCycles = 0;
+		m6502->Run(mFrameCycles);
+		m6502->SetBrkVector(0xfffe);
+	}
+}
+
+
+void SidPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
+{
+	int count = in->samples_avail();
+
+	in->read_samples(out, count, 1);
+
+	// Copy each left channel sample to the right channel
+	for (int i = 0; i < count*2; i += 2) {
+		out[i+1] = out[i];
+	}
 }
 
 
@@ -236,7 +264,30 @@ int SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
-	// TODO: finish
+	for (k = 0; k < blipLen; k++) {
+		if (mCycleCount == 0) {
+			Execute6502(mFileHeader.playAddress);
+		}
+
+		mSid->Step();
+
+		for (i = 0; i < 3; i++) {
+			out = mSid->mChannels[i].mVol;
+
+			if (out != mSid->mChannels[i].mOut) {
+				mSynth[i].update(k, out);
+				mSid->mChannels[i].mOut = out;
+			}
+		}
+
+		mCycleCount++;
+		if (mCycleCount == mFrameCycles) {
+			mCycleCount = 0;
+		}
+	}
+
+	mBlipBuf->end_frame(blipLen);
+	PresentBuffer(buffer, mBlipBuf);
 
 	return MusicPlayer::OK;
 }

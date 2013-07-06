@@ -138,7 +138,7 @@
 
 void Emu6502::Reset()
 {
-	// TODO: fill out
+	mBrkVector = 0xfffe;
 }
 
 void Emu6502::Run(uint32_t maxCycles)
@@ -357,8 +357,8 @@ void Emu6502::Run(uint32_t maxCycles)
 			temp8 = mRegs.F | (Emu6502::FLAG_B | 0x20);
 			PUSHB(temp8);
 			mRegs.F |= (Emu6502::FLAG_B | Emu6502::FLAG_I);
-			mRegs.PC = mMemory->ReadByte(0xFFFE);
-			mRegs.PC |= (uint16_t)mMemory->ReadByte(0xFFFF) << 8;
+			mRegs.PC = mMemory->ReadByte(mBrkVector);
+			mRegs.PC |= (uint16_t)mMemory->ReadByte(mBrkVector+1) << 8;
 			mCycles += 7;
 			break;
 
