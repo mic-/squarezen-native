@@ -1509,11 +1509,25 @@ void Emu6502::Disassemble(uint16_t address)
 		machineCodeStr += temp;
 		break;
 
+	case 0x6C:
+		snprintf(operandStr, 16, " ($%02x%02x)", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
+		break;
+
 	case 0x1D: case 0x1E: case 0x3D: case 0x3E:
 	case 0x5D: case 0x5E: case 0x7D: case 0x7E:
 	case 0x9D: case 0xBC: case 0xBD: case 0xDD:
 	case 0xDE: case 0xFD: case 0xFE:
 		snprintf(operandStr, 16, " $%02x%02x,X", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
+		break;
+
+	case 0x19: case 0x39: case 0x59: case 0x79:
+	case 0x99: case 0xB9: case 0xBE: case 0xD9:
+	case 0xF9:
+		snprintf(operandStr, 16, " $%02x%02x,Y", operand2, operand1);
 		snprintf(temp, 16, " %02x %02x", operand1, operand2);
 		machineCodeStr += temp;
 		break;

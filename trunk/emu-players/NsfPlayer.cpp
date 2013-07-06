@@ -31,6 +31,7 @@ NsfPlayer::NsfPlayer()
 	: m6502(NULL)
 	, m2A03(NULL)
 	, mMemory(NULL)
+	, mSongIsBankswitched(false)
 {
 	for (int i = 0; i < 31; i++) {
 		pulseTable[i] = 95.52f / (8128.0f / (float)i + 100.0);
@@ -134,10 +135,10 @@ int NsfPlayer::Prepare(std::string fileName)
 
     //NLOGD("NsfPlayer", "Prepare(): title and author is %s, %s", mMetaData.GetTitle().c_str(), mMetaData.GetAuthor().c_str());
 
-    bool usesBankswitching = false;
+    mSongIsBankswitched = false;
     for (i = 0; i < 8; i++) {
     	if (mFileHeader.initialBanks[i]) {
-    		usesBankswitching = true;
+    		mSongIsBankswitched = true;
     		break;
     	}
     }
@@ -146,7 +147,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	m2A03 = new Emu2A03;
 
 	uint32_t offset = mFileHeader.loadAddress & 0x0fff;
-	if (!usesBankswitching) {
+	if (!mSongIsBankswitched) {
 		offset = mFileHeader.loadAddress - 0x8000;
 	}
 
@@ -155,7 +156,7 @@ int NsfPlayer::Prepare(std::string fileName)
 	mMemory = new NsfMapper(numBanks);
 	mMemory->SetApu(m2A03);
 
-    NLOGD("NsfPlayer", "Loading to offset %#x", offset);
+    NLOGD("NsfPlayer", "Loading to offset %#x (%#x..%#x)", offset, 0x8000+offset, 0x7fff+offset+fileSize-sizeof(NsfFileHeader));
 	musicFile.read((char*)(mMemory->GetRomPointer()) + offset,
 			       fileSize - sizeof(NsfFileHeader));
 	if (!musicFile) {
@@ -185,16 +186,16 @@ int NsfPlayer::Prepare(std::string fileName)
 	m2A03->Write(0x4011, 0x0);
 	m2A03->Write(0x4012, 0x0);
 	m2A03->Write(0x4013, 0x0);
-	m2A03->Write(0x4015, 0x0f);*/
+	m2A03->Write(0x4015, 0x0f);
 
 	// Set up ROM mapping
 	for (int i = 0; i < 8; i++) {
-		if (usesBankswitching) {
+		if (mSongIsBankswitched) {
 			mMemory->WriteByte(0x5FF8 + i, mFileHeader.initialBanks[i]);
 		} else {
 			mMemory->WriteByte(0x5FF8 + i, i);
 		}
-	}
+	}*/
 
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,82>[2]; //5];
@@ -240,6 +241,8 @@ void NsfPlayer::SetSubSong(uint32_t subSong)
 {
 	NLOGD("NsfPlayer", "SetSubSong(%d)", subSong);
 
+	mMemory->Reset();
+
 	// Initialize the APU registers
 	for (int i = 0x4000; i < 0x4010; i++) {
 		m2A03->Write(i, 0);
@@ -249,6 +252,15 @@ void NsfPlayer::SetSubSong(uint32_t subSong)
 	m2A03->Write(0x4012, 0x0);
 	m2A03->Write(0x4013, 0x0);
 	m2A03->Write(0x4015, 0x0f);
+
+	// Set up ROM mapping
+	for (int i = 0; i < 8; i++) {
+		if (mSongIsBankswitched) {
+			mMemory->WriteByte(0x5FF8 + i, mFileHeader.initialBanks[i]);
+		} else {
+			mMemory->WriteByte(0x5FF8 + i, i);
+		}
+	}
 
 	m6502->mRegs.A = subSong;
 	m6502->mRegs.X = 0;  // NTSC/PAL

@@ -97,40 +97,54 @@ void Emu2A03LinearCounter::Step()
 	if (!(mChannel->mChip->mRegs[Emu2A03::R_TRIANGLE_LIN] & 0x80)) {
 		mReload = false;
 	}
-	mChannel->mOutputMask = (mStep && mChannel->mLC.mStep) ? 0xFFFF : 0;
+	mChannel->mOutputMask = 0xFFFF; //(mStep && mChannel->mLC.mStep) ? 0xFFFF : 0;
 }
 
 
 void Emu2A03EnvelopeGenerator::Reset()
 {
-	if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
+	/*if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
 		uint8_t enve = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
 		mStep = (enve & 0x0F) + 1;
 		mOut = 0x0F;
 		if (!(enve & 0x10)) {
 			mChannel->mVol = 0x0F;
 		}
-	}
+	}*/
 }
 
 void Emu2A03EnvelopeGenerator::Step()
 {
-	if (mChannel->mIndex != Emu2A03::CHN_TRIANGLE) {
-		uint8_t enve = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
-		if (!(enve & 0x10)) {
-			mStep--;
-			if (!mStep) {
-				mStep = (enve = 0x0F) + 1;
-				if (mOut) mOut--;
-				if (!mOut) {
-					if (enve & 0x20) {
-						// Looping envelope
-						mOut = 0x0F;
-					}
+	if (mChannel->mIndex == Emu2A03::CHN_TRIANGLE
+			|| mChannel->mIndex == Emu2A03::CHN_DMC) {
+		return;
+	}
+
+	uint8_t enve = mChannel->mChip->mRegs[Emu2A03::R_PULSE1_DUTY_ENVE + mChannel->mIndex * 4];
+
+	if (mStart) {
+		mStart = false;
+		mStep = (enve & 0x0F) + 1;
+		mOut = 0x0F;
+
+	} else {
+		mStep--;
+		if (!mStep) {
+			mStep = (enve & 0x0F) + 1;
+			if (mOut) mOut--;
+			if (!mOut) {
+				if (enve & 0x20) {
+					// Looping envelope
+					mOut = 0x0F;
 				}
-				mChannel->mVol = mOut;
 			}
 		}
+	}
+
+	if (!(enve & 0x10)) {
+		mChannel->mVol = mOut;
+	} else {
+		mChannel->mVol = enve & 0x0F;
 	}
 }
 
@@ -156,7 +170,7 @@ void Emu2A03Channel::Reset()
 	mEG.SetChannel(this);
 	mEG.Reset();
 	mEG.mMax = 0;
-	mEG.mDirection = 0;
+	mEG.mStart = false;
 
 	mLinC.SetChannel(this);
 	mLinC.Reset();
@@ -191,13 +205,14 @@ void Emu2A03Channel::Step()
 		}
 
 	} else if (mIndex == Emu2A03::CHN_TRIANGLE) {
-		if (mPos >= mPeriod + 1) {
+		if (mLC.mStep && mLinC.mStep && mPos >= mPeriod + 1) {
 			mPos = 0;
 			if (mWaveStep == 32) {
 				mWaveStep = 0;
 			}
-			mPhase = 1;
 			mVol = Emu2A03::TRIANGLE_WAVE[mWaveStep++];
+			mPhase = 1;
+			mVol = (mPeriod > 1) ? mVol : 7;
 		}
 
 	} else if (mIndex == Emu2A03::CHN_NOISE) {
@@ -212,18 +227,18 @@ void Emu2A03Channel::Step()
 		}
 
 	} else if (mIndex == Emu2A03::CHN_DMC) {
-		if (mSampleLen && (mChip->mRegs[Emu2A03::R_STATUS] & (1 << Emu2A03::CHN_DMC))) {
+		if ((mChip->mRegs[Emu2A03::R_STATUS] & (1 << Emu2A03::CHN_DMC))) {
 			if (mPos >= mPeriod) {
 				mPos = 0;
 
-				mPhase = 1;
 				mOutputMask = 0xFFFF;
 
 				if (!mSampleBits) {
 					// Load another sample byte
 					if (mWaveStep < mSampleLen) {
-						mSample = mChip->mMemory->ReadByte(mSampleAddr + mWaveStep);
+						mSample = mChip->mMemory->ReadByte(((mSampleAddr + mWaveStep) & 0x7FFF) | 0x8000);
 						mWaveStep++;
+						mSampleBits = 8;
 					}
 					if (mWaveStep >= mSampleLen) {
 						if (mChip->mRegs[Emu2A03::R_DMC_PER_LOOP] & 0x40) {
@@ -232,18 +247,19 @@ void Emu2A03Channel::Step()
 							mOutputMask = 0;
 						}
 					}
-					mSampleBits = 8;
 				}
 
-				if (mSample & 1) {
-					if (mDuty < 126) mDuty += 2;
-				} else {
-					if (mDuty > 1) mDuty -= 2;
-				}
-				mSample >>= 1;
-				mSampleBits--;
+				if (mSampleBits) {
+					if (mSample & 1) {
+						if (mDuty < 126) mDuty += 2;
+					} else {
+						if (mDuty > 1) mDuty -= 2;
+					}
+					mSample >>= 1;
+					mSampleBits--;
 
-				mVol = mDuty >> 3;
+					mVol = mDuty >> 3;
+				}
 			}
 		} else {
 			mOutputMask = 0;
@@ -279,7 +295,7 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 		break;
 
 	case Emu2A03::R_NOISE_MODE_PER:
-		mPeriod = Emu2A03::NOISE_PERIODS[0][val & 0x0F];
+		mPeriod = Emu2A03::NOISE_PERIODS[0][val & 0x0F];	// TODO: handle PAL
 		break;
 
 	case Emu2A03::R_PULSE1_PERHI_LEN:
@@ -292,34 +308,26 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 		if (Emu2A03::R_TRIANGLE_PERHI_LEN == reg) {
 			mLinC.mReload = true;
 		} else {
-			mEG.Reset();
+			mEG.mStart = true; //mEG.Reset();
 			mPos = 0;
-			//mWaveStep = 0;
+			mWaveStep = 0;
 		}
 		if (mChip->mRegs[Emu2A03::R_STATUS] & (1 << mIndex)) {
 			mLC.mStep = Emu2A03::LENGTH_COUNTERS[val >> 3];
-			mOutputMask = (mLC.mStep && (mChip->mRegs[Emu2A03::R_STATUS] & (1 << mIndex))) ? 0xFFFF : 0;
+			if (mIndex != Emu2A03::CHN_TRIANGLE) {
+				mOutputMask = (mLC.mStep && (mChip->mRegs[Emu2A03::R_STATUS] & (1 << mIndex))) ? 0xFFFF : 0;
+			}
 		}
 		break;
 
 	case Emu2A03::R_DMC_PER_LOOP:
-		mPeriod = Emu2A03::DMC_PERIODS[0][val & 0x0F];
+		mPeriod = Emu2A03::DMC_PERIODS[0][val & 0x0F];	// TODO: handle PAL
 		break;
 
 	case Emu2A03::R_DMC_DIRLD:
 		mDuty = val & 0x7F;
 		mPhase = 1;
 		mVol = mDuty >> 3;
-		break;
-
-	case Emu2A03::R_DMC_SMPADR:
-		mSampleAddr = (val << 6) | 0xC000;
-		NLOGV("Emu2A03", "DMC sample address = %#x", mSampleAddr);
-		break;
-
-	case Emu2A03::R_DMC_SMPLEN:
-		mSampleLen = (val << 4) + 1;
-		NLOGV("Emu2A03", "DMC sample length = %d bytes", mSampleLen);
 		break;
 
 	default:
@@ -347,30 +355,49 @@ void Emu2A03::SetClock(uint32_t clockHz, uint32_t fps)
 }
 
 
+void Emu2A03::QuarterFrame()
+{
+	if (mCurFrame < 4) {
+		for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
+			mChannels[i].mEG.Step();
+		}
+		mChannels[Emu2A03::CHN_TRIANGLE].mLinC.Step();
+	}
+}
+
+void Emu2A03::HalfFrame() {
+	if (mCurFrame < 4) {
+		if ((mCurFrame & 1) == (mMaxFrameCount & 1)) {
+			for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
+				mChannels[i].mLC.Step();
+				if (i <= Emu2A03::CHN_PULSE2) {
+					mChannels[i].mSU.Step();
+				}
+			}
+		}
+	}
+}
+
+void Emu2A03::SequencerFrame()
+{
+	HalfFrame();
+	QuarterFrame();
+
+	if (mCurFrame == 3 && mMaxFrameCount == 3 && mGenerateFrameIRQ) {
+		// TODO: generate frame IRQ
+	}
+
+	mCurFrame++;
+	if (mCurFrame > mMaxFrameCount) {
+		mCurFrame = 0;
+	}
+}
+
+
 void Emu2A03::Step()
 {
 	if (mCycleCount == 0) {
-		if (mCurFrame < 4) {
-			if ((mCurFrame & 1) == (mMaxFrameCount & 1)) {
-				for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
-					mChannels[i].mLC.Step();
-					if (i <= Emu2A03::CHN_PULSE2) {
-						mChannels[i].mSU.Step();
-					}
-				}
-			}
-			for (int i = Emu2A03::CHN_PULSE1; i <= Emu2A03::CHN_NOISE; i++) {
-				mChannels[i].mEG.Step();
-			}
-			mChannels[Emu2A03::CHN_TRIANGLE].mLinC.Step();
-		}
-		if (mCurFrame == 3 && mMaxFrameCount == 3 && mGenerateFrameIRQ) {
-			// TODO: generate frame IRQ
-		}
-		mCurFrame++;
-		if (mCurFrame > mMaxFrameCount) {
-			mCurFrame = 0;
-		}
+		SequencerFrame();
 	}
 
 	mCycleCount++;
@@ -389,6 +416,7 @@ void Emu2A03::Write(uint32_t addr, uint8_t data)
 	NLOGV("Emu2A03", "Write(%#x, %#x)", addr, data);
 
 	uint8_t reg = addr & 0x1F;
+	uint8_t prevStatus = mRegs[R_STATUS];
 
 	if (reg >= R_PULSE1_DUTY_ENVE && reg <= R_FRAMECNT) {
 		mRegs[addr - 0x4000] = data;
@@ -407,17 +435,33 @@ void Emu2A03::Write(uint32_t addr, uint8_t data)
 		mChannels[CHN_NOISE].Write(addr, data);
 
 	} else if (reg >= R_DMC_PER_LOOP && reg <= R_DMC_SMPLEN) {
-		//NLOGE("Emu2A03", "DMC Write(%#x, %#x)", addr, data);
 		mChannels[CHN_DMC].Write(addr, data);
 
 	} else if (reg == R_STATUS) {
 		for (int i = CHN_PULSE1; i <= CHN_DMC; i++) {
 			if (!(data & (1 << i))) {
-				mChannels[i].mOutputMask = 0;
+				if (i != CHN_TRIANGLE) {
+					mChannels[i].mOutputMask = 0;
+				}
+				mChannels[i].mLC.mStep = 0;
 			}
 		}
+		if ((data & 0x10) && (!(prevStatus & 0x10))) {
+			//NLOGD("Emu2A03", "Restarting DMC");
+			mChannels[CHN_DMC].mSampleAddr = (mRegs[R_DMC_SMPADR] << 6) | 0xC000;
+			mChannels[CHN_DMC].mSampleLen = (mRegs[R_DMC_SMPLEN] << 4) + 1;
+			mChannels[CHN_DMC].mPos = mChannels[CHN_DMC].mPeriod;
+			mChannels[CHN_DMC].mWaveStep = 0;
+			mChannels[CHN_DMC].mSampleBits = 0;
+			//mChannels[CHN_DMC].mDuty = mRegs[R_DMC_DIRLD] & 0x7F;
+		}
+
 	} else if (reg == R_FRAMECNT) {
+		NLOGD("Emu2A03", "Frame counter Write(%#x)", data);
 		mGenerateFrameIRQ = ((data & 0x40) == 0);
 		mMaxFrameCount = (data & 0x80) ? 4 : 3;
+		if (data & 0x80) {
+			SequencerFrame();
+		}
 	}
 }

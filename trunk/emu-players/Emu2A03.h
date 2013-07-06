@@ -74,7 +74,7 @@ public:
 
 	Emu2A03Channel *mChannel;
 	uint32_t mMax;
-	int16_t mDirection;
+	bool mStart;
 	uint8_t mOut;
 	bool mUse;
 };
@@ -112,7 +112,7 @@ public:
 	Emu2A03SweepUnit mSU;
 	Emu2A03 *mChip;
 	int16_t mOut;
-	uint8_t mWaveStep;
+	uint16_t mWaveStep;
 	uint16_t mOutputMask;
 	uint16_t mSampleAddr, mSampleLen;
 	uint8_t mSample, mSampleBits;
@@ -183,6 +183,11 @@ public:
 	bool mGenerateFrameIRQ;
 	uint8_t mMaxFrameCount, mCurFrame;
 	MemoryMapper *mMemory;
+
+private:
+	void HalfFrame();
+	void QuarterFrame();
+	void SequencerFrame();
 };
 
 
