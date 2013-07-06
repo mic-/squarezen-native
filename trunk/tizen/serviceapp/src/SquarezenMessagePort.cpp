@@ -58,10 +58,7 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		AppLog("SquarezenService: With argument: %S", arg->GetPointer());
 		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAll();
 		mMessageArgList->Add(new String(*arg));
-		AppLog("SquarezenMessagePort: Add");
 		//mMessageArgList->Add(remoteMessagePort);
-		//AppLog("SquarezenMessagePort: SendUserEvent");
-
 		app->SendUserEvent(PLAYBACK_REQUEST, mMessageArgList);
 		delete map;
 		delete message;
@@ -73,10 +70,7 @@ void SquarezenMessagePort::OnMessageReceivedN(RemoteMessagePort* remoteMessagePo
 		String *arg = static_cast<String *>(message->GetValue(String(L"SqzSubSong")));
 		AppLog("SquarezenService: With argument: %S", arg->GetPointer());
 		if (mMessageArgList->GetCount()) mMessageArgList->RemoveAll();
-		AppLog("SquarezenService: Add");
 		mMessageArgList->Add(new String(*arg));
-		//mMessageArgList->Add(remoteMessagePort);
-		AppLog("SquarezenService: SendUserEvent");
 		app->SendUserEvent(SET_SUBSONG_REQUEST, mMessageArgList);
 		delete map;
 		delete message;

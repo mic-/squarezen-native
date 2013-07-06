@@ -286,17 +286,19 @@ SquarezenMainForm::OnUserEventReceivedN(RequestId requestId, IList* args)
 		app = UiApp::GetInstance();
 		AppAssert(app);
 		AppLog("Squarezen mainform got metadata with %d args", args->GetCount());
-		if (args->GetCount() >= 5) {
+		if (args->GetCount() >= 6) {
 			Tizen::Ui::Controls::Label *pArtistLabel = static_cast<Label*>(GetControl(IDC_ARTIST_LABEL));
 			Tizen::Ui::Controls::Label *pTitleLabel = static_cast<Label*>(GetControl(IDC_TITLE_LABEL));
+			Tizen::Ui::Controls::Label *pCommentLabel = static_cast<Label*>(GetControl(IDC_COMMENT_LABEL));
 			AppLog("Title is %S", ((String*)(args->GetAt(0)))->GetPointer());
 
 			pTitleLabel->SetText(*(String*)(args->GetAt(0)));
 			pArtistLabel->SetText(*(String*)(args->GetAt(1)));
+			pCommentLabel->SetText(*(String*)(args->GetAt(2)));
 
-			Integer::Decode(*(static_cast<String*>(args->GetAt(2))), mSongLengthMs);
-			Integer::Decode(*(static_cast<String*>(args->GetAt(3))), mNumSubSongs);
-			Integer::Decode(*(static_cast<String*>(args->GetAt(4))), mCurrSubSong);
+			Integer::Decode(*(static_cast<String*>(args->GetAt(3))), mSongLengthMs);
+			Integer::Decode(*(static_cast<String*>(args->GetAt(4))), mNumSubSongs);
+			Integer::Decode(*(static_cast<String*>(args->GetAt(5))), mCurrSubSong);
 
 			Tizen::Ui::Controls::Slider *pSlider = static_cast<Slider*>(GetControl(IDC_SLIDER1));
 			if (mNumSubSongs > 1) {
