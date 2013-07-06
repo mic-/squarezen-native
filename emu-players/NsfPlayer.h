@@ -85,6 +85,7 @@ private:
 	NsfMapper *mMemory;
 
 	NsfFileHeader mFileHeader;
+	bool mSongIsBankswitched;
 	uint32_t mFrameCycles, mCycleCount, mPlayCounter;
 };
 

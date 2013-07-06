@@ -23,6 +23,7 @@
 
 
 NsfMapper::NsfMapper(uint32_t numRomBanks)
+	: mNumRomBanks(numRomBanks)
 {
     mCart = new uint8_t[(uint32_t)numRomBanks << 12];
     memset(mCart, 0, (uint32_t)numRomBanks << 12);
@@ -55,6 +56,12 @@ uint8_t NsfMapper::ReadByte_4000(uint16_t addr)
 	// TODO: fill out
 	if (addr >= 0x4f80 && addr < 0x4f90) {
 		return mCallCode[addr - 0x4f80];
+
+	} else if (addr >= 0x5FF8 && addr <= 0x5FFF) {
+		NLOGD("NsfMapper", "Reading from bankswitch register (%#x)", addr);
+
+	} else if (addr <= 0x4017) {
+		NLOGD("NsfMapper", "APU read (%#x)", addr);
 	}
 	return 0;
 }
@@ -66,13 +73,9 @@ uint8_t NsfMapper::ReadByte_6000(uint16_t addr)
 
 uint8_t NsfMapper::ReadByte_8000(uint16_t addr)
 {
-	return mRomTbl[(addr >> 12) - 8][addr & 0x0FFF];
-}
-
-
-uint8_t NsfMapper::ReadByte_C000(uint16_t addr)
-{
-	// TODO: fill out
+	if (mRomTbl[(addr >> 12) - 8]) {
+		return mRomTbl[(addr >> 12) - 8][addr & 0x0FFF];
+	}
 	return 0;
 }
 
@@ -105,8 +108,13 @@ void NsfMapper::WriteByte_4000(uint16_t addr, uint8_t data)
 void NsfMapper::WriteByte_5000(uint16_t addr, uint8_t data)
 {
 	if (addr >= 0x5FF8 && addr <= 0x5FFF) {
-		mRomTbl[addr - 0x5FF8] = mCart + data * 0x1000;
-		NLOGV("NsfMapper", "Mapping bank %d to #%x", data, 0x8000 + (addr - 0x5FF8) * 0x1000);
+		if (data >= mNumRomBanks) {
+			mRomTbl[addr - 0x5FF8] = NULL;
+			NLOGV("NsfMapper", "Mapping nothing to #%x", 0x8000 + (addr - 0x5FF8) * 0x1000);
+		} else {
+			mRomTbl[addr - 0x5FF8] = mCart + data * 0x1000;
+			NLOGV("NsfMapper", "Mapping bank %d to #%x", (data % mNumRomBanks), 0x8000 + (addr - 0x5FF8) * 0x1000);
+		}
 	}
 }
 
@@ -119,9 +127,6 @@ void NsfMapper::WriteByte_8000(uint16_t addr, uint8_t data)
 {
 }
 
-void NsfMapper::WriteByte_C000(uint16_t addr, uint8_t data)
-{
-}
 
 void NsfMapper::WriteByte(uint16_t addr, uint8_t data)
 {
@@ -142,14 +147,17 @@ void NsfMapper::Reset()
 	mReadByteFunc[0x01] = &NsfMapper::ReadByte_0000;
 	mReadByteFunc[0x02] = &NsfMapper::ReadByte_0000;
 	mReadByteFunc[0x03] = &NsfMapper::ReadByte_0000;
+
 	mReadByteFunc[0x04] = &NsfMapper::ReadByte_4000;
 	mReadByteFunc[0x05] = &NsfMapper::ReadByte_4000;
-	mReadByteFunc[0x06] = &NsfMapper::ReadByte_4000;
-	mReadByteFunc[0x07] = &NsfMapper::ReadByte_4000;
+	mReadByteFunc[0x06] = &NsfMapper::ReadByte_6000;
+	mReadByteFunc[0x07] = &NsfMapper::ReadByte_6000;
+
 	mReadByteFunc[0x08] = &NsfMapper::ReadByte_8000;
 	mReadByteFunc[0x09] = &NsfMapper::ReadByte_8000;
 	mReadByteFunc[0x0A] = &NsfMapper::ReadByte_8000;
 	mReadByteFunc[0x0B] = &NsfMapper::ReadByte_8000;
+
 	mReadByteFunc[0x0C] = &NsfMapper::ReadByte_8000;
 	mReadByteFunc[0x0D] = &NsfMapper::ReadByte_8000;
 	mReadByteFunc[0x0E] = &NsfMapper::ReadByte_8000;
@@ -159,16 +167,19 @@ void NsfMapper::Reset()
 	mWriteByteFunc[0x01] = &NsfMapper::WriteByte_0000;
 	mWriteByteFunc[0x02] = &NsfMapper::WriteByte_0000;
 	mWriteByteFunc[0x03] = &NsfMapper::WriteByte_0000;
+
 	mWriteByteFunc[0x04] = &NsfMapper::WriteByte_4000;
 	mWriteByteFunc[0x05] = &NsfMapper::WriteByte_5000;
-	mWriteByteFunc[0x06] = &NsfMapper::WriteByte_4000;
-	mWriteByteFunc[0x07] = &NsfMapper::WriteByte_4000;
+	mWriteByteFunc[0x06] = &NsfMapper::WriteByte_6000;
+	mWriteByteFunc[0x07] = &NsfMapper::WriteByte_6000;
+
 	mWriteByteFunc[0x08] = &NsfMapper::WriteByte_8000;
 	mWriteByteFunc[0x09] = &NsfMapper::WriteByte_8000;
 	mWriteByteFunc[0x0A] = &NsfMapper::WriteByte_8000;
 	mWriteByteFunc[0x0B] = &NsfMapper::WriteByte_8000;
-	mWriteByteFunc[0x0C] = &NsfMapper::WriteByte_C000;
-	mWriteByteFunc[0x0D] = &NsfMapper::WriteByte_C000;
-	mWriteByteFunc[0x0E] = &NsfMapper::WriteByte_C000;
-	mWriteByteFunc[0x0F] = &NsfMapper::WriteByte_C000;
+
+	mWriteByteFunc[0x0C] = &NsfMapper::WriteByte_8000;
+	mWriteByteFunc[0x0D] = &NsfMapper::WriteByte_8000;
+	mWriteByteFunc[0x0E] = &NsfMapper::WriteByte_8000;
+	mWriteByteFunc[0x0F] = &NsfMapper::WriteByte_8000;
 }
