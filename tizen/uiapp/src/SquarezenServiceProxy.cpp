@@ -121,6 +121,7 @@ void SquarezenServiceProxy::OnMessageReceivedN(RemoteMessagePort* remoteMessageP
 			}
 			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SongTitle"))))  );
 			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SongAuthor")))) );
+			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SongComment")))) );
 			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SongLength")))) );
 			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"SubSongs"))))   );
 			mMessageArgList->Add( new String(*static_cast<String*>(message->GetValue(String(L"DefaultSong"))))   );

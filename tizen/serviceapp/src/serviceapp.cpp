@@ -277,6 +277,7 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 		if (mPlayer) {
 			map->Add(new String(L"SongTitle"), new String(mPlayer->GetTitle().c_str()));
 			map->Add(new String(L"SongAuthor"), new String(mPlayer->GetAuthor().c_str()));
+			map->Add(new String(L"SongComment"), new String(mPlayer->GetComment().c_str()));
 			String *numSongs = new String();
 			numSongs->Format(10, L"%d", mPlayer->GetNumSubSongs());
 			String *songLength = new String();
@@ -289,6 +290,7 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 		} else {
 			map->Add(new String(L"SongTitle"), new String(L"empty"));
 			map->Add(new String(L"SongAuthor"), new String(L"empty"));
+			map->Add(new String(L"SongComment"), new String(L"empty"));
 			map->Add(new String(L"SubSongs"), new String(L"0"));
 			map->Add(new String(L"SongLength"), new String(L"0"));
 			map->Add(new String(L"DefaultSong"), new String(L"0"));
