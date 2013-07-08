@@ -132,7 +132,7 @@ public:
 
 protected:
 	Blip_Buffer *mBlipBuf;
-	Blip_Synth<blip_low_quality,82> *mSynth;
+	Blip_Synth<blip_low_quality,4096> *mSynth;
 	MetaData mMetaData;
 	int mState;
 };

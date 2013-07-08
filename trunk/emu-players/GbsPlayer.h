@@ -64,7 +64,7 @@ private:
 	void ExecuteGbZ80(uint16_t address);
 
 	Blip_Buffer *mBlipBufRight;
-	Blip_Synth<blip_low_quality,82> *mSynthRight;
+	Blip_Synth<blip_low_quality,4096> *mSynthRight;
 	GbsFileHeader mFileHeader;
 	GbPapuChip mPapu;
 	uint32_t mCycleCount, mFrameCycles;

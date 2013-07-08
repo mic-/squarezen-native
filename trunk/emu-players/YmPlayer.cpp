@@ -183,7 +183,7 @@ int YmPlayer::Prepare(std::string fileName)
 	mChip.mEG.mMaxCycle = 31;
 
 	mBlipBuf = new Blip_Buffer();
-	mSynth = new Blip_Synth<blip_low_quality,82>[3];
+	mSynth = new Blip_Synth<blip_low_quality,4096>[3];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
 		NLOGE("YmPlayer", "Failed to set blipbuffer sample rate");

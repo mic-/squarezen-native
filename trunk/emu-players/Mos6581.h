@@ -27,19 +27,6 @@
 class Mos6581;
 class Mos6581Channel;
 
-class Mos6581Mixer
-{
-public:
-	void Reset(uint16_t mixLevel);
-	void AddSample(uint16_t sample);
-	uint16_t Mix();
-
-private:
-	uint16_t mSamples[4];
-	uint16_t mNumSamples;
-	uint16_t mMixLevel;
-};
-
 
 class Mos6581EnvelopeGenerator : public Oscillator
 {
@@ -64,6 +51,7 @@ public:
 	uint8_t mOut;
 	uint16_t mSustainLevel;
 	Phase mPhase;
+	uint16_t mClockDivider;
 	bool mClocked;
 };
 
@@ -82,11 +70,12 @@ public:
 
 	Mos6581 *mChip;
 	Mos6581EnvelopeGenerator mEG;
-	Mos6581Mixer mMixer;
 	int16_t mOut;
 	uint16_t mDuty;
 	uint16_t mVol;
+	uint32_t mLfsr;
 	uint8_t mIndex;
+	uint16_t mOutputMask;
 };
 
 

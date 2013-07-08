@@ -15,11 +15,13 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+//#define LOG_TO_FILE
 
 #include <string>
 #include <stdio.h>
 #include "NativeLogger.h"
 #include "Emu6502.h"
+
 
 #define UPDATE_NZ(val) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N); \
 				       mRegs.F |= ((uint8_t)val == 0) ? Emu6502::FLAG_Z : 0; \
@@ -99,12 +101,12 @@
 // (zp,X)
 // Updates PC
 #define INDX_ADDR(dest) dest = ZPX_ADDR(); \
-						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte(dest+1) << 8))
+						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte((dest & 0xFF00)+((dest+1)&0xFF)) << 8))
 
 // (zp),Y
 // Updates PC
 #define INDY_ADDR(dest) dest = ZP_ADDR(); \
-						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte(dest+1) << 8)); \
+						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte((dest & 0xFF00)+((dest+1)&0xFF)) << 8)); \
 						if ((dest & 0x100) != ((dest + mRegs.Y) & 0x100)) mCycles++; \
 						dest += mRegs.Y
 
@@ -645,7 +647,7 @@ void Emu6502::Run(uint32_t maxCycles)
 		case 0x6C:		// JMP (abs)
 			addr = ABS_ADDR();
 			mRegs.PC = mMemory->ReadByte(addr);
-			mRegs.PC |= (uint16_t)mMemory->ReadByte(addr+1) << 8;
+			mRegs.PC |= (uint16_t)mMemory->ReadByte((addr&0xFF00)+((addr+1)&0xFF)) << 8;
 			mCycles += 5;
 			break;
 
@@ -1093,6 +1095,7 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0x99:		// STA abs,Y
 			ABSY_ADDR(addr);
+			//NLOGD("Emu6502", "STA abs,Y: addr=%#x, A=%#x", addr, mRegs.A);
 			mMemory->WriteByte(addr, mRegs.A);
 			mCycles += 4;
 			break;
@@ -1209,14 +1212,21 @@ void Emu6502::Disassemble(uint16_t address)
 {
 	uint8_t opcode = mMemory->ReadByte(address);
 	uint8_t operand1, operand2;
-	std::string opcodeStr, machineCodeStr;
+	std::string opcodeStr, machineCodeStr, eaStr;
 	char temp[16];
 	char operandStr[16];
 	operand1 = mMemory->ReadByte(address+1);
 	operand2 = mMemory->ReadByte(address+2);
+    static int insNum = 0;
+#ifdef LOG_TO_FILE
+    static int maxLogLines = 10000;
+    static FILE *logFile = NULL;
+#endif
 
 	snprintf(temp, 16, "%02x", opcode);
 	machineCodeStr = temp;
+
+	eaStr = "";
 
 	switch (opcode) {
 	case 0x69: case 0x65: case 0x75:
@@ -1476,6 +1486,8 @@ void Emu6502::Disassemble(uint16_t address)
 		snprintf(operandStr, 16, " $%02x,X", operand1);
 		snprintf(temp, 8, " %02x", operand1);
 		machineCodeStr += temp;
+		snprintf(temp, 16, " [%#x]", (operand1 + mRegs.X) & 0xFF);
+		eaStr = temp;
 		break;
 
 	case 0x96: case 0xB6:
@@ -1522,6 +1534,8 @@ void Emu6502::Disassemble(uint16_t address)
 		snprintf(operandStr, 16, " $%02x%02x,X", operand2, operand1);
 		snprintf(temp, 16, " %02x %02x", operand1, operand2);
 		machineCodeStr += temp;
+		snprintf(temp, 16, " [%#x]", operand1 + mRegs.X + ((uint16_t)operand2<<8));
+		eaStr = temp;
 		break;
 
 	case 0x19: case 0x39: case 0x59: case 0x79:
@@ -1530,6 +1544,8 @@ void Emu6502::Disassemble(uint16_t address)
 		snprintf(operandStr, 16, " $%02x%02x,Y", operand2, operand1);
 		snprintf(temp, 16, " %02x %02x", operand1, operand2);
 		machineCodeStr += temp;
+		snprintf(temp, 16, " [%#x]", operand1 + mRegs.Y + ((uint16_t)operand2<<8));
+		eaStr = temp;
 		break;
 
 	case 0x10: case 0x30: case 0x50: case 0x70:
@@ -1544,6 +1560,24 @@ void Emu6502::Disassemble(uint16_t address)
 		break;
 	}
 
-	NLOGD("Emu6502", "%#x: %s %s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x", address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
+#ifdef LOG_TO_FILE
+	/*String filePath(App::GetInstance()->GetAppDataPath() + L"cpudebug.txt");
+	file.Construct(filePath, "w+");
+
+	if (maxLogLines && logFile) {
+		fprintf(logFile, "%#x: %s %s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x (%d)",
+				address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S, insNum);
+		maxLogLines--;
+	} else {
+		if (logFile) {
+			fclose(logFile);
+			logFile = NULL;
+		}
+	}*/
+#else
+	NLOGD("Emu6502", "%#x: %s %s%s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x (%d)",
+			address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, eaStr.c_str(), mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S, insNum);
+#endif
+	insNum++;
 }
 
