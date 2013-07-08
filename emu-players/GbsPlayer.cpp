@@ -121,7 +121,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	{
 		mBlipBuf = new Blip_Buffer();
-		mSynth = new Blip_Synth<blip_low_quality,82>[4];
+		mSynth = new Blip_Synth<blip_low_quality,4096>[4];
 
 		if (mBlipBuf->set_sample_rate(44100)) {
 			NLOGE("GbsPlayer", "Failed to set blipbuffer sample rate");
@@ -136,7 +136,7 @@ int GbsPlayer::Prepare(std::string fileName)
 	}
 	{
 		mBlipBufRight = new Blip_Buffer();
-		mSynthRight = new Blip_Synth<blip_low_quality,82>[4];
+		mSynthRight = new Blip_Synth<blip_low_quality,4096>[4];
 
 		if (mBlipBufRight->set_sample_rate(44100)) {
 			//NativeLog("Failed to set blipbuffer sample rate");

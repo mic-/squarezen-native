@@ -173,32 +173,10 @@ int NsfPlayer::Prepare(std::string fileName)
 	m2A03->SetMapper(mMemory);
 	mMemory->Reset();
 	m6502->Reset();
-
-	NLOGD("NsfPlayer", "Initializing APU registers");
-
 	m2A03->Reset();
 
-	// Initialize the APU registers
-	/*for (i = 0x4000; i < 0x4010; i++) {
-		m2A03->Write(i, 0);
-	}
-	m2A03->Write(0x4010, 0x10);
-	m2A03->Write(0x4011, 0x0);
-	m2A03->Write(0x4012, 0x0);
-	m2A03->Write(0x4013, 0x0);
-	m2A03->Write(0x4015, 0x0f);
-
-	// Set up ROM mapping
-	for (int i = 0; i < 8; i++) {
-		if (mSongIsBankswitched) {
-			mMemory->WriteByte(0x5FF8 + i, mFileHeader.initialBanks[i]);
-		} else {
-			mMemory->WriteByte(0x5FF8 + i, i);
-		}
-	}*/
-
 	mBlipBuf = new Blip_Buffer();
-	mSynth = new Blip_Synth<blip_low_quality,82>[2]; //5];
+	mSynth = new Blip_Synth<blip_low_quality,4096>[2]; //5];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
     	NLOGE("NsfPlayer", "Failed to set blipbuffer sample rate");
@@ -310,7 +288,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		pulseOut += (-m2A03->mChannels[Emu2A03::CHN_PULSE2].mPhase)
 					& (m2A03->mChannels[Emu2A03::CHN_PULSE2].mVol & 0x0F)
 					& m2A03->mChannels[Emu2A03::CHN_PULSE2].mOutputMask;
-		pulseOut = (uint16_t)(pulseTable[pulseOut] * 82.0f);
+		pulseOut = (uint16_t)(pulseTable[pulseOut] * 4000.0f);
 
 		tndOut = ((-m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mPhase)
 					& (m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mVol & 0x0F)
@@ -320,7 +298,7 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 					& m2A03->mChannels[Emu2A03::CHN_NOISE].mOutputMask) * 2;
 		tndOut += ((m2A03->mChannels[Emu2A03::CHN_DMC].mDuty)
 					& m2A03->mChannels[Emu2A03::CHN_DMC].mOutputMask);
-		tndOut = (uint16_t)(tndTable[tndOut] * 82.0f);
+		tndOut = (uint16_t)(tndTable[tndOut] * 4000.0f);
 
 		if (pulseOut != m2A03->mChannels[0].mOut) {
 			mSynth[0].update(k, pulseOut);

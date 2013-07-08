@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_DEBUG 0
+#define NLOG_LEVEL_ERROR 0
 
 #include <iostream>
 #include <fstream>
@@ -22,7 +22,8 @@
 #include "NativeLogger.h"
 #include "SidPlayer.h"
 
-#define BYTESWAP(w) w = (w>>8) | (w << 8)
+#define BYTESWAP(w) w = (((w) & 0xFF00) >> 8) | (((w) & 0x00FF) << 8)
+#define WORDSWAP(d) d = (((d) & 0xFFFF0000) >> 16) | (((d) & 0x0000FFFF) << 16)
 
 SidPlayer::SidPlayer()
 	: m6502(NULL)
@@ -68,6 +69,7 @@ int SidPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
+    uint16_t *p16;
 
     if (MusicPlayer::STATE_CREATED != GetState()) {
     	Reset();
@@ -99,6 +101,12 @@ int SidPlayer::Prepare(std::string fileName)
 	BYTESWAP(mFileHeader.playAddress);
 	BYTESWAP(mFileHeader.numSongs);
 	BYTESWAP(mFileHeader.firstSong);
+
+	p16 = (uint16_t*)&mFileHeader.speed;
+	BYTESWAP(*p16);
+	p16++;
+	BYTESWAP(*p16);
+	WORDSWAP(mFileHeader.speed);
 
 	if (mFileHeader.version == 2) {
 	    NLOGD("SidPlayer", "Reading PSID v2 header fields");
@@ -149,7 +157,7 @@ int SidPlayer::Prepare(std::string fileName)
     }*/
 
 	mBlipBuf = new Blip_Buffer();
-	mSynth = new Blip_Synth<blip_low_quality,82>[3];
+	mSynth = new Blip_Synth<blip_low_quality,4096>[3];
 	if (mBlipBuf->set_sample_rate(44100)) {
 		NLOGE("SidPlayer", "Failed to set blipbuffer sample rate");
 		delete mMemory;
@@ -190,6 +198,8 @@ int SidPlayer::Prepare(std::string fileName)
 
 void SidPlayer::SetMasterVolume(int masterVol)
 {
+	NLOGV("SidPlayer", "SetMasterVolume(%d)", masterVol);
+
 	for (int i = 0; i < 3; i++) {
 		mSynth[i].volume(0.02 * (float)masterVol);
 	}
@@ -199,6 +209,9 @@ void SidPlayer::SetMasterVolume(int masterVol)
 void SidPlayer::SetSubSong(uint32_t subSong)
 {
 	NLOGD("SidPlayer", "SetSubSong(%d)", subSong);
+
+	/*mFrameCycles = 1000000 / ((mFileHeader.speed & (1 << subSong)) ? 60 : 50);
+	NLOGE("SidPlayer", "Frame cycles = %d", mFrameCycles);*/
 
 	m6502->mRegs.A = subSong;
 	Execute6502(mFileHeader.initAddress);
@@ -211,14 +224,14 @@ void SidPlayer::Execute6502(uint16_t address)
 
 	if (address) {
 		// JSR loadAddress
-		mMemory->WriteByte(0xbf80, 0x20);
-		mMemory->WriteByte(0xbf81, address & 0xff);
-		mMemory->WriteByte(0xbf82, address >> 8);
+		mMemory->WriteByte(0x9ff0, 0x20);
+		mMemory->WriteByte(0x9ff1, address & 0xff);
+		mMemory->WriteByte(0x9ff2, address >> 8);
 		// -: JMP -
-		mMemory->WriteByte(0xbf83, 0x4c);
-		mMemory->WriteByte(0xbf84, 0x83);
-		mMemory->WriteByte(0xbf85, 0xbf);
-		m6502->mRegs.PC = 0xbf80;
+		mMemory->WriteByte(0x9ff3, 0x4c);
+		mMemory->WriteByte(0x9ff4, 0xf3);
+		mMemory->WriteByte(0x9ff5, 0x9f);
+		m6502->mRegs.PC = 0x9ff0;
 		m6502->mCycles = 0;
 		m6502->Run(mFrameCycles);
 	} else {
@@ -227,12 +240,12 @@ void SidPlayer::Execute6502(uint16_t address)
 			m6502->SetBrkVector(0x314);
 		}
 		// BRK
-		mMemory->WriteByte(0xbf80, 0x00);
+		mMemory->WriteByte(0x9ff0, 0x00);
 		// -: JMP -
-		mMemory->WriteByte(0xbf81, 0x4c);
-		mMemory->WriteByte(0xbf82, 0x81);
-		mMemory->WriteByte(0xbf83, 0xbf);
-		m6502->mRegs.PC = 0xbf80;
+		mMemory->WriteByte(0x9ff1, 0x4c);
+		mMemory->WriteByte(0x9ff2, 0xf1);
+		mMemory->WriteByte(0x9ff3, 0x9f);
+		m6502->mRegs.PC = 0x9ff0;
 		m6502->mCycles = 0;
 		m6502->Run(mFrameCycles);
 		m6502->SetBrkVector(0xfffe);
@@ -272,7 +285,8 @@ int SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		mSid->Step();
 
 		for (i = 0; i < 3; i++) {
-			out = mSid->mChannels[i].mVol;
+			out = mSid->mChannels[i].mVol & mSid->mChannels[i].mOutputMask;
+			//if (i != 2) out = 0;
 
 			if (out != mSid->mChannels[i].mOut) {
 				mSynth[i].update(k, out);
