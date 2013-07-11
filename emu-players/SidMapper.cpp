@@ -31,8 +31,8 @@ static const uint8_t KERNEL_FF48_IRQ_HANDLER[] =
 
 
 SidMapper::SidMapper()
-	: mSid(NULL)
-	, mSidPlayer(NULL)
+	: mSidPlayer(NULL)
+	, mSid(NULL)
 {
 	mRam = new uint8_t[64 * 1024];
 	memset(mRam, 0, 64*1024);

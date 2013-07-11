@@ -386,7 +386,6 @@ void Emu6502::Run(uint32_t maxCycles)
 			break;
 
 		case 0x58:		// CLI
-			NLOGD("Emu6502", "CLI at PC=%#x", mRegs.PC);
 			mRegs.F &= ~Emu6502::FLAG_I;
 			mCycles += 2;
 			break;
@@ -1073,7 +1072,6 @@ void Emu6502::Run(uint32_t maxCycles)
 			break;
 
 		case 0x78:		// SEI
-			NLOGD("Emu6502", "SEI at PC=%#x", mRegs.PC);
 			mRegs.F |= Emu6502::FLAG_I;
 			mCycles += 2;
 			break;
