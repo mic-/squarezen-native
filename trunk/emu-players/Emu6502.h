@@ -31,7 +31,9 @@ public:
 	void Run(uint32_t maxCycles);
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 	void Disassemble(uint16_t address);
+
 	void SetBrkVector(uint16_t vector) { mBrkVector = vector; }
+	void Irq(uint16_t vector);
 
 	enum {
 		FLAG_C = 0x01,
