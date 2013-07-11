@@ -14,13 +14,20 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_WARNING 0
+#define NLOG_LEVEL_DEBUG 0
 
 #include <string.h>
 #include <stddef.h>
 #include "NativeLogger.h"
 #include "SidMapper.h"
 #include "SidPlayer.h"
+#include "Emu6502.h"
+
+
+static const uint8_t KERNEL_FF48_IRQ_HANDLER[] =
+{
+	0x6C, 0x14, 0x03	// JMP ($0314)
+};
 
 
 SidMapper::SidMapper()
@@ -41,11 +48,29 @@ SidMapper::~SidMapper()
 
 uint8_t SidMapper::ReadByte(uint16_t addr)
 {
-	// TODO: handle special addresses?
-	if (addr >= Mos6581::REGISTER_BASE && addr <= Mos6581::REGISTER_BASE + Mos6581::R_FILTER_MODEVOL) {
-		NLOGD("SidMapper", "Reading from SID area (%#x)", addr);
-	} else if ((addr >> 12) >= 0xE && (mRam[1] & 3) >= 2) {
-		NLOGD("SidMapper", "Reading from kernel ROM (%#x)", addr);
+	uint8_t bankSelect = mRam[1] & 7;
+
+	if ((addr >> 12) == 0xD && bankSelect >= 5) {
+		// I/O at D000-DFFF
+		if (addr >= 0xDC00 && addr <= 0xDCFF) {
+			// CIA1
+			return mCia[0].Read(addr & 0xDC0F);
+
+		} else if (addr >= 0xDD00 && addr <= 0xDDFF) {
+			// CIA2
+			return mCia[1].Read(addr & 0xDD0F);
+
+		} else if (addr >= Mos6581::REGISTER_BASE && addr <= Mos6581::REGISTER_BASE + Mos6581::R_FILTER_MODEVOL) {
+			NLOGD("SidMapper", "Reading from SID area (%#x)", addr);
+		}
+
+	} else if ((addr >> 12) >= 0xE && (bankSelect & 3) >= 2) {
+		NLOGD("SidMapper", "Reading from kernel ROM (%#x) at PC=%#x", addr, m6502->mRegs.PC);
+		if (addr >= 0xFF48 && addr <= 0xFF4A) {
+			return KERNEL_FF48_IRQ_HANDLER[addr - 0xFF48];
+		} else {
+			return 0;
+		}
 	}
 	return mRam[addr];
 }
@@ -64,13 +89,18 @@ void SidMapper::WriteByte(uint16_t addr, uint8_t data)
 		}
 		break;
 	case 0xD:
-		NLOGV("SidMapper", "addr=%#x, data=%#x, bankSelect=%d", addr, data, bankSelect);
+		//NLOGD("SidMapper", "addr=%#x, data=%#x, bankSelect=%d", addr, data, bankSelect);
 		if (bankSelect >= 5) {
-			if (addr >= 0xDC00 && addr < 0xDC10) {
-				NLOGE("SidMapper", "Writing %#x to %#x", data, addr);
-			}
 			// I/O at D000-DFFF
-			if (addr >= Mos6581::REGISTER_BASE && addr <= Mos6581::REGISTER_BASE + 0x3FF) {
+			if (addr >= 0xDC00 && addr <= 0xDCFF) {
+				// CIA1
+				mCia[0].Write(addr & 0xDC0F, data);
+
+			} else if (addr >= 0xDD00 && addr <= 0xDDFF) {
+				// CIA2
+				mCia[1].Write(addr & 0xDD0F, data);
+
+			} else if (addr >= Mos6581::REGISTER_BASE && addr <= Mos6581::REGISTER_BASE + 0x3FF) {
 				addr &= (Mos6581::REGISTER_BASE + 0x1F);
 				mSid->Write(addr, data);
 				if (addr == Mos6581::REGISTER_BASE + Mos6581::R_FILTER_MODEVOL) {
@@ -91,6 +121,9 @@ void SidMapper::WriteByte(uint16_t addr, uint8_t data)
 		}
 		break;
 	default:
+		if (addr == 1) {
+			NLOGD("SidMapper", "New bank select value: %#x at PC=%#x", data, m6502->mRegs.PC);
+		}
 		mRam[addr] = data;
 		break;
 	}
@@ -100,6 +133,170 @@ void SidMapper::WriteByte(uint16_t addr, uint8_t data)
 
 void SidMapper::Reset()
 {
-	mRam[1] = 0x36; //0x37;
+	mRam[0x01] = 0x37;
+	mRam[0x314] = 0x31;
+	mRam[0x315] = 0xEA;
+	mRam[0xEA31] = 0x40;  // RTI
+
+	mCia[0].SetMapper(this);
+	mCia[1].SetMapper(this);
+
+	mCia[0].Reset();
+	mCia[1].Reset();
 }
 
+
+void Cia6526Timer::Reset()
+{
+	mPeriod = 0;
+	mCtrl = 0;
+}
+
+void Cia6526Timer::Step()
+{
+	if (mCtrl & CTRL_START) {
+		if (mPos) {
+			mPos--;
+			if (!mPos) {
+				NLOGV("Cia6526Timer", "Underflow on timer %d, ctrl=%#x, P=%#x",
+						mIndex, mCia->mCtrl, mCia->mMemory->m6502->mRegs.F);
+
+				mCia->mStatus |= (Cia6526::STATUS_TIMER_A_UNDERFLOW << mIndex);
+
+				if (mCtrl & CTRL_RESTART) {
+					mPos = mPeriod;
+				}
+				if (mCia->mCtrl & (Cia6526::CTRL_TIMER_A_IRQ << mIndex)) {
+					mCia->mStatus |= Cia6526::STATUS_NMI;
+					if (!(mCia->mMemory->m6502->mRegs.F & Emu6502::FLAG_I)) {
+						if ((mCia->mMemory->ReadByte(0x0001) & 3) < 2) {
+							// RAM at $E000-FFFF
+							mCia->mMemory->m6502->Irq(0xFFFE);
+						} else {
+							// ROM at $E000-FFFF
+							mCia->mMemory->m6502->Irq(0x0314);
+						}
+						mCia->mMemory->mSidPlayer->TimerIrq(Cia6526::TIMER_A);
+					}
+				}
+			}
+		}
+	}
+}
+
+
+Cia6526::Cia6526()
+{
+	mTimer[0] = new Cia6526Timer(this, 0);
+	mTimer[1] = new Cia6526Timer(this, 1);
+}
+
+
+Cia6526::~Cia6526()
+{
+	delete mTimer[0];
+	delete mTimer[1];
+}
+
+
+void Cia6526::Reset()
+{
+	mCtrl = mStatus = 0;
+	mTimer[TIMER_A]->Reset();
+	mTimer[TIMER_B]->Reset();
+}
+
+
+uint8_t Cia6526::Read(uint16_t addr)
+{
+	uint8_t reg = addr & 0x1F;
+	uint8_t result;
+
+	NLOGD("Cia6526", "Read(%#x)", addr);
+
+	switch (reg) {
+	case 0x04:
+		return mTimer[TIMER_A]->mPos & 0xFF;
+		break;
+	case 0x05:
+		return (mTimer[TIMER_A]->mPos >> 8) & 0xFF;
+		break;
+
+	case 0x06:
+		return mTimer[TIMER_B]->mPos & 0xFF;
+		break;
+	case 0x07:
+		return (mTimer[TIMER_B]->mPos >> 8) & 0xFF;
+		break;
+
+	case 0x0D:
+		result = mStatus;
+		mStatus = 0;
+		return result;
+		break;
+
+	case 0x0E:
+		return mTimer[TIMER_A]->mCtrl;
+		break;
+	case 0x0F:
+		return mTimer[TIMER_B]->mCtrl;
+		break;
+
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+
+void Cia6526::Write(uint16_t addr, uint8_t data)
+{
+	uint8_t reg = addr & 0x1F;
+
+	NLOGD("Cia6526", "Write(%#x, %#x)", addr, data);
+
+	switch (reg) {
+	case 0x04:
+		mTimer[TIMER_A]->mPeriod = (mTimer[TIMER_A]->mPeriod & 0xFF00) | data;
+		break;
+	case 0x05:
+		mTimer[TIMER_A]->mPeriod = (mTimer[TIMER_A]->mPeriod & 0x00FF) | ((uint16_t)data << 8);
+		break;
+	case 0x06:
+		mTimer[TIMER_B]->mPeriod = (mTimer[TIMER_B]->mPeriod & 0xFF00) | data;
+		break;
+	case 0x07:
+		mTimer[TIMER_B]->mPeriod = (mTimer[TIMER_B]->mPeriod & 0x00FF) | ((uint16_t)data << 8);
+		break;
+
+	case 0x0D:
+		for (int i = 0; i <= 4; i++) {
+			if (data & 0x80) {
+				if (data & (1 << i)) {
+					mCtrl |= (1 << i);
+				}
+			} else {
+				if (data & (1 << i)) {
+					mCtrl &= ~(1 << i);
+				}
+			}
+		}
+		break;
+
+	case 0x0E:
+		mTimer[TIMER_A]->mCtrl = data;
+		if (data & Cia6526Timer::CTRL_LOAD) {
+			mTimer[TIMER_A]->mPos = mTimer[TIMER_A]->mPeriod;
+		}
+		break;
+	case 0x0F:
+		mTimer[TIMER_B]->mCtrl = data;
+		if (data & Cia6526Timer::CTRL_LOAD) {
+			mTimer[TIMER_B]->mPos = mTimer[TIMER_B]->mPeriod;
+		}
+		break;
+	default:
+		break;
+	}
+}

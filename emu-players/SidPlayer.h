@@ -61,6 +61,8 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
+	void TimerIrq(uint8_t timerNum);
+
 	virtual void SetSubSong(uint32_t subSong);
 	void SetMasterVolume(int masterVol);
 
@@ -73,6 +75,7 @@ private:
 	SidMapper *mMemory;
 	uint32_t mFrameCycles, mCycleCount;
 	PsidFileHeader mFileHeader;
+	uint16_t mDriverPage;
 };
 
 #endif /* SIDPLAYER_H_ */

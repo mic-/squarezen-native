@@ -138,9 +138,18 @@
 // ====
 
 
+void Emu6502::Irq(uint16_t vector) {
+	PUSHW(mRegs.PC);
+	PUSHB(mRegs.F);
+	mRegs.F |= (Emu6502::FLAG_I);
+	mRegs.PC = mMemory->ReadByte(vector);
+	mRegs.PC |= (uint16_t)mMemory->ReadByte(vector+1) << 8;
+}
+
 void Emu6502::Reset()
 {
 	mBrkVector = 0xfffe;
+	mRegs.F = 0;
 }
 
 void Emu6502::Run(uint32_t maxCycles)
@@ -377,6 +386,7 @@ void Emu6502::Run(uint32_t maxCycles)
 			break;
 
 		case 0x58:		// CLI
+			NLOGD("Emu6502", "CLI at PC=%#x", mRegs.PC);
 			mRegs.F &= ~Emu6502::FLAG_I;
 			mCycles += 2;
 			break;
@@ -1063,6 +1073,7 @@ void Emu6502::Run(uint32_t maxCycles)
 			break;
 
 		case 0x78:		// SEI
+			NLOGD("Emu6502", "SEI at PC=%#x", mRegs.PC);
 			mRegs.F |= Emu6502::FLAG_I;
 			mCycles += 2;
 			break;
@@ -1181,7 +1192,6 @@ void Emu6502::Run(uint32_t maxCycles)
 
 		case 0x9A:		// TXS
 			mRegs.S = mRegs.X;
-			UPDATE_NZ(mRegs.S);
 			mCycles += 2;
 			break;
 

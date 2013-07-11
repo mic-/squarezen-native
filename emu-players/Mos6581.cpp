@@ -150,10 +150,18 @@ void Mos6581Channel::Step()
 
 	sawOut = mPos >> 12;
 
-	if ((mPos ^ oldPos) & 0xFFC000) {
+	if ((mPos ^ oldPos) & 0xFFF000) {
 		mLfsr = (mLfsr << 1) | (((mLfsr >> 22) ^ (mLfsr >> 17)) & 1);
 		mLfsr &= 0x7FFFFF;
-		noiseOut = mLfsr >> 11;
+		//noiseOut = mLfsr >> 11;
+		noiseOut = ((mLfsr >> 9) & 0x800) |
+				   ((mLfsr >> 8) & 0x400) |
+				   ((mLfsr >> 5) & 0x200) |
+				   ((mLfsr >> 3) & 0x100) |
+				   ((mLfsr >> 2) & 0x080) |
+				   ((mLfsr << 1) & 0x040) |
+				   ((mLfsr << 3) & 0x020) |
+				   ((mLfsr << 4) & 0x010);
 	}
 
 	mEG.Step();
@@ -239,12 +247,12 @@ void Mos6581Channel::Write(uint32_t addr, uint8_t val)
 				mEG.mClockDivider = 1;
 				mEG.mClocked = true;
 				mEG.mPeriod = EG_PERIODS[mChip->mRegs[Mos6581::R_VOICE1_AD + mIndex * 7] >> 4];
-				if (mIndex==2) NLOGD("Mos6581", "Attack phase on channel 0 at level %d (%d)", mEG.mOut, curCycle);
+				if (mIndex==2) NLOGV("Mos6581", "Attack phase on channel 0 at level %d (%d)", mEG.mOut, curCycle);
 			} else {
 				mEG.mPhase = Mos6581EnvelopeGenerator::RELEASE;
 				mEG.mPeriod = EG_PERIODS[mChip->mRegs[Mos6581::R_VOICE1_SR + mIndex * 7] & 0x0F];
 				mEG.mClocked = true;
-				if (mIndex==2) NLOGD("Mos6581", "Channel %d starting release phase at output level %d, (period %d, divider %d, time %d)",
+				if (mIndex==2) NLOGV("Mos6581", "Channel %d starting release phase at output level %d, (period %d, divider %d, time %d)",
 						mIndex, mEG.mOut, mEG.mPeriod, mEG.mClockDivider, curCycle);
 			}
 		}
@@ -291,15 +299,12 @@ void Mos6581::Write(uint32_t addr, uint8_t data)
 	mRegs[reg] = data;
 
 	if (reg >= Mos6581::R_VOICE1_FREQ_LO && reg <= Mos6581::R_VOICE1_SR) {
-		//NLOGD("Mos6581", "Voice1 Write(%#x, %#x)", addr, data);
 		mChannels[0].Write(addr, data);
 
 	} else if (reg >= Mos6581::R_VOICE2_FREQ_LO && reg <= Mos6581::R_VOICE2_SR) {
-		//NLOGD("Mos6581", "Voice2 Write(%#x, %#x)", addr, data);
 		mChannels[1].Write(addr, data);
 
 	} else if (reg >= Mos6581::R_VOICE3_FREQ_LO && reg <= Mos6581::R_VOICE3_SR) {
-		//NLOGD("Mos6581", "Voice3 Write(%#x, %#x)", addr, data);
 		mChannels[2].Write(addr, data);
 
 	} else if (Mos6581::R_FILTER_FC_LO == reg) {
