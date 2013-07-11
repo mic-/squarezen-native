@@ -84,7 +84,7 @@ SidPlayer::~SidPlayer()
 
 int SidPlayer::Reset()
 {
-	NLOGV("NsfPlayer", "Reset");
+	NLOGV("SidPlayer", "Reset");
 
 	delete mBlipBuf;
 	mBlipBuf = NULL;
@@ -278,18 +278,15 @@ void SidPlayer::SetSubSong(uint32_t subSong)
 {
 	NLOGD("SidPlayer", "SetSubSong(%d)", subSong);
 
-	/*mFrameCycles = 1000000 / ((mFileHeader.speed & (1 << subSong)) ? 60 : 50);
-	NLOGE("SidPlayer", "Frame cycles = %d", mFrameCycles);*/
-
 	uint8_t *ram = mMemory->GetRamPointer();
 	ram[mDriverPage + 0x30] = subSong;
-	Execute6502(mDriverPage); //mFileHeader.initAddress);
+	Execute6502(mDriverPage);
 }
 
 
 void SidPlayer::TimerIrq(uint8_t timerNum)
 {
-	NLOGE("SidPlayer", "TimerA IRQ");
+	NLOGV("SidPlayer", "TimerA IRQ");
 
 	if (timerNum == Cia6526::TIMER_A) {
 		m6502->mCycles = 0;
