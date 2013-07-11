@@ -117,7 +117,8 @@ void Mos6581Channel::Reset()
 void Mos6581Channel::Step()
 {
 	uint8_t ctrl = mChip->mRegs[Mos6581::R_VOICE1_CTRL + mIndex * 7];
-	uint16_t triOut = 0, sawOut = 0, pulseOut = 0, noiseOut = 0;
+	uint16_t triOut = 0, sawOut = 0, pulseOut = 0;
+	static uint16_t noiseOut = 0;
 	uint8_t prevChn = (mIndex == 0) ? 2 : mIndex - 1;
 	uint8_t nextChn = (mIndex == 2) ? 0 : mIndex + 1;
 	uint8_t nextCtrl = mChip->mRegs[Mos6581::R_VOICE1_CTRL + nextChn * 7];
@@ -150,7 +151,7 @@ void Mos6581Channel::Step()
 
 	sawOut = mPos >> 12;
 
-	if ((mPos ^ oldPos) & 0xFFF000) {
+	if ((mPos ^ oldPos) & 0xF00000) {
 		mLfsr = (mLfsr << 1) | (((mLfsr >> 22) ^ (mLfsr >> 17)) & 1);
 		mLfsr &= 0x7FFFFF;
 		//noiseOut = mLfsr >> 11;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_DEBUG 0
+//#define NLOG_LEVEL_DEBUG 0
 
 #include <string.h>
 #include <stddef.h>
