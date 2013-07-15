@@ -53,8 +53,60 @@ SquarezenMainForm::Initialize(void)
 }
 
 
+void ScanDirectory(String root, String relativePath)
+{
+	Directory* dir;
+	DirEnumerator* dirEnum;
+	String dirName;
+	result r;
+
+	AppLog("FileScannerThread started");
+
+	dir = new Directory;
+
+	// Open the directory
+	r = dir->Construct(root + relativePath);
+	if (IsFailed(r)) {
+		// TODO: handle error
+	}
+
+	// Reads all the directory entries
+	dirEnum = dir->ReadN();
+	if (!dirEnum) {
+		// TODO: handle error
+	}
+
+	// Loops through all the directory entries
+	while (dirEnum->MoveNext() == E_SUCCESS) {
+		DirEntry entry = dirEnum->GetCurrentDirEntry();
+		if (entry.IsDirectory() && entry.GetName() != L"." && entry.GetName() != L"..") {
+			ScanDirectory(root, relativePath+"/"+entry.GetName());
+		} else {
+			String s;
+			entry.GetName().ToUpper(s);
+			if (s.EndsWith(".YM") ||
+					s.EndsWith(".VGM") ||
+					s.EndsWith(".SID") ||
+					s.EndsWith(".NSF") ||
+					s.EndsWith(".GBS")) {
+				//String *temp = new String(entry.GetName());
+				//mFileList->Add(temp);
+				AppLog("Found file: %S at relative path %S", entry.GetName().GetPointer(), relativePath.GetPointer());
+			}
+		}
+	}
+
+	delete dir;
+	dir = null;
+}
+
 Object *FileScannerThread::Run()
 {
+	String extStoragePath = Tizen::System::Environment::GetExternalStoragePath();
+	String relativePath(L"");
+
+	ScanDirectory(extStoragePath, relativePath);
+	AppLog("FileScannerThread finished");
 	return null;
  }
 
@@ -72,8 +124,8 @@ SquarezenMainForm::OnInitializing(void)
 
 	mExtStoragePath = Tizen::System::Environment::GetExternalStoragePath();
 
-	//mFileScanner.Construct();
-	//mFileScanner.Start();
+	mFileScanner.Construct();
+	mFileScanner.Start();
 
 	Directory* dir;
 	DirEnumerator* dirEnum;
