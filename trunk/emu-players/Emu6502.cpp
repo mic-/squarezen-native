@@ -668,6 +668,44 @@ void Emu6502::Run(uint32_t maxCycles)
 			 mCycles += 6;
 			 break;
 
+ // == LAX ==
+		case 0xA7:		// LAX zp
+			mRegs.A = mMemory->ReadByte(ZP_ADDR());
+			mRegs.X = mRegs.A;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 3;
+			break;
+
+		case 0xB7:		// LAX zp,Y
+			mRegs.A = mMemory->ReadByte(ZPY_ADDR());
+			mRegs.X = mRegs.A;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xAF:		// LAX abs
+			mRegs.A = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			mRegs.X = mRegs.A;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xBF:		// LAX abs,Y
+			ABSY_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			mRegs.X = mRegs.A;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xB3:		// LAX (zp),Y
+			INDY_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			mRegs.X = mRegs.A;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 5;
+			break;
 
 // == LDA ==
 		case 0xA9:		// LDA imm
@@ -1201,6 +1239,7 @@ void Emu6502::Run(uint32_t maxCycles)
 
 // ====
 		case 0xEA:		// NOP
+		case 0x1A: case 0x3A: case 0x5A: case 0x7A: case 0xDA:
 			mCycles += 2;
 			break;
 
