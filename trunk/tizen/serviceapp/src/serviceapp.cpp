@@ -15,6 +15,7 @@
  */
 
 #include <FBase.h>
+#include <FText.h>
 #include "serviceapp.h"
 #include "../../../emu-players/GbsPlayer.h"
 #include "../../../emu-players/NsfPlayer.h"
@@ -28,6 +29,7 @@ using namespace Tizen::Base;
 using namespace Tizen::Base::Collection;
 using namespace Tizen::Media;
 using namespace Tizen::System;
+using namespace Tizen::Text;
 
 static const wchar_t* LOCAL_MESSAGE_PORT_NAME = L"SQZSERVICE_PORT";
 
@@ -275,9 +277,31 @@ serviceappApp::OnUserEventReceivedN(RequestId requestId, IList* pArgs)
 		map->Add(new String(L"SquarezenService"), new String(L"song_metadata"));
 		mPlayerMutex.Acquire();
 		if (mPlayer) {
-			map->Add(new String(L"SongTitle"), new String(mPlayer->GetTitle().c_str()));
-			map->Add(new String(L"SongAuthor"), new String(mPlayer->GetAuthor().c_str()));
-			map->Add(new String(L"SongComment"), new String(mPlayer->GetComment().c_str()));
+			ByteBuffer *pBuf;
+			String str;
+			Encoding* pEnc = Encoding::GetEncodingN(L"ISO-8859-1");
+
+			int numBytes = strlen(mPlayer->GetTitle().c_str());
+			pBuf = new ByteBuffer;
+			pBuf->Construct((const byte*)(mPlayer->GetTitle().c_str()), 0, numBytes, 100);
+			pEnc->GetString(*pBuf, 0, numBytes, str);
+			map->Add(new String(L"SongTitle"), new String(str));
+			delete pBuf;
+
+			numBytes = strlen(mPlayer->GetAuthor().c_str());
+			pBuf = new ByteBuffer;
+			pBuf->Construct((const byte*)(mPlayer->GetAuthor().c_str()), 0, numBytes, 100);
+			pEnc->GetString(*pBuf, 0, numBytes, str);
+			map->Add(new String(L"SongAuthor"), new String(str));
+			delete pBuf;
+
+			numBytes = strlen(mPlayer->GetComment().c_str());
+			pBuf = new ByteBuffer;
+			pBuf->Construct((const byte*)(mPlayer->GetComment().c_str()), 0, numBytes, 100);
+			pEnc->GetString(*pBuf, 0, numBytes, str);
+			map->Add(new String(L"SongComment"), new String(str));
+			delete pBuf;
+
 			String *numSongs = new String();
 			numSongs->Format(10, L"%d", mPlayer->GetNumSubSongs());
 			String *songLength = new String();
