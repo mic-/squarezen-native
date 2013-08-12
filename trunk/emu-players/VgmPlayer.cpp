@@ -53,7 +53,7 @@ int VgmPlayer::Reset()
 
 	mState = MusicPlayer::STATE_CREATED;
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
 
