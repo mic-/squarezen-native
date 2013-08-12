@@ -57,6 +57,53 @@ int VgmPlayer::Reset()
 }
 
 
+void VgmPlayer::ParseGd3(size_t fileSize)
+{
+	size_t offset;
+	short *gd3w;
+
+	if (mFileHeader->gd3Offset == 0) return;
+
+	offset = mFileHeader->gd3Offset + 0x14 + 12;
+
+	memset(mAsciiTitle, 0, 256);
+	memset(mAsciiAuthor, 0, 256);
+	memset(mAsciiComment, 0, 256);
+
+	gd3w = (short*)&mVgmData[offset];
+
+	for (int i = 0; *gd3w != 0 && i < 255; i++) {
+		if (offset >= fileSize) return;
+		mAsciiTitle[i] = *gd3w++;
+		offset++;
+	}
+	gd3w++; offset++;
+	mMetaData.SetTitle(mAsciiTitle);
+
+	while (*gd3w++) offset++; offset++;	// Skip japanese title
+
+	for (int i = 0; *gd3w != 0 && i < 255; i++) {
+		if (offset >= fileSize) return;
+		mAsciiComment[i] = *gd3w++;
+		offset++;
+	}
+	gd3w++; offset++;
+	mMetaData.SetComment(mAsciiComment);
+
+	while (*gd3w++) offset++; offset++;	// Skip japanese game name
+	while (*gd3w++) offset++; offset++;	// Skip system name
+	while (*gd3w++) offset++; offset++;	// Skip japanese system name
+
+	for (int i = 0; *gd3w != 0 && i < 255; i++) {
+		if (offset >= fileSize) return;
+		mAsciiAuthor[i] = *gd3w++;
+		offset++;
+	}
+	gd3w++;
+	mMetaData.SetAuthor(mAsciiAuthor);
+}
+
+
 int VgmPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
@@ -136,6 +183,8 @@ int VgmPlayer::Prepare(std::string fileName)
 		delete [] buf;
 	}
 	mFileHeader = (VgmFileHeader*)mVgmData;
+
+	ParseGd3(fileSize);
 
 	if ((mFileHeader->version & 0xFF) >= 0x50) {
 		mDataPos = mFileHeader->dataOffset;

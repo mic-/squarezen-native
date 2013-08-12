@@ -66,6 +66,7 @@ public:
 	} VgmFileHeader;
 	
 private:
+	void ParseGd3(size_t fileSize);
 	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 	uint8_t GetData();
 	void Step();
@@ -77,6 +78,7 @@ private:
 	uint32_t mWait;
 	uint32_t mCycleCount, mSampleCycles;
 	uint32_t mDataPos, mDataLen, mLoopPos;
+	char mAsciiTitle[256], mAsciiAuthor[256], mAsciiComment[256];
 };
 
 #endif /* VGMPLAYER_H_ */
