@@ -30,10 +30,32 @@
 // Updates PC
 #define ZP_ADDR() (mMemory->ReadByte(mRegs.PC++))
 
-// zp,X
+// zp+X
 // Updates PC
 #define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
 
+// zp+Y
+// Updates PC
+#define ZPY_ADDR() ((ZP_ADDR() + mRegs.Y) & 0xFF)
+
+
+// !abs
+// Doesn't update PC
+#define ABS_ADDR() (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8))
+
+// !abs+X
+// Updates PC
+#define ABSX_ADDR(dest) dest = (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8)); \
+	                    mRegs.PC += 2; \
+						dest += mRegs.X
+
+// !abs+Y
+// Updates PC
+#define ABSY_ADDR(dest) dest = (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8)); \
+	                    mRegs.PC += 2; \
+						dest += mRegs.Y
+
+// ====
 
 #define PUSHB(val) mMemory->WriteByte(0x100 + (uint16_t)mRegs.SP, val); \
 	               mRegs.SP--
@@ -122,9 +144,49 @@ void SSmp::Run(uint32_t maxCycles)
 			mCycles += 3;
 			break;
 
-		case 0xF4:		// MOV A,aa,X
+		case 0xF4:		// MOV A,aa+X
 			mRegs.A = mMemory->ReadByte(ZPX_ADDR());
 			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xE5:		// MOV A,!aaaa
+			mRegs.A = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xF5:		// MOV A,!aaaa+X
+			ABSX_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 5;
+			break;
+
+		case 0xF6:		// MOV A,!aaaa+Y
+			ABSY_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 5;
+			break;
+
+		case 0xF8:		// MOV X,aa
+			mRegs.X = mMemory->ReadByte(ZP_ADDR());
+			UPDATE_NZ(mRegs.X);
+			mCycles += 3;
+			break;
+
+		case 0xF9:		// MOV X,aa+Y
+			mRegs.X = mMemory->ReadByte(ZPY_ADDR());
+			UPDATE_NZ(mRegs.X);
+			mCycles += 4;
+			break;
+
+		case 0xE9:		// MOV X,!aaaa
+			mRegs.A = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.X);
 			mCycles += 4;
 			break;
 
