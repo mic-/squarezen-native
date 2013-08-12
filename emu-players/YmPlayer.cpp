@@ -57,7 +57,7 @@ int YmPlayer::Reset()
 
 	mState = MusicPlayer::STATE_CREATED;
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
 
@@ -224,7 +224,7 @@ int YmPlayer::Prepare(std::string fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
 
@@ -296,6 +296,6 @@ int YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	}
 #endif
 
-	return 0;
+	return MusicPlayer::OK;
 }
 
