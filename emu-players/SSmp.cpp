@@ -112,6 +112,18 @@
 
 // ====
 
+#define CLR1_aa_b(b) \
+	addr = ZP_ADDR(); \
+	mMemory->WriteByte(addr, mMemory->ReadByte(addr) & ~(1 << b)); \
+	mCycles += 4
+
+#define SET1_aa_b(b) \
+	addr = ZP_ADDR(); \
+	mMemory->WriteByte(addr, mMemory->ReadByte(addr) | (1 << b)); \
+	mCycles += 4
+
+// ====
+
 
 void SSmp::Reset()
 {
@@ -173,6 +185,31 @@ void SSmp::Run(uint32_t maxCycles)
 			BITWISE_atX_atY(&);
 			break;
 
+		// == CLR1 ==
+		case 0x12:
+			CLR1_aa_b(0);
+			break;
+		case 0x32:
+			CLR1_aa_b(1);
+			break;
+		case 0x52:
+			CLR1_aa_b(2);
+			break;
+		case 0x72:
+			CLR1_aa_b(3);
+			break;
+		case 0x92:
+			CLR1_aa_b(4);
+			break;
+		case 0xB2:
+			CLR1_aa_b(5);
+			break;
+		case 0xD2:
+			CLR1_aa_b(6);
+			break;
+		case 0xF2:
+			CLR1_aa_b(7);
+			break;
 
 		// == CMP ==
 		case 0x68:		// CMP A,#nn
@@ -479,6 +516,32 @@ void SSmp::Run(uint32_t maxCycles)
 		case 0x8E:		// POP PSW
 			PULLB(mRegs.PSW);
 			mCycles += 4;
+			break;
+
+		// == SET1 ==
+		case 0x02:
+			SET1_aa_b(0);
+			break;
+		case 0x22:
+			SET1_aa_b(1);
+			break;
+		case 0x42:
+			SET1_aa_b(2);
+			break;
+		case 0x62:
+			SET1_aa_b(3);
+			break;
+		case 0x82:
+			SET1_aa_b(4);
+			break;
+		case 0xA2:
+			SET1_aa_b(5);
+			break;
+		case 0xC2:
+			SET1_aa_b(6);
+			break;
+		case 0xE2:
+			SET1_aa_b(7);
 			break;
 
 		// == Wait/delay/control ==

@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
+#define NLOG_LEVEL_VERBOSE 0
+
+#include "NativeLogger.h"
 #include "SpcPlayer.h"
+
 
 int SpcPlayer::Reset()
 {
-	// Todo: implement
+	// ToDo: implement
+	NLOGV("SpcPlayer", "SpcPlayer::Reset");
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
 
 int SpcPlayer::Prepare(std::string fileName)
 {
-	// Todo: implement
+	// ToDo: implement
+	NLOGV("SpcPlayer", "SpcPlayer::Prepare(%s)", fileName.c_str());
 	mState = MusicPlayer::STATE_PREPARING;
 	return MusicPlayer::OK;
 }
@@ -33,6 +39,6 @@ int SpcPlayer::Prepare(std::string fileName)
 
 int SpcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
-	// Todo: implement
+	// ToDo: implement
 	return MusicPlayer::OK;
 }
