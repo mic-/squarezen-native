@@ -26,6 +26,11 @@
 				       mRegs.PSW |= ((uint8_t)val == 0) ? SSmp::FLAG_Z : 0; \
 				       mRegs.PSW |= (val & 0x80)
 
+#define UPDATE_NZC(val, val2) mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N | SSmp::FLAG_C); \
+				       mRegs.PSW |= ((uint8_t)val == (uint8_t)val2) ? SSmp::FLAG_Z : 0; \
+				       mRegs.PSW |= (val & 0x80); \
+				       mRegs.PSW |= (val >= val2) ? SSmp::FLAG_C : 0
+
 // zp
 // Updates PC
 #define ZP_ADDR() (mMemory->ReadByte(mRegs.PC++) + ((mRegs.PSW & SSmp::FLAG_P) ? 0x100 : 0))
@@ -99,6 +104,12 @@
 	UPDATE_NZ(temp8); \
 	mCycles += 5
 
+#define BITWISE_A_aaaa(op) \
+	mRegs.A = mRegs.A op mMemory->ReadByte(ABS_ADDR()); \
+	mRegs.PC += 2; \
+	UPDATE_NZ(mRegs.A); \
+	mCycles += 4
+
 // ====
 
 
@@ -146,6 +157,10 @@ void SSmp::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0x25:		// AND A,!aaaa
+			BITWISE_A_aaaa(&);
+			break;
+
 		case 0x29:		// AND aa,bb
 			BITWISE_aa_bb(&);
 			break;
@@ -156,6 +171,32 @@ void SSmp::Run(uint32_t maxCycles)
 
 		case 0x39:		// AND (X),(Y)
 			BITWISE_atX_atY(&);
+			break;
+
+
+		// == CMP ==
+		case 0x68:		// CMP A,#nn
+			operand = mMemory->ReadByte(mRegs.PC++);
+			UPDATE_NZC(mRegs.A, operand);
+			mCycles += 2;
+			break;
+
+		case 0x66:		// CMP A,(X)
+			operand = mMemory->ReadByte(X_ADDR());
+			UPDATE_NZC(mRegs.A, operand);
+			mCycles += 3;
+			break;
+
+		case 0x64:		// CMP A,aa
+			operand = mMemory->ReadByte(ZP_ADDR());
+			UPDATE_NZC(mRegs.A, operand);
+			mCycles += 3;
+			break;
+
+		case 0x74:		// CMP aa+X
+			operand = mMemory->ReadByte(ZPX_ADDR());
+			UPDATE_NZC(mRegs.A, operand);
+			mCycles += 4;
 			break;
 
 
@@ -182,6 +223,10 @@ void SSmp::Run(uint32_t maxCycles)
 			mRegs.A ^= mMemory->ReadByte(ZPX_ADDR());
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
+			break;
+
+		case 0x45:		// EOR A,!aaaa
+			BITWISE_A_aaaa(^);
 			break;
 
 		case 0x49:		// EOR aa,bb
@@ -382,6 +427,10 @@ void SSmp::Run(uint32_t maxCycles)
 			mRegs.A |= mMemory->ReadByte(ZPX_ADDR());
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
+			break;
+
+		case 0x05:		// OR A,!aaaa
+			BITWISE_A_aaaa(|);
 			break;
 
 		case 0x09:		// OR aa,bb
