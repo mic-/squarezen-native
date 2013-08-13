@@ -28,15 +28,15 @@
 
 // zp
 // Updates PC
-#define ZP_ADDR() (mMemory->ReadByte(mRegs.PC++))
+#define ZP_ADDR() (mMemory->ReadByte(mRegs.PC++) + ((mRegs.PSW & SSmp::FLAG_P) ? 0x100 : 0))
 
 // zp+X
 // Updates PC
-#define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
+#define ZPX_ADDR() (((mMemory->ReadByte(mRegs.PC++) + mRegs.X) & 0xFF) + ((mRegs.PSW & SSmp::FLAG_P) ? 0x100 : 0))
 
 // zp+Y
 // Updates PC
-#define ZPY_ADDR() ((ZP_ADDR() + mRegs.Y) & 0xFF)
+#define ZPY_ADDR() (((mMemory->ReadByte(mRegs.PC++) + mRegs.Y) & 0xFF) + ((mRegs.PSW & SSmp::FLAG_P) ? 0x100 : 0))
 
 
 // !abs
@@ -137,7 +137,7 @@ void SSmp::Run(uint32_t maxCycles)
 			mCycles += 2;
 			break;
 
-		// == MOV mem ==
+		// == MOV reg,mem ==
 		case 0xE4:		// MOV A,aa
 			mRegs.A = mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZ(mRegs.A);
@@ -183,12 +183,72 @@ void SSmp::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0xE6:		// MOV A,(X)
+			mRegs.A = mMemory->ReadByte(mRegs.X);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 3;
+			break;
+
+		case 0xBF:		// MOV A,(X)+
+			mRegs.A = mMemory->ReadByte(mRegs.X++);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
+
 		case 0xE9:		// MOV X,!aaaa
 			mRegs.A = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.X);
 			mCycles += 4;
 			break;
+
+		case 0xEB:		// MOV Y,aa
+			mRegs.Y = mMemory->ReadByte(ZP_ADDR());
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 3;
+			break;
+
+		case 0xFB:		// MOV Y,aa+X
+			mRegs.Y = mMemory->ReadByte(ZPX_ADDR());
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 4;
+			break;
+
+		case 0xEC:		// MOV Y,!aaaa
+			mRegs.Y = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 4;
+			break;
+
+		// == MOV mem,reg/imm ==
+		case 0x8F:		// MOV aa,#nn
+			operand = mMemory->ReadByte(mRegs.PC++);
+			mMemory->WriteByte(ZP_ADDR(), operand);
+			mCycles += 5;
+			break;
+
+		case 0xFA:		// MOV aa,bb
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mMemory->WriteByte(ZP_ADDR(), operand);
+			mCycles += 5;
+			break;
+
+		case 0xC4:		// MOV aa,A
+			mMemory->WriteByte(ZP_ADDR(), mRegs.A);
+			mCycles += 4;
+			break;
+
+		case 0xD8:		// MOV aa,X
+			mMemory->WriteByte(ZP_ADDR(), mRegs.X);
+			mCycles += 4;
+			break;
+
+		case 0xCB:		// MOV aa,Y
+			mMemory->WriteByte(ZP_ADDR(), mRegs.Y);
+			mCycles += 4;
+			break;
+
 
 		// == Push/Pop ==
 		case 0x2D:		// PUSH A
