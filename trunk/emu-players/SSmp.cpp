@@ -124,6 +124,14 @@
 
 // ====
 
+#define COND_BRANCH(cc) if ((cc)) { relAddr = mMemory->ReadByte(mRegs.PC++); \
+								    addr = mRegs.PC + relAddr; \
+                                    mCycles += 2; \
+                                    mRegs.PC = addr; } else { mRegs.PC++; } \
+                                  mCycles += 2
+
+// ====
+
 
 void SSmp::Reset()
 {
@@ -185,31 +193,6 @@ void SSmp::Run(uint32_t maxCycles)
 			BITWISE_atX_atY(&);
 			break;
 
-		// == CLR1 ==
-		case 0x12:
-			CLR1_aa_b(0);
-			break;
-		case 0x32:
-			CLR1_aa_b(1);
-			break;
-		case 0x52:
-			CLR1_aa_b(2);
-			break;
-		case 0x72:
-			CLR1_aa_b(3);
-			break;
-		case 0x92:
-			CLR1_aa_b(4);
-			break;
-		case 0xB2:
-			CLR1_aa_b(5);
-			break;
-		case 0xD2:
-			CLR1_aa_b(6);
-			break;
-		case 0xF2:
-			CLR1_aa_b(7);
-			break;
 
 		// == CMP ==
 		case 0x68:		// CMP A,#nn
@@ -518,30 +501,80 @@ void SSmp::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
-		// == SET1 ==
-		case 0x02:
+		// == 1-bit ALU operations ==
+		case 0x12:		// CLR1 aa.0
+			CLR1_aa_b(0);
+			break;
+		case 0x32:		// CLR1 aa.1
+			CLR1_aa_b(1);
+			break;
+		case 0x52:		// CLR1 aa.2
+			CLR1_aa_b(2);
+			break;
+		case 0x72:		// CLR1 aa.3
+			CLR1_aa_b(3);
+			break;
+		case 0x92:		// CLR1 aa.4
+			CLR1_aa_b(4);
+			break;
+		case 0xB2:		// CLR1 aa.5
+			CLR1_aa_b(5);
+			break;
+		case 0xD2:		// CLR1 aa.6
+			CLR1_aa_b(6);
+			break;
+		case 0xF2:		// CLR1 aa.7
+			CLR1_aa_b(7);
+			break;
+
+		case 0x02:		// SET1 aa.0
 			SET1_aa_b(0);
 			break;
-		case 0x22:
+		case 0x22:		// SET1 aa.1
 			SET1_aa_b(1);
 			break;
-		case 0x42:
+		case 0x42:		// SET1 aa.2
 			SET1_aa_b(2);
 			break;
-		case 0x62:
+		case 0x62:		// SET1 aa.3
 			SET1_aa_b(3);
 			break;
-		case 0x82:
+		case 0x82:		// SET1 aa.4
 			SET1_aa_b(4);
 			break;
-		case 0xA2:
+		case 0xA2:		// SET1 aa.5
 			SET1_aa_b(5);
 			break;
-		case 0xC2:
+		case 0xC2:		// SET1 aa.6
 			SET1_aa_b(6);
 			break;
-		case 0xE2:
+		case 0xE2:		// SET1 aa.7
 			SET1_aa_b(7);
+			break;
+
+		case 0x60:		// CLRC
+			mRegs.PSW &= ~SSmp::FLAG_C;
+			mCycles += 2;
+			break;
+		case 0x80:		// SETC
+			mRegs.PSW |= SSmp::FLAG_C;
+			mCycles += 2;
+			break;
+		case 0xED:		// NOTC
+			mRegs.PSW ^= SSmp::FLAG_C;
+			mCycles += 2;
+			break;
+
+		case 0xE0:		// CLRV
+			mRegs.PSW &= ~(SSmp::FLAG_V | SSmp::FLAG_H);
+			mCycles += 2;
+			break;
+
+		// == Special ALU operations ==
+		case 0x9F:		// XCN
+			mRegs.A = (mRegs.A >> 4) | (mRegs.A << 4);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 2;
 			break;
 
 		// == Wait/delay/control ==
@@ -571,6 +604,49 @@ void SSmp::Run(uint32_t maxCycles)
 			break;
 		case 0xC0:		// DI
 			mRegs.PSW &= ~SSmp::FLAG_I;
+			mCycles += 3;
+			break;
+
+		// Conditional branches
+		case 0x10:		// BPL rr
+			COND_BRANCH((mRegs.PSW & SSmp::FLAG_N) == 0);
+			break;
+		case 0x30:		// BMI rr
+			COND_BRANCH(mRegs.PSW & SSmp::FLAG_N);
+			break;
+		case 0x50:		// BVC rr
+			COND_BRANCH((mRegs.PSW & SSmp::FLAG_V) == 0);
+			break;
+		case 0x70:		// BVS rr
+			COND_BRANCH(mRegs.PSW & SSmp::FLAG_V);
+			break;
+		case 0x90:		// BCC rr
+			COND_BRANCH((mRegs.PSW & SSmp::FLAG_C) == 0);
+			break;
+		case 0xB0:		// BCS rr
+			COND_BRANCH(mRegs.PSW & SSmp::FLAG_C);
+			break;
+		case 0xD0:		// BNE rr
+			COND_BRANCH((mRegs.PSW & SSmp::FLAG_Z) == 0);
+			break;
+		case 0xF0:		// BEQ rr
+			COND_BRANCH(mRegs.PSW & SSmp::FLAG_Z);
+			break;
+
+		// Unconditional branches
+		case 0x2F:		// BRA rr
+			COND_BRANCH(true);
+			break;
+
+		case 0x5F:		// JMP !aaaa
+			temp16 = mRegs.PC - 1;
+			addr = mMemory->ReadByte(mRegs.PC++);
+			addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
+			mRegs.PC = addr;
+			/*if (addr == temp16) {
+				// Exit early for infinite loops
+				return;
+			}*/
 			mCycles += 3;
 			break;
 
