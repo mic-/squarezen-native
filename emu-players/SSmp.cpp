@@ -26,9 +26,9 @@
 				       mRegs.PSW |= ((uint8_t)val == 0) ? SSmp::FLAG_Z : 0; \
 				       mRegs.PSW |= (val & 0x80)
 
-#define UPDATE_NZC(val, val2) mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N | SSmp::FLAG_C); \
+#define UPDATE_NZC(val, val2, sub) mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N | SSmp::FLAG_C); \
 				       mRegs.PSW |= ((uint8_t)val == (uint8_t)val2) ? SSmp::FLAG_Z : 0; \
-				       mRegs.PSW |= (val & 0x80); \
+				       mRegs.PSW |= ((val - sub) & 0x80); \
 				       mRegs.PSW |= (val >= val2) ? SSmp::FLAG_C : 0
 
 // zp
@@ -63,6 +63,17 @@
 // Updates PC
 #define ABSY_ADDR(dest) dest = (mMemory->ReadByte(mRegs.PC) + ((uint16_t)mMemory->ReadByte(mRegs.PC+1) << 8)); \
 	                    mRegs.PC += 2; \
+						dest += mRegs.Y
+
+// [aa+X]
+// Updates PC
+#define INDX_ADDR(dest) dest = ZPX_ADDR(); \
+						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte(dest+1) << 8))
+
+// [aa]+Y
+// Updates PC
+#define INDY_ADDR(dest) dest = ZP_ADDR(); \
+						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte(dest+1) << 8)); \
 						dest += mRegs.Y
 
 // ====
@@ -122,11 +133,23 @@
 	UPDATE_NZ(mRegs.A); \
 	mCycles += 5
 
+#define BITWISE_A_indX(op) \
+	INDX_ADDR(addr); \
+	mRegs.A = mRegs.A op mMemory->ReadByte(addr); \
+	UPDATE_NZ(mRegs.A); \
+	mCycles += 6
+
+#define BITWISE_A_indY(op) \
+	INDY_ADDR(addr); \
+	mRegs.A = mRegs.A op mMemory->ReadByte(addr); \
+	UPDATE_NZ(mRegs.A); \
+	mCycles += 6
+
 // == Arithmetic ==
 
 #define ADC(dest8, val) \
 	temp16 = (uint16_t)(val) + (uint16_t)dest8 + ((mRegs.PSW & SSmp::FLAG_C) ? 1 : 0); \
-	UPDATE_NZC(temp16, 0x100); \
+	UPDATE_NZC(temp16, 0x100, 0); \
 	mRegs.PSW &= ~SSmp::FLAG_V; \
 	mRegs.PSW |= ((!((dest8 ^ val) & 0x80)) && ((dest8 ^ temp16) & 0x80)) ? SSmp::FLAG_V : 0; \
 	dest8 = (uint8_t)temp16
@@ -162,6 +185,12 @@
                                     mCycles += 2; \
                                     mRegs.PC = addr; } else { mRegs.PC++; } \
                                   mCycles += 2
+
+// ====
+
+#define ILLEGAL_OP() NLOGE("SSmp", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
+					 mCycles += 2; \
+					 mRegs.PC++
 
 // ====
 
@@ -404,6 +433,12 @@ void SSmp::Run(uint32_t maxCycles)
 		case 0x36:		// AND A,!aaaa+Y
 			BITWISE_A_aaaaY(&);
 			break;
+		case 0x27:		// AND A,[aa+X]
+			BITWISE_A_indX(&);
+			break;
+		case 0x37:		// AND A,[aa]+Y
+			BITWISE_A_indY(&);
+			break;
 		case 0x29:		// AND aa,bb
 			BITWISE_aa_bb(&);
 			break;
@@ -442,6 +477,12 @@ void SSmp::Run(uint32_t maxCycles)
 			break;
 		case 0x56:		// EOR A,!aaaa+Y
 			BITWISE_A_aaaaY(^);
+			break;
+		case 0x47:		// EOR A,[aa+X]
+			BITWISE_A_indX(^);
+			break;
+		case 0x57:		// EOR A,[aa]+Y
+			BITWISE_A_indY(^);
 			break;
 		case 0x49:		// EOR aa,bb
 			BITWISE_aa_bb(^);
@@ -482,6 +523,12 @@ void SSmp::Run(uint32_t maxCycles)
 		case 0x16:		// OR A,!aaaa+Y
 			BITWISE_A_aaaaY(|);
 			break;
+		case 0x07:		// OR A,[aa+X]
+			BITWISE_A_indX(|);
+			break;
+		case 0x17:		// OR A,[aa]+Y
+			BITWISE_A_indY(|);
+			break;
 		case 0x09:		// OR aa,bb
 			BITWISE_aa_bb(|);
 			break;
@@ -495,56 +542,48 @@ void SSmp::Run(uint32_t maxCycles)
 		// == CMP ==
 		case 0x68:		// CMP A,#nn
 			operand = mMemory->ReadByte(mRegs.PC++);
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 2;
 			break;
-
 		case 0x66:		// CMP A,(X)
 			operand = mMemory->ReadByte(X_ADDR());
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 3;
 			break;
-
 		case 0x64:		// CMP A,aa
 			operand = mMemory->ReadByte(ZP_ADDR());
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 3;
 			break;
-
 		case 0x74:		// CMP aa+X
 			operand = mMemory->ReadByte(ZPX_ADDR());
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 4;
 			break;
-
 		case 0x79:		// CMP (X),(Y)
 			operand = mMemory->ReadByte(Y_ADDR());
 			temp8 = mMemory->ReadByte(X_ADDR());
-			UPDATE_NZC(temp8, operand);
+			UPDATE_NZC(temp8, operand, operand);
 			mCycles += 5;
 			break;
-
 		case 0xC8:		// CMP X,#nn
 			operand = mMemory->ReadByte(mRegs.PC++);
-			UPDATE_NZC(mRegs.X, operand);
+			UPDATE_NZC(mRegs.X, operand, operand);
 			mCycles += 2;
 			break;
-
 		case 0x3E:		// CMP X,aa
 			operand = mMemory->ReadByte(ZP_ADDR());
-			UPDATE_NZC(mRegs.X, operand);
+			UPDATE_NZC(mRegs.X, operand, operand);
 			mCycles += 3;
 			break;
-
 		case 0xAD:		// CMP Y,#nn
 			operand = mMemory->ReadByte(mRegs.PC++);
-			UPDATE_NZC(mRegs.Y, operand);
+			UPDATE_NZC(mRegs.Y, operand, operand);
 			mCycles += 2;
 			break;
-
 		case 0x7E:		// CMP Y,aa
 			operand = mMemory->ReadByte(ZP_ADDR());
-			UPDATE_NZC(mRegs.Y, operand);
+			UPDATE_NZC(mRegs.Y, operand, operand);
 			mCycles += 3;
 			break;
 
@@ -602,78 +641,78 @@ void SSmp::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.A);
 			mCycles += 3;
 			break;
-
 		case 0xF4:		// MOV A,aa+X
 			mRegs.A = mMemory->ReadByte(ZPX_ADDR());
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
 			break;
-
 		case 0xE5:		// MOV A,!aaaa
 			mRegs.A = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
 			break;
-
 		case 0xF5:		// MOV A,!aaaa+X
 			ABSX_ADDR(addr);
 			mRegs.A = mMemory->ReadByte(addr);
 			UPDATE_NZ(mRegs.A);
 			mCycles += 5;
 			break;
-
 		case 0xF6:		// MOV A,!aaaa+Y
 			ABSY_ADDR(addr);
 			mRegs.A = mMemory->ReadByte(addr);
 			UPDATE_NZ(mRegs.A);
 			mCycles += 5;
 			break;
-
+		case 0xE7:		// MOV A,[aa+X]
+			INDX_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 6;
+			break;
+		case 0xF7:		// MOV A,[aa]+Y
+			INDY_ADDR(addr);
+			mRegs.A = mMemory->ReadByte(addr);
+			UPDATE_NZ(mRegs.A);
+			mCycles += 6;
+			break;
 		case 0xF8:		// MOV X,aa
 			mRegs.X = mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZ(mRegs.X);
 			mCycles += 3;
 			break;
-
 		case 0xF9:		// MOV X,aa+Y
 			mRegs.X = mMemory->ReadByte(ZPY_ADDR());
 			UPDATE_NZ(mRegs.X);
 			mCycles += 4;
 			break;
-
 		case 0xE6:		// MOV A,(X)
 			mRegs.A = mMemory->ReadByte(X_ADDR());
 			UPDATE_NZ(mRegs.A);
 			mCycles += 3;
 			break;
-
 		case 0xBF:		// MOV A,(X)+
 			mRegs.A = mMemory->ReadByte(X_ADDR());
 			mRegs.X++;
 			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
 			break;
-
 		case 0xE9:		// MOV X,!aaaa
 			mRegs.A = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.X);
 			mCycles += 4;
 			break;
-
 		case 0xEB:		// MOV Y,aa
 			mRegs.Y = mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZ(mRegs.Y);
 			mCycles += 3;
 			break;
-
 		case 0xFB:		// MOV Y,aa+X
 			mRegs.Y = mMemory->ReadByte(ZPX_ADDR());
 			UPDATE_NZ(mRegs.Y);
 			mCycles += 4;
 			break;
-
 		case 0xEC:		// MOV Y,!aaaa
 			mRegs.Y = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -687,23 +726,29 @@ void SSmp::Run(uint32_t maxCycles)
 			mMemory->WriteByte(ZP_ADDR(), operand);
 			mCycles += 5;
 			break;
-
 		case 0xFA:		// MOV aa,bb
 			operand = mMemory->ReadByte(ZP_ADDR());
 			mMemory->WriteByte(ZP_ADDR(), operand);
 			mCycles += 5;
 			break;
-
 		case 0xC4:		// MOV aa,A
 			mMemory->WriteByte(ZP_ADDR(), mRegs.A);
 			mCycles += 4;
 			break;
-
+		case 0xC7:		// MOV [aa+X],A
+			INDX_ADDR(addr);
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 7;
+			break;
+		case 0xD7:		// MOV [aa]+Y,A
+			INDY_ADDR(addr);
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 7;
+			break;
 		case 0xD8:		// MOV aa,X
 			mMemory->WriteByte(ZP_ADDR(), mRegs.X);
 			mCycles += 4;
 			break;
-
 		case 0xCB:		// MOV aa,Y
 			mMemory->WriteByte(ZP_ADDR(), mRegs.Y);
 			mCycles += 4;
@@ -949,6 +994,7 @@ void SSmp::Run(uint32_t maxCycles)
 
 		// ====
 		default:
+			ILLEGAL_OP();
 			break;
 		}
 	}

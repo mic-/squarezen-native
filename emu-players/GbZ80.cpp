@@ -30,12 +30,12 @@
 #define H_BIT_SHIFT 2  //1
 
 
-#define LOAD_IMM_8(r) r = mem_read_8(cpu.regs.PC+1);\
+#define LOAD_IMM_8(r) r = mem_read_8(cpu.regs.PC + 1);\
 	                      cpu.cycles += 8;\
 						  cpu.regs.PC += 2
 
-#define LOAD_IMM_16(r1,r2) r2 = mem_read_8(cpu.regs.PC+1);\
-						   r1 = mem_read_8(cpu.regs.PC+2);\
+#define LOAD_IMM_16(r1,r2) r2 = mem_read_8(cpu.regs.PC + 1);\
+						   r1 = mem_read_8(cpu.regs.PC + 2);\
 						   cpu.cycles += 12;\
 						   cpu.regs.PC += 3
 
@@ -43,24 +43,24 @@
 	                          cpu.cycles += 4;\
 							  cpu.regs.PC++
 
-#define ADD_REG_REG_8(r1,r2) temp8 = r1 + r2;\
+#define ADD_REG_REG_8(r1,r2) temp16 = (uint16_t)(r1) + (uint16_t)(r2);\
 							 cpu.regs.F = 0;\
-							 if (temp8 == 0) cpu.regs.F |= FLAG_Z;\
-							 if (temp8 < r1) cpu.regs.F |= FLAG_C;\
-							 cpu.regs.F |= ((temp8&0x0F)<(r1&0x0F))?FLAG_H:0;\
-							 r1 = temp8;\
+							 if ((uint8_t)temp16 == 0) cpu.regs.F |= FLAG_Z;\
+							 if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;\
+							 cpu.regs.F |= ((temp8 & 0x0F) < (r1 & 0x0F)) ? FLAG_H : 0;\
+							 r1 = (uint8_t)temp16; \
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
 
-#define ADC_REG_REG_8(r1,r2) temp9 = ((cpu.regs.F&FLAG_C)>>4);\
-                             temp8 = r1 + r2 + temp9;\
-	                         temp16 = (unsigned short)r1 + r2 + temp9;\
+#define ADC_REG_REG_8(r1,r2) temp9 = ((cpu.regs.F & FLAG_C) >> 4);\
+                             temp8 = r1 + r2 + temp9; \
+	                         temp16 = (unsigned short)r1 + r2 + temp9; \
 							 cpu.regs.F = 0;\
 							 if (temp8 == 0) cpu.regs.F |= FLAG_Z;\
-							 if (temp16 > 0xFF) cpu.regs.F |= FLAG_C;\
-							 cpu.regs.F |= ((temp8&0x0F)<(r1&0x0F))?FLAG_H:0;\
-							 cpu.regs.F |= (((temp8&0xF)==(r1&0xF))&&temp9)?FLAG_H:0;\
-							 r1 = temp8;\
+							 if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;\
+							 cpu.regs.F |= ((temp8 & 0x0F) < (r1 & 0x0F))?FLAG_H:0;\
+							 cpu.regs.F |= (((temp8 & 0xF) == (r1 & 0xF))&&temp9)?FLAG_H:0;\
+							 r1 = temp8; \
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
 
@@ -73,17 +73,17 @@
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
 
-#define SBC_REG_REG_8(r1,r2) temp8 = (r2 + ((cpu.regs.F&FLAG_C)>>4));\
+#define SBC_REG_REG_8(r1,r2) temp8 = (r2 + ((cpu.regs.F & FLAG_C) >> 4));\
 							 cpu.regs.F = FLAG_N;\
-							 if (r1 - temp8 == 0) cpu.regs.F |= FLAG_Z;\
+							 if (r1 == temp8) cpu.regs.F |= FLAG_Z;\
 							 if (r1 < temp8) cpu.regs.F |= FLAG_C;\
-							 cpu.regs.F |= ((temp8&0x0F)>(r1&0x0F))?FLAG_H:0;\
+							 cpu.regs.F |= ((temp8 & 0x0F) > (r1 & 0x0F))?FLAG_H:0;\
 							 r1 -= temp8;\
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
 
 #define AND_REG_REG_8(r1,r2) r1 &= r2;\
-							 cpu.regs.F = (cpu.regs.F&0x0)|FLAG_H;\
+							 cpu.regs.F = (cpu.regs.F & 0x0) | FLAG_H;\
 							 if (r1==0) cpu.regs.F |= FLAG_Z;\
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
@@ -104,7 +104,7 @@
 							cpu.regs.F = (cpu.regs.F&0x0)|FLAG_N;\
 							if (r1 == r2) cpu.regs.F |= FLAG_Z;\
 							if (r1 < r2) cpu.regs.F |= FLAG_C;\
-							if ((temp8&0xF) > (r1&0xF)) cpu.regs.F |= FLAG_H;\
+							if ((temp8 & 0xF) > (r1&0xF)) cpu.regs.F |= FLAG_H;\
 							cpu.cycles += 4;\
 							cpu.regs.PC++
 
@@ -117,7 +117,7 @@
 					 cpu.regs.PC++
 
 #define DEC_REG_8(r) temp8 = r - 1;\
-	                 cpu.regs.F = (cpu.regs.F&FLAG_C)|FLAG_N;\
+	                 cpu.regs.F = (cpu.regs.F & FLAG_C) | FLAG_N;\
 					 if (temp8 == 0) cpu.regs.F |= FLAG_Z;\
 					 cpu.regs.F |= ((r ^ 1 ^ temp8)<<H_BIT_SHIFT)&FLAG_H;\
 					 r = temp8;\
@@ -125,18 +125,18 @@
                      cpu.regs.PC++
 
 
-#define ADD_REG_REG_16(r1,r2,r3,r4) temp8 = r1 + r3;\
+#define ADD_REG_REG_16(r1,r2,r3,r4) temp16 = (uint16_t)r1 + r3;\
                                     temp9 = 0;\
 							        cpu.regs.F &= FLAG_Z;\
-									if (((unsigned short)r2+r4)>0xFF) temp9++;\
-									tempa = r2+r4;\
-									temp8 += temp9;\
-							        if ((temp8 < r1)||((temp8==r1)&&temp9)) cpu.regs.F |= FLAG_C;\
-							        if ((temp8&0xF) < (r1&0xF)) cpu.regs.F |= FLAG_H;\
-							        if (((temp8&0xF)==(r1&0xF))&&temp9) cpu.regs.F |= FLAG_H;\
-							        r1 = temp8;\
-							        r2 = tempa;\
-							        cpu.cycles += 8;\
+									if (((uint16_t)r2 + (uint16_t)r4) > 0xFF) temp9++;\
+									tempa = r2 + r4; \
+									temp16 += temp9;\
+							        if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;\
+							        if ((temp16 & 0xF) < (r1 & 0xF)) cpu.regs.F |= FLAG_H;\
+							        if (((temp16 & 0xF) == (r1&0xF))&&temp9) cpu.regs.F |= FLAG_H;\
+							        r1 = (uint8_t)temp16; \
+							        r2 = tempa; \
+							        cpu.cycles += 8; \
 							        cpu.regs.PC++
 
 #define INC_REG_16(r1,r2) r2++;\
@@ -161,24 +161,24 @@
                      cpu.cycles += 8;\
                      cpu.regs.PC++
 
-#define RRC_REG_8(r) temp8 = (r&0x01)?FLAG_C:0;\
-                     r = (r>>1)|((r&0x01)<<7);\
+#define RRC_REG_8(r) temp8 = (r & 0x01) ? FLAG_C : 0;\
+                     r = (r>>1) | ((r&0x01)<<7);\
 					 cpu.regs.F = temp8;\
-                     if (r==0) cpu.regs.F |= FLAG_Z;\
+                     if (r == 0) cpu.regs.F |= FLAG_Z;\
                      cpu.cycles += 8;\
                      cpu.regs.PC++
 
-#define RL_REG_8(r)  temp8 = (r&0x80)?FLAG_C:0;\
-                     r = (r<<1)|((cpu.regs.F&FLAG_C)>>4);\
+#define RL_REG_8(r)  temp8 = (r & 0x80) ? FLAG_C : 0;\
+                     r = (r << 1) | ((cpu.regs.F&FLAG_C) >> 4);\
 					 cpu.regs.F = temp8;\
-                     if (r==0) cpu.regs.F |= FLAG_Z;\
+                     if (r == 0) cpu.regs.F |= FLAG_Z;\
                      cpu.cycles += 8;\
                      cpu.regs.PC++
 
-#define RR_REG_8(r)  temp8 = (r&0x01)?FLAG_C:0;\
-                     r = (r>>1)|((cpu.regs.F&FLAG_C)<<3);\
+#define RR_REG_8(r)  temp8 = (r & 0x01) ? FLAG_C : 0;\
+                     r = (r >> 1) | ((cpu.regs.F & FLAG_C) << 3);\
 					 cpu.regs.F = temp8;\
-                     if (r==0) cpu.regs.F |= FLAG_Z;\
+                     if (r == 0) cpu.regs.F |= FLAG_Z;\
                      cpu.cycles += 8;\
                      cpu.regs.PC++
 
@@ -235,7 +235,6 @@ extern GbsPlayer *gbsPlayer;  // located in GbMemory.cpp
 
 int exec_count[512];
 int exec_samples = 1000000;
-//FILE *log;
 
 
 int cpu_reset()
@@ -300,25 +299,25 @@ void cpu_close()
 }
 
 void cpu_execute(unsigned int max) {
-	unsigned char opcode,opcode2,temp8,temp9,tempa;
-	unsigned short temp16,oldPC;
+	uint8_t opcode, opcode2,temp8,temp9,tempa;
+	uint16_t temp16, oldPC;
 	int debg=0,oldcyc;
 
 	//cpu.cycles = 0;
 
 	if (cpu.halted || cpu.stopped) {
 		temp8 = divcnt - (max-cpu.cycles);
-		if (temp8>divcnt) REG_DIV++;
+		if (temp8 > divcnt) REG_DIV++;
 		divcnt = temp8;
 		if (REG_TAC & 4) {
 			tmcnt -= (max-cpu.cycles);
-			if (tmcnt<0) {
-				temp8 = REG_TIMA + (max-cpu.cycles)/tmrld;
+			if (tmcnt < 0) {
+				temp8 = REG_TIMA + (max - cpu.cycles) / tmrld;
 				if (temp8 < REG_TIMA) {
 					REG_TIMA = REG_TMA;
 					REG_IF |= 4;
-					if ((IME!=0)&&((REG_IE&4)!=0)) {
-					//sprintf(szBuffer,"RST50(1)");
+					if ((IME != 0) && ((REG_IE & 4) != 0)) {
+						//sprintf(szBuffer,"RST50(1)");
 						REG_IF &= ~4;
 						cpu_rst(0x50);
 						IME = 0;
@@ -363,7 +362,7 @@ void cpu_execute(unsigned int max) {
 
 			// LD (BC),A
 			case 0x02:
-				mem_write_8(cpu.regs.C + ((unsigned short)cpu.regs.B<<8), cpu.regs.A);
+				mem_write_8(cpu.regs.C + ((uint16_t)cpu.regs.B<<8), cpu.regs.A);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
@@ -387,35 +386,34 @@ void cpu_execute(unsigned int max) {
 
 			// RLCA
 			case 0x07:
-				cpu.regs.F = /*(cpu.regs.F&FLAG_Z) |*/ ((cpu.regs.A&0x80)?FLAG_C:0);
+				cpu.regs.F = (cpu.regs.A & 0x80) ? FLAG_C : 0;
 				cpu.regs.A = (cpu.regs.A<<1)|(cpu.regs.A>>7);
-				//if (cpu.regs.A==0) cpu.regs.F |= FLAG_Z;
 				cpu.cycles += 4;
 				cpu.regs.PC++;
 				break;
 
 			// LD (nn),SP
 			case 0x08:
-				mem_write_16(mem_read_16(cpu.regs.PC+1),cpu.regs.SP);
+				mem_write_16(mem_read_16(cpu.regs.PC+1), cpu.regs.SP);
 				cpu.cycles += 20;
 				cpu.regs.PC += 3;
 				break;
 
 			// ADD HL,BC
 			case 0x09:
-				ADD_REG_REG_16(cpu.regs.H,cpu.regs.L,cpu.regs.B,cpu.regs.C);
+				ADD_REG_REG_16(cpu.regs.H,cpu.regs.L, cpu.regs.B, cpu.regs.C);
 				break;
 
 			// LD A,(BC)
 			case 0x0A:
-				cpu.regs.A = mem_read_8(cpu.regs.C + ((unsigned short)cpu.regs.B<<8));
+				cpu.regs.A = mem_read_8(cpu.regs.C + ((uint16_t)cpu.regs.B<<8));
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
 
 			// DEC BC
 			case 0x0B:
-				DEC_REG_16(cpu.regs.B,cpu.regs.C);
+				DEC_REG_16(cpu.regs.B, cpu.regs.C);
 				break;
 
 			// INC C
@@ -435,7 +433,6 @@ void cpu_execute(unsigned int max) {
 			case 0x0F:
 				cpu.regs.F = /*(cpu.regs.F&FLAG_Z) |*/ ((cpu.regs.A & 0x01) ? FLAG_C : 0);
 				cpu.regs.A = (cpu.regs.A>>1)|((cpu.regs.A&1)<<7);
-				//if (cpu.regs.A==0) cpu.regs.F |= FLAG_Z;
 				cpu.cycles += 4;
 				cpu.regs.PC++;
 				break;
@@ -460,14 +457,14 @@ void cpu_execute(unsigned int max) {
 				break;
 			// LD (DE),A
 			case 0x12:
-				mem_write_8(cpu.regs.E + ((unsigned short)cpu.regs.D<<8), cpu.regs.A);
+				mem_write_8(cpu.regs.E + ((uint16_t)cpu.regs.D<<8), cpu.regs.A);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
 
 			// INC DE
 			case 0x13:
-				INC_REG_16(cpu.regs.D,cpu.regs.E);
+				INC_REG_16(cpu.regs.D, cpu.regs.E);
 				break;
 
 			// INC D
@@ -485,10 +482,9 @@ void cpu_execute(unsigned int max) {
 
 			// RLA
 			case 0x17:
-				temp8 = /*(cpu.regs.F&FLAG_Z) |*/ ((cpu.regs.A & 0x80) ? FLAG_C : 0);
+				temp8 = (cpu.regs.A & 0x80) ? FLAG_C : 0;
 				cpu.regs.A = (cpu.regs.A<<1)|((cpu.regs.F&FLAG_C)>>4);
 				cpu.regs.F = temp8;
-				//if (cpu.regs.A==0) cpu.regs.F |= FLAG_Z;
 				cpu.cycles += 4;
 				cpu.regs.PC++;
 				break;
@@ -502,7 +498,7 @@ void cpu_execute(unsigned int max) {
 
 			// ADD HL,DE
 			case 0x19:
-				ADD_REG_REG_16(cpu.regs.H,cpu.regs.L,cpu.regs.D,cpu.regs.E);
+				ADD_REG_REG_16(cpu.regs.H, cpu.regs.L, cpu.regs.D, cpu.regs.E);
 				break;
 
 			// LD A,(DE)
@@ -514,7 +510,7 @@ void cpu_execute(unsigned int max) {
 
 			// DEC DE
 			case 0x1B:
-				DEC_REG_16(cpu.regs.D,cpu.regs.E);
+				DEC_REG_16(cpu.regs.D, cpu.regs.E);
 				break;
 
 			// INC E
@@ -534,7 +530,6 @@ void cpu_execute(unsigned int max) {
 				temp8 = /*(cpu.regs.F&FLAG_Z) |*/ ((cpu.regs.A&0x01)?FLAG_C:0);
 				cpu.regs.A = (cpu.regs.A>>1)|((cpu.regs.F&FLAG_C)<<3);
 				cpu.regs.F = temp8;
-				//if (cpu.regs.A==0) cpu.regs.F |= FLAG_Z;
 				cpu.cycles += 4;
 				cpu.regs.PC++;
 				break;
@@ -552,11 +547,11 @@ void cpu_execute(unsigned int max) {
 
 			// LD HL,nn
 			case 0x21:
-				LOAD_IMM_16(cpu.regs.H,cpu.regs.L);
+				LOAD_IMM_16(cpu.regs.H, cpu.regs.L);
 				break;
 			// LD (HL+),A
 			case 0x22:
-				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8), cpu.regs.A);
+				mem_write_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8), cpu.regs.A);
 				cpu.regs.L++;
 				if (cpu.regs.L==0) cpu.regs.H++;
 				cpu.cycles += 8;
@@ -565,7 +560,7 @@ void cpu_execute(unsigned int max) {
 
 			// INC HL
 			case 0x23:
-				INC_REG_16(cpu.regs.H,cpu.regs.L);
+				INC_REG_16(cpu.regs.H, cpu.regs.L);
 				break;
 
 			// INC H
@@ -617,9 +612,9 @@ void cpu_execute(unsigned int max) {
 			// JR Z,n
 			case 0x28:
 				cpu.regs.PC += 2;
-				if ((cpu.regs.F&FLAG_Z)!=0)
+				if ((cpu.regs.F & FLAG_Z)!=0)
 				{
-					cpu.regs.PC += (signed char)mem_read_8(cpu.regs.PC-1);
+					cpu.regs.PC += (int8_t)mem_read_8(cpu.regs.PC-1);
 					cpu.cycles += 4;
                 }
 				cpu.cycles += 8;
@@ -627,12 +622,12 @@ void cpu_execute(unsigned int max) {
 
 			// ADD HL,HL
 			case 0x29:
-				ADD_REG_REG_16(cpu.regs.H,cpu.regs.L,cpu.regs.H,cpu.regs.L);
+				ADD_REG_REG_16(cpu.regs.H, cpu.regs.L, cpu.regs.H, cpu.regs.L);
 				break;
 
 			// LD A,(HL+)
 			case 0x2A:
-				cpu.regs.A = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
+				cpu.regs.A = mem_read_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8));
 				cpu.regs.L++;
 				if (cpu.regs.L==0) cpu.regs.H++;
 				cpu.cycles += 8;
@@ -641,7 +636,7 @@ void cpu_execute(unsigned int max) {
 
 			// DEC HL
 			case 0x2B:
-				DEC_REG_16(cpu.regs.H,cpu.regs.L);
+				DEC_REG_16(cpu.regs.H, cpu.regs.L);
 				break;
 
 
@@ -952,38 +947,38 @@ void cpu_execute(unsigned int max) {
 				cpu.regs.PC++;
 				break;
 			case 0x6F:
-				MOVE_REG_REG_8(cpu.regs.L,cpu.regs.A);
+				MOVE_REG_REG_8(cpu.regs.L, cpu.regs.A);
 				break;
 
 			case 0x70:
-				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),cpu.regs.B);
+				mem_write_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8),cpu.regs.B);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
 			case 0x71:
-				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),cpu.regs.C);
+				mem_write_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8), cpu.regs.C);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
 			case 0x72:
-				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),cpu.regs.D);
+				mem_write_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8), cpu.regs.D);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
 			case 0x73:
-				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),cpu.regs.E);
+				mem_write_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8), cpu.regs.E);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
 			case 0x74:
-				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),cpu.regs.H);
+				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8), cpu.regs.H);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
 
 			// LD (HL),L
 			case 0x75:
-				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),cpu.regs.L);
+				mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8), cpu.regs.L);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
@@ -1003,25 +998,25 @@ void cpu_execute(unsigned int max) {
 				break;
 
 			case 0x78:
-				MOVE_REG_REG_8(cpu.regs.A,cpu.regs.B);
+				MOVE_REG_REG_8(cpu.regs.A, cpu.regs.B);
 				break;
 			case 0x79:
-				MOVE_REG_REG_8(cpu.regs.A,cpu.regs.C);
+				MOVE_REG_REG_8(cpu.regs.A, cpu.regs.C);
 				break;
 			case 0x7A:
-				MOVE_REG_REG_8(cpu.regs.A,cpu.regs.D);
+				MOVE_REG_REG_8(cpu.regs.A, cpu.regs.D);
 				break;
 			case 0x7B:
-				MOVE_REG_REG_8(cpu.regs.A,cpu.regs.E);
+				MOVE_REG_REG_8(cpu.regs.A, cpu.regs.E);
 				break;
 			case 0x7C:
-				MOVE_REG_REG_8(cpu.regs.A,cpu.regs.H);
+				MOVE_REG_REG_8(cpu.regs.A, cpu.regs.H);
 				break;
 			case 0x7D:
-				MOVE_REG_REG_8(cpu.regs.A,cpu.regs.L);
+				MOVE_REG_REG_8(cpu.regs.A, cpu.regs.L);
 				break;
 			case 0x7E:
-				cpu.regs.A = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
+				cpu.regs.A = mem_read_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8));
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
@@ -1049,11 +1044,11 @@ void cpu_execute(unsigned int max) {
 				ADD_REG_REG_8(cpu.regs.A, cpu.regs.L);
 				break;
 			case 0x86:
-				temp16 = (unsigned short)cpu.regs.A + mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
-				temp8 = (unsigned char)temp16;
+				temp16 = (uint16_t)cpu.regs.A + mem_read_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8));
+				temp8 = (uint8_t)temp16;
 				cpu.regs.F = 0;
 				if (temp8 == 0) cpu.regs.F |= FLAG_Z;
-				if (temp16 & 0x100) cpu.regs.F |= FLAG_C;
+				if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;
 				if ((temp8 & 0xF) < (cpu.regs.A & 0xF)) cpu.regs.F |= FLAG_H;
 				cpu.regs.A = temp8;
 				cpu.cycles += 8;
@@ -1084,25 +1079,14 @@ void cpu_execute(unsigned int max) {
 				ADC_REG_REG_8(cpu.regs.A, cpu.regs.L);
 				break;
 			case 0x8E:
-				/*temp16 = (unsigned short)cpu.regs.A + mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8)) + ((cpu.regs.F&FLAG_C)>>4);
-				temp8 = (unsigned char)temp16;
-				cpu.regs.F = 0;
-				if (temp8 == 0) cpu.regs.F |= FLAG_Z;
-				if (temp16 > 0xFF) cpu.regs.F |= FLAG_C;
-				if ((temp8 & 0xF) < (cpu.regs.A & 0xF)) cpu.regs.F |= FLAG_H;
-				if (((temp8&0xF)==(cpu.regs.A&0xF))&&((temp8&0xF0)!=(cpu.regs.A&0xF0))) cpu.regs.F |= FLAG_H;
-				cpu.regs.A = temp8;
-				cpu.cycles += 8;
-				cpu.regs.PC++;
-				break;*/
                 temp9 = (cpu.regs.F&FLAG_C)>>4; // Old carry
 				temp8 = cpu.regs.A + mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8)) + temp9;
-				temp16 = (unsigned short)cpu.regs.A + mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8)) + temp9;
+				temp16 = (uint16_t)cpu.regs.A + mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8)) + temp9;
 				cpu.regs.F = 0;
 				if (temp8==0) cpu.regs.F |= FLAG_Z;
-				if (temp16 > 0xFF) cpu.regs.F |= FLAG_C;
-				if ((temp8&0xF) < (cpu.regs.A&0xF)) cpu.regs.F |= FLAG_H;
-				if (((temp8&0xF) == (cpu.regs.A&0xF)) && temp9) cpu.regs.F |= FLAG_H;
+				if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;
+				if ((temp8 & 0xF) < (cpu.regs.A&0xF)) cpu.regs.F |= FLAG_H;
+				if (((temp8 & 0xF) == (cpu.regs.A&0xF)) && temp9) cpu.regs.F |= FLAG_H;
 				cpu.regs.A = temp8;
 				cpu.cycles += 8;
 				cpu.regs.PC++;
@@ -1362,12 +1346,12 @@ void cpu_execute(unsigned int max) {
 
 			// ADD A,n
 			case 0xC6:
-				temp16 = cpu.regs.A + mem_read_8(cpu.regs.PC+1);
-				temp8 = (unsigned char)temp16;
+				temp16 = (uint16_t)cpu.regs.A + mem_read_8(cpu.regs.PC+1);
+				temp8 = (uint8_t)temp16;
 				cpu.regs.F = 0;
 				if (temp8 == 0) cpu.regs.F |= FLAG_Z;
-				if (temp16 & 0x100) cpu.regs.F |= FLAG_C;
-				if ((temp8&0xF) < (cpu.regs.A&0xF)) cpu.regs.F |= FLAG_H;
+				if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;
+				if ((temp8 & 0xF) < (cpu.regs.A & 0xF)) cpu.regs.F |= FLAG_H;
 				cpu.regs.A = temp8;
 				cpu.cycles += 8;
 				cpu.regs.PC += 2;
@@ -1984,12 +1968,12 @@ void cpu_execute(unsigned int max) {
 
 			// ADC A,n
 			case 0xCE:
-                temp9 = (cpu.regs.F&FLAG_C)>>4; // Old carry
+                temp9 = (cpu.regs.F & FLAG_C)>>4; // Old carry
 				temp8 = cpu.regs.A + mem_read_8(cpu.regs.PC+1) + temp9;
-				temp16 = (unsigned short)cpu.regs.A + mem_read_8(cpu.regs.PC+1) + temp9;
+				temp16 = (uint16_t)cpu.regs.A + mem_read_8(cpu.regs.PC+1) + temp9;
 				cpu.regs.F = 0;
 				if (temp8==0) cpu.regs.F |= FLAG_Z;
-				if (temp16 > 0xFF) cpu.regs.F |= FLAG_C;
+				if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;
 				if ((temp8&0xF) < (cpu.regs.A&0xF)) cpu.regs.F |= FLAG_H;
 				if (((temp8&0xF) == (cpu.regs.A&0xF)) && temp9) cpu.regs.F |= FLAG_H;
 				cpu.regs.A = temp8;
@@ -2272,10 +2256,10 @@ void cpu_execute(unsigned int max) {
 			// LD HL,SP+n
 			case 0xF8:
 				temp16 = mem_read_8(cpu.regs.PC+1);
-				if (temp16&0x80) temp16|=0xFF00; else temp16&=0x007F;
+				if (temp16 & 0x80) temp16 |= 0xFF00; else temp16 &= 0x007F;
 				temp16 += cpu.regs.SP;
-				cpu.regs.L = temp16&0xFF;
-				cpu.regs.H = (temp16>>8)&0xFF;
+				cpu.regs.L = temp16 & 0xFF;
+				cpu.regs.H = (temp16 >> 8) & 0xFF;
 				cpu.regs.F &= ~(FLAG_Z|FLAG_N);
 				cpu.cycles += 12;
 				cpu.regs.PC += 2;
@@ -2283,7 +2267,7 @@ void cpu_execute(unsigned int max) {
 
 			// LD SP,HL
 			case 0xF9:
-				cpu.regs.SP = cpu.regs.L + ((unsigned short)cpu.regs.H<<8);
+				cpu.regs.SP = cpu.regs.L + ((uint16_t)cpu.regs.H<<8);
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
