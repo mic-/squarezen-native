@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include "MusicPlayer.h"
 #include "SSmp.h"
+#include "SDsp.h"
 #include "SpcMapper.h"
 
 class SpcPlayer : public MusicPlayer
@@ -67,6 +68,10 @@ public:
 	} SpcFileHeader;
 
 private:
+	SSmp *mSSmp;
+	SDsp *mSDsp;
+	SpcMapper *mMemory;
+
 	SpcFileHeader mFileHeader;
 };
 
