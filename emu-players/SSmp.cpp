@@ -206,6 +206,63 @@ void SSmp::Run(uint32_t maxCycles)
 			ADC(mRegs.A, operand);
 			mCycles += 4;
 			break;
+		case 0x85:		// ADC A,!aaaa
+			operand = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			ADC(mRegs.A, operand);
+			mCycles += 4;
+			break;
+		case 0x95:		// ADC A,!aaaa+X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ADC(mRegs.A, operand);
+			mCycles += 5;
+			break;
+		case 0x96:		// ADC A,!aaaa+Y
+			ABSY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ADC(mRegs.A, operand);
+			mCycles += 5;
+			break;
+
+		case 0xA8:		// SBC A,#nn
+			operand = mMemory->ReadByte(mRegs.PC++) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 2;
+			break;
+		case 0xA6:		// SBC A,(X)
+			operand = mMemory->ReadByte(X_ADDR()) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 3;
+			break;
+		case 0xA4:		// SBC A,aa
+			operand = mMemory->ReadByte(ZP_ADDR()) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 3;
+			break;
+		case 0xB4:		// SBC A,aa+X
+			operand = mMemory->ReadByte(ZPX_ADDR()) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 4;
+			break;
+		case 0xA5:		// SBC A,!aaaa
+			operand = mMemory->ReadByte(ABS_ADDR()) ^ 0xFF;
+			mRegs.PC += 2;
+			ADC(mRegs.A, operand);
+			mCycles += 4;
+			break;
+		case 0xB5:		// SBC A,!aaaa+X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 5;
+			break;
+		case 0xB6:		// SBC A,!aaaa+Y
+			ABSY_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 5;
+			break;
 
 		// == Rotate/shift ==
 		case 0x1C:		// ASL A
@@ -294,6 +351,27 @@ void SSmp::Run(uint32_t maxCycles)
 			mRegs.A = (mRegs.A >> 4) | (mRegs.A << 4);
 			UPDATE_NZ(mRegs.A);
 			mCycles += 2;
+			break;
+
+		case 0x4E:		// TCLR1 !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N);
+	        mRegs.PSW |= ((uint8_t)mRegs.A == (uint8_t)operand) ? SSmp::FLAG_Z : 0;
+	        mRegs.PSW |= ((mRegs.A - operand) & 0x80);
+			mMemory->WriteByte(addr, operand & ~mRegs.A);
+			mCycles += 6;
+			break;
+		case 0x0E:		// TSET1 !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N);
+	        mRegs.PSW |= ((uint8_t)mRegs.A == (uint8_t)operand) ? SSmp::FLAG_Z : 0;
+	        mRegs.PSW |= ((mRegs.A - operand) & 0x80);
+			mMemory->WriteByte(addr, operand | mRegs.A);
+			mCycles += 6;
 			break;
 
 		// == Bitwise logic ==
@@ -721,6 +799,113 @@ void SSmp::Run(uint32_t maxCycles)
 			break;
 		case 0xF0:		// BEQ rr
 			COND_BRANCH(mRegs.PSW & SSmp::FLAG_Z);
+			break;
+
+		case 0x03:		// BBS aa.0,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x01);
+			break;
+		case 0x23:		// BBS aa.1,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x02);
+			break;
+		case 0x43:		// BBS aa.2,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x04);
+			break;
+		case 0x63:		// BBS aa.3,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x08);
+			break;
+		case 0x83:		// BBS aa.4,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x10);
+			break;
+		case 0xA3:		// BBS aa.5,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x20);
+			break;
+		case 0xC3:		// BBS aa.6,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x40);
+			break;
+		case 0xE3:		// BBS aa.7,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(operand & 0x80);
+			break;
+
+		case 0x13:		// BBC aa.0,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x01) == 0);
+			break;
+		case 0x33:		// BBC aa.1,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x02) == 0);
+			break;
+		case 0x53:		// BBC aa.2,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x04) == 0);
+			break;
+		case 0x73:		// BBC aa.3,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x08) == 0);
+			break;
+		case 0x93:		// BBC aa.4,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x10) == 0);
+			break;
+		case 0xB3:		// BBC aa.5,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x20) == 0);
+			break;
+		case 0xD3:		// BBC aa.6,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x40) == 0);
+			break;
+		case 0xF3:		// BBC aa.7,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH((operand & 0x80) == 0);
+			break;
+
+		case 0x2E:		// CBNE aa,rr
+			operand = mMemory->ReadByte(ZP_ADDR());
+			mCycles += 3;
+			COND_BRANCH(mRegs.A != operand);
+			break;
+		case 0xDE:		// CBNE aa+X,rr
+			operand = mMemory->ReadByte(ZPX_ADDR());
+			mCycles += 4;
+			COND_BRANCH(mRegs.A != operand);
+			break;
+
+		case 0xFE:		// DBNZ Y,rr
+			mRegs.Y--;
+			mCycles += 2;
+			COND_BRANCH(mRegs.Y);
+			break;
+		case 0x6E:		// DBNZ aa,rr
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			operand--;
+			mMemory->WriteByte(addr, operand);
+			mCycles += 3;
+			COND_BRANCH(operand);
 			break;
 
 		// Unconditional branches
