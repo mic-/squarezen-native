@@ -383,6 +383,9 @@ int mem_reset()
 	WRAM1 = WRAM;
 	VRAM0 = VRAM;
 
+	memset(RAM, 0, 0x2000);
+	memset(RAM1, 0, 0x2000);
+
 	/*if ((CART_TYPE==TYPE_MBC1)||(CART_TYPE==TYPE_MBC1_RAM)||(CART_TYPE==TYPE_MBC1_RAM_BATT)) {
 		read_8_tbl[0x0] = mem_read_8_0000;
 		read_8_tbl[0x1] = mem_read_8_0000;

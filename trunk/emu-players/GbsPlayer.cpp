@@ -72,7 +72,7 @@ void GbsPlayer::ExecuteGbZ80(uint16_t address)
 	cart[0xF3] = 0x76;	// HALT
 	cpu.regs.PC = 0xF0;
 	cpu.cycles = 0;
-	cpu_execute(mFrameCycles);
+	cpu_execute(mFrameCycles*2);
 }
 
 
@@ -172,7 +172,7 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 
-	SetSubSong(mFileHeader.firstSong);
+	//SetSubSong(mFileHeader.firstSong);
 
 	return MusicPlayer::OK;
 }
@@ -180,8 +180,12 @@ int GbsPlayer::Prepare(std::string fileName)
 
 void GbsPlayer::SetSubSong(uint32_t subSong)
 {
+	NLOGD("GbsPlayer", "Setting subsong %d", subSong);
 	cpu.regs.SP = mFileHeader.SP;
 	cpu.regs.A = subSong; // song number
+	//cpu.regs.B = cpu.regs.C = cpu.regs.H = cpu.regs.L = 0;
+	//mem_reset();
+	cpu.halted = 0;
 	ExecuteGbZ80(mFileHeader.initAddress);
 }
 
