@@ -27,15 +27,15 @@
 				       mRegs.F |= ((uint8_t)val == 0) ? Emu6502::FLAG_Z : 0; \
 				       mRegs.F |= (val & 0x80)
 
-#define UPDATE_NZC(val, val2) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N | Emu6502::FLAG_C); \
+#define UPDATE_NZC(val, val2, sub) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N | Emu6502::FLAG_C); \
 				       mRegs.F |= ((uint8_t)val == (uint8_t)val2) ? Emu6502::FLAG_Z : 0; \
-				       mRegs.F |= (val & 0x80); \
+				       mRegs.F |= ((val - sub) & 0x80); \
 				       mRegs.F |= (val >= val2) ? FLAG_C : 0
 
 // == Arithmetic ==
 
 #define ADC(val) temp16 = (uint16_t)(val) + (uint16_t)mRegs.A + ((mRegs.F & Emu6502::FLAG_C) ? 1 : 0); \
-				 UPDATE_NZC(temp16, 0x100); \
+				 UPDATE_NZC(temp16, 0x100, 0); \
 				 mRegs.F &= ~Emu6502::FLAG_V; \
 				 mRegs.F |= ((!((mRegs.A ^ val) & 0x80)) && ((mRegs.A ^ temp16) & 0x80)) ? Emu6502::FLAG_V : 0; \
 				 mRegs.A = (uint8_t)temp16
@@ -399,94 +399,94 @@ void Emu6502::Run(uint32_t maxCycles)
 // == CMP ==
 		case 0xC9:		// CMP imm
 			operand = mMemory->ReadByte(mRegs.PC++);
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 2;
 			break;
 
 		case 0xC5:		// CMP zp
 			operand = mMemory->ReadByte(ZP_ADDR());
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 3;
 			break;
 
 		case 0xD5:		// CMP zp,X
 			operand = mMemory->ReadByte(ZPX_ADDR());
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 4;
 			break;
 
 		case 0xCD:		// CMP abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 4;
 			break;
 
 		case 0xDD:		// CMP abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 4;
 			break;
 
 		case 0xD9:		// CMP abs,Y
 			ABSY_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 4;
 			break;
 
 		case 0xC1:		// CMP (zp,X)
 			INDX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 6;
 			break;
 
 		case 0xD1:		// CMP (zp),Y
 			INDY_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
-			UPDATE_NZC(mRegs.A, operand);
+			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 5;
 			break;
 
 // == CPX ==
 		case 0xE0:		// CPX imm
 			operand = mMemory->ReadByte(mRegs.PC++);
-			UPDATE_NZC(mRegs.X, operand);
+			UPDATE_NZC(mRegs.X, operand, operand);
 			mCycles += 2;
 			break;
 
 		case 0xE4:		// CPX zp
 			operand = mMemory->ReadByte(ZP_ADDR());
-			UPDATE_NZC(mRegs.X, operand);
+			UPDATE_NZC(mRegs.X, operand, operand);
 			mCycles += 3;
 			break;
 
 		case 0xEC:		// CPX abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
-			UPDATE_NZC(mRegs.X, operand);
+			UPDATE_NZC(mRegs.X, operand, operand);
 			mCycles += 4;
 			break;
 
 // == CPY ==
 		case 0xC0:		// CPY imm
 			operand = mMemory->ReadByte(mRegs.PC++);
-			UPDATE_NZC(mRegs.Y, operand);
+			UPDATE_NZC(mRegs.Y, operand, operand);
 			mCycles += 2;
 			break;
 
 		case 0xC4:		// CPY zp
 			operand = mMemory->ReadByte(ZP_ADDR());
-			UPDATE_NZC(mRegs.Y, operand);
+			UPDATE_NZC(mRegs.Y, operand, operand);
 			mCycles += 3;
 			break;
 
 		case 0xCC:		// CPY abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
-			UPDATE_NZC(mRegs.Y, operand);
+			UPDATE_NZC(mRegs.Y, operand, operand);
 			mCycles += 4;
 			break;
 
