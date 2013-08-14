@@ -110,6 +110,18 @@
 	UPDATE_NZ(mRegs.A); \
 	mCycles += 4
 
+#define BITWISE_A_aaaaX(op) \
+	ABSX_ADDR(addr); \
+	mRegs.A = mRegs.A op mMemory->ReadByte(addr); \
+	UPDATE_NZ(mRegs.A); \
+	mCycles += 5
+
+#define BITWISE_A_aaaaY(op) \
+	ABSY_ADDR(addr); \
+	mRegs.A = mRegs.A op mMemory->ReadByte(addr); \
+	UPDATE_NZ(mRegs.A); \
+	mCycles += 5
+
 // ====
 
 #define CLR1_aa_b(b) \
@@ -180,6 +192,12 @@ void SSmp::Run(uint32_t maxCycles)
 		case 0x25:		// AND A,!aaaa
 			BITWISE_A_aaaa(&);
 			break;
+		case 0x35:		// AND A,!aaaa+X
+			BITWISE_A_aaaaX(&);
+			break;
+		case 0x36:		// AND A,!aaaa+Y
+			BITWISE_A_aaaaY(&);
+			break;
 
 		case 0x29:		// AND aa,bb
 			BITWISE_aa_bb(&);
@@ -219,6 +237,36 @@ void SSmp::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0x79:		// CMP (X),(Y)
+			operand = mMemory->ReadByte(Y_ADDR());
+			temp8 = mMemory->ReadByte(X_ADDR());
+			UPDATE_NZC(temp8, operand);
+			mCycles += 5;
+			break;
+
+		case 0xC8:		// CMP X,#nn
+			operand = mMemory->ReadByte(mRegs.PC++);
+			UPDATE_NZC(mRegs.X, operand);
+			mCycles += 2;
+			break;
+
+		case 0x3E:		// CMP X,aa
+			operand = mMemory->ReadByte(ZP_ADDR());
+			UPDATE_NZC(mRegs.X, operand);
+			mCycles += 3;
+			break;
+
+		case 0xAD:		// CMP Y,#nn
+			operand = mMemory->ReadByte(mRegs.PC++);
+			UPDATE_NZC(mRegs.Y, operand);
+			mCycles += 2;
+			break;
+
+		case 0x7E:		// CMP Y,aa
+			operand = mMemory->ReadByte(ZP_ADDR());
+			UPDATE_NZC(mRegs.Y, operand);
+			mCycles += 3;
+			break;
 
 		// == EOR ==
 		case 0x48:		// EOR A,#nn
@@ -247,6 +295,12 @@ void SSmp::Run(uint32_t maxCycles)
 
 		case 0x45:		// EOR A,!aaaa
 			BITWISE_A_aaaa(^);
+			break;
+		case 0x55:		// EOR A,!aaaa+X
+			BITWISE_A_aaaaX(^);
+			break;
+		case 0x56:		// EOR A,!aaaa+Y
+			BITWISE_A_aaaaY(^);
 			break;
 
 		case 0x49:		// EOR aa,bb
@@ -452,6 +506,12 @@ void SSmp::Run(uint32_t maxCycles)
 		case 0x05:		// OR A,!aaaa
 			BITWISE_A_aaaa(|);
 			break;
+		case 0x15:		// OR A,!aaaa+X
+			BITWISE_A_aaaaX(|);
+			break;
+		case 0x16:		// OR A,!aaaa+Y
+			BITWISE_A_aaaaY(|);
+			break;
 
 		case 0x09:		// OR aa,bb
 			BITWISE_aa_bb(|);
@@ -648,6 +708,28 @@ void SSmp::Run(uint32_t maxCycles)
 				return;
 			}*/
 			mCycles += 3;
+			break;
+
+		case 0x3F:		// CALL !aaaa
+			 addr = mMemory->ReadByte(mRegs.PC++);
+			 addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
+			 PUSHW(mRegs.PC);
+			 mRegs.PC = addr;
+			 mCycles += 8;
+			 break;
+
+		case 0x4F:		// PCALL nn
+			 addr = mMemory->ReadByte(mRegs.PC++) | 0xFF00;
+			 PUSHW(mRegs.PC);
+			 mRegs.PC = addr;
+			 mCycles += 6;
+			 break;
+
+		case 0x6F:		// RET
+			PULLB(mRegs.PC);
+			PULLB(addr);
+			mRegs.PC += (addr << 8) + 1;
+			mCycles += 5;
 			break;
 
 		// ====
