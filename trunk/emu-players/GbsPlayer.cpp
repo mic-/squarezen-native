@@ -72,6 +72,7 @@ void GbsPlayer::ExecuteGbZ80(uint16_t address)
 	cart[0xF3] = 0x76;	// HALT
 	cpu.regs.PC = 0xF0;
 	cpu.cycles = 0;
+	cpu.stopped = 0;
 	cpu_execute(mFrameCycles*2);
 }
 
@@ -163,10 +164,14 @@ int GbsPlayer::Prepare(std::string fileName)
 
 	NLOGD("GbsPlayer", "Reset done");
 
+	mFileHeader.title[31] = mFileHeader.author[31] = mFileHeader.copyright[31] = 0;
+	mMetaData.SetTitle(mFileHeader.title);
+	mMetaData.SetAuthor(mFileHeader.author);
+	mMetaData.SetComment(mFileHeader.copyright);
 	mMetaData.SetNumSubSongs(mFileHeader.numSongs);
 	mMetaData.SetDefaultSong(mFileHeader.firstSong);
 
-	SetSubSong(mFileHeader.firstSong);
+	SetSubSong(mFileHeader.firstSong - 1);
 
 	NLOGD("GbsPlayer", "Prepare finished");
 
