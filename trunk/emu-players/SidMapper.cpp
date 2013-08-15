@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-//#define NLOG_LEVEL_DEBUG 0
+#define NLOG_LEVEL_DEBUG 0
 
 #include <string.h>
 #include <stddef.h>
@@ -23,9 +23,19 @@
 #include "SidPlayer.h"
 #include "Emu6502.h"
 
+static const uint8_t KERNEL_EA31_IRQ_HANDLER[] =
+{
+	0x4C, 0x81, 0xEA
+};
+
+static const uint8_t KERNEL_EA81_IRQ_TAIL[] =
+{
+	0x68, 0xA8, 0x68, 0xAA, 0x68, 0x40
+};
 
 static const uint8_t KERNEL_FF48_IRQ_HANDLER[] =
 {
+	0x48, 0x8A, 0x48, 0x98, 0x48,
 	0x6C, 0x14, 0x03	// JMP ($0314)
 };
 
@@ -52,7 +62,10 @@ uint8_t SidMapper::ReadByte(uint16_t addr)
 
 	if ((addr >> 12) == 0xD && bankSelect >= 5) {
 		// I/O at D000-DFFF
-		if (addr >= 0xDC00 && addr <= 0xDCFF) {
+		if (addr < 0xD400) {
+			// VIC-II
+			return mVicII.Read(addr);
+		} else if (addr >= 0xDC00 && addr <= 0xDCFF) {
 			// CIA1
 			return mCia[0].Read(addr & 0xDC0F);
 
@@ -66,8 +79,16 @@ uint8_t SidMapper::ReadByte(uint16_t addr)
 
 	} else if ((addr >> 12) >= 0xE && (bankSelect & 3) >= 2) {
 		NLOGD("SidMapper", "Reading from kernel ROM (%#x) at PC=%#x", addr, m6502->mRegs.PC);
-		if (addr >= 0xFF48 && addr <= 0xFF4A) {
+		if (addr >= 0xEA31 && addr <= 0xEA33) {
+			return KERNEL_EA31_IRQ_HANDLER[addr - 0xEA31];
+		} else if (addr >= 0xEA81 && addr <= 0xEA86) {
+			return KERNEL_EA81_IRQ_TAIL[addr - 0xEA81];
+		} else if (addr >= 0xFF48 && addr <= 0xFF4F) {
 			return KERNEL_FF48_IRQ_HANDLER[addr - 0xFF48];
+		} else if (addr == 0xFFFE) {
+			return 0x48;
+		} else if (addr == 0xFFFF) {
+			return 0xFF;
 		} else {
 			return 0;
 		}
@@ -92,7 +113,10 @@ void SidMapper::WriteByte(uint16_t addr, uint8_t data)
 		//NLOGD("SidMapper", "addr=%#x, data=%#x, bankSelect=%d", addr, data, bankSelect);
 		if (bankSelect >= 5) {
 			// I/O at D000-DFFF
-			if (addr >= 0xDC00 && addr <= 0xDCFF) {
+			if (addr < 0xD400) {
+				// VIC-II
+				mVicII.Write(addr, data);
+			} else if (addr >= 0xDC00 && addr <= 0xDCFF) {
 				// CIA1
 				mCia[0].Write(addr & 0xDC0F, data);
 
@@ -143,6 +167,9 @@ void SidMapper::Reset()
 
 	mCia[0].Reset();
 	mCia[1].Reset();
+
+	mVicII.SetMapper(this);
+	mVicII.Reset();
 }
 
 
@@ -174,7 +201,7 @@ void Cia6526Timer::Step()
 							mCia->mMemory->m6502->Irq(0xFFFE);
 						} else {
 							// ROM at $E000-FFFF
-							mCia->mMemory->m6502->Irq(0x0314);
+							mCia->mMemory->m6502->Irq(0xFFFE); //0x0314);
 						}
 						mCia->mMemory->mSidPlayer->TimerIrq(Cia6526::TIMER_A);
 					}
@@ -300,3 +327,73 @@ void Cia6526::Write(uint16_t addr, uint8_t data)
 		break;
 	}
 }
+
+
+void VicII::Reset()
+{
+	mCycles = 0;
+	mScanline = mRasterIrqLine = 0;
+	mCtrl = mStatus = 0;
+}
+
+void VicII::Step()
+{
+	mCycles++;
+	if (mCycles >= 63) {
+		mCycles = 0;
+		mScanline++;
+		if (mScanline >= 312) {
+			mScanline = 0;
+		}
+
+		if ((mCtrl & 1) && mScanline == mRasterIrqLine) {
+			mStatus |= 1;
+			if (!(mMemory->m6502->mRegs.F & Emu6502::FLAG_I)) {
+				if ((mMemory->ReadByte(0x0001) & 3) < 2) {
+					// RAM at $E000-FFFF
+					mMemory->m6502->Irq(0xFFFE);
+				} else {
+					// ROM at $E000-FFFF
+					mMemory->m6502->Irq(0xFFFE); //0x0314);
+				}
+				// ToDo: add a VicIrq method or make a general Irq method?
+				mMemory->mSidPlayer->TimerIrq(Cia6526::TIMER_A);
+			}
+		}
+	}
+}
+
+uint8_t VicII::Read(uint16_t addr)
+{
+	NLOGD("SidMapper", "Read(%#x)", addr);
+
+	switch (addr & 0x3FF) {
+	case 0x19:
+		return mStatus;
+	case 0x1A:
+		return mCtrl;
+	}
+	return 0;
+}
+
+void VicII::Write(uint16_t addr, uint8_t data)
+{
+	NLOGD("SidMapper", "Write(%#x, %#x)", addr, data);
+
+	switch (addr & 0x3FF) {
+	case 0x11:
+		mRasterIrqLine = (mRasterIrqLine & 0x100) | data;
+		break;
+	case 0x12:
+		mRasterIrqLine = (mRasterIrqLine & 0xFF) | ((uint16_t)(data & 0x80) << 1);
+		break;
+	case 0x19:
+		mStatus = data;
+		break;
+	case 0x1A:
+		mCtrl = data;
+		break;
+	}
+
+}
+

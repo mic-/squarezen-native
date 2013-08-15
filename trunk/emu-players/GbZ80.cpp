@@ -70,7 +70,7 @@
 							 cpu.regs.F = FLAG_N;\
 							 if (r1 == r2) cpu.regs.F |= FLAG_Z;\
 							 if (r1 < r2) cpu.regs.F |= FLAG_C;\
-							 cpu.regs.F |= ((temp8&0x0F)>(r1&0x0F))?FLAG_H:0;\
+							 cpu.regs.F |= ((r1&0x0F) < (r2&0x0F)) ? FLAG_H : 0;\
 							 r1 = temp8;\
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
@@ -85,25 +85,25 @@
 							 cpu.regs.PC++
 
 #define AND_REG_REG_8(r1,r2) r1 &= r2;\
-							 cpu.regs.F = (cpu.regs.F & 0x0) | FLAG_H;\
+							 cpu.regs.F = FLAG_H;\
 							 if (r1==0) cpu.regs.F |= FLAG_Z;\
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
 
 #define OR_REG_REG_8(r1,r2) r1 |= r2;\
-							cpu.regs.F &= 0x0;\
+							cpu.regs.F = 0x0;\
 							if (r1==0) cpu.regs.F |= FLAG_Z;\
 							cpu.cycles += 4;\
 							cpu.regs.PC++
 
 #define XOR_REG_REG_8(r1,r2) r1 ^= r2;\
-							 cpu.regs.F &= 0x0;\
+							 cpu.regs.F = 0x0;\
 							 if (r1 == 0) cpu.regs.F |= FLAG_Z;\
 							 cpu.cycles += 4;\
 							 cpu.regs.PC++
 
 #define CP_REG_REG_8(r1,r2) temp8 = r1 - r2;\
-							cpu.regs.F = (cpu.regs.F&0x0)|FLAG_N;\
+							cpu.regs.F = FLAG_N;\
 							if (r1 == r2) cpu.regs.F |= FLAG_Z;\
 							if (r1 < r2) cpu.regs.F |= FLAG_C;\
 							if ((temp8 & 0xF) > (r1&0xF)) cpu.regs.F |= FLAG_H;\
@@ -113,7 +113,7 @@
 #define INC_REG_8(r) temp8 = r + 1;\
 					 cpu.regs.F &= FLAG_C;\
 					 if (temp8 == 0) cpu.regs.F |= FLAG_Z;\
-					 cpu.regs.F |= ((r ^ 1 ^ temp8)<<H_BIT_SHIFT)&FLAG_H;\
+					 cpu.regs.F |= ((r ^ temp8) & 0x10) << 1;\
 					 r = temp8;\
 					 cpu.cycles += 4;\
 					 cpu.regs.PC++
@@ -121,7 +121,7 @@
 #define DEC_REG_8(r) temp8 = r - 1;\
 	                 cpu.regs.F = (cpu.regs.F & FLAG_C) | FLAG_N;\
 					 if (temp8 == 0) cpu.regs.F |= FLAG_Z;\
-					 cpu.regs.F |= ((r ^ 1 ^ temp8)<<H_BIT_SHIFT)&FLAG_H;\
+					 cpu.regs.F |= ((r ^ temp8) & 0x10) << 1;\
 					 r = temp8;\
 					 cpu.cycles += 4;\
                      cpu.regs.PC++
@@ -157,7 +157,7 @@
 					  cpu.cycles += 8;\
 					  cpu.regs.PC++
 
-#define RLC_REG_8(r) cpu.regs.F = (r&0x80)?FLAG_C:0;\
+#define RLC_REG_8(r) cpu.regs.F = (r & 0x80) ? FLAG_C : 0;\
                      r = (r<<1)|((r&0x80)>>7);\
                      if (r==0) cpu.regs.F |= FLAG_Z;\
                      cpu.cycles += 8;\
@@ -214,8 +214,8 @@
                      cpu.cycles += 8;\
                      cpu.regs.PC++
 
-#define BIT_REG_8(r,b) cpu.regs.F = (cpu.regs.F&FLAG_C)|FLAG_H;\
-	                   cpu.regs.F |= (r & (1<<(b)))?0:FLAG_Z;\
+#define BIT_REG_8(r,b) cpu.regs.F = (cpu.regs.F & FLAG_C) | FLAG_H;\
+	                   cpu.regs.F |= (r & (1<<(b))) ? 0 : FLAG_Z;\
 					   cpu.cycles += 8;\
 					   cpu.regs.PC++
 
@@ -402,6 +402,7 @@ void cpu_execute(unsigned int max) {
 			// ADD HL,BC
 			case 0x09:
 				ADD_REG_REG_16(cpu.regs.H,cpu.regs.L, cpu.regs.B, cpu.regs.C);
+				NLOGD("GbZ80", "ADD HL,BC => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
 				break;
 
 			// LD A,(BC)
@@ -431,7 +432,7 @@ void cpu_execute(unsigned int max) {
 
 			// RRCA
 			case 0x0F:
-				cpu.regs.F = /*(cpu.regs.F&FLAG_Z) |*/ ((cpu.regs.A & 0x01) ? FLAG_C : 0);
+				cpu.regs.F = (cpu.regs.A & 0x01) ? FLAG_C : 0;
 				cpu.regs.A = (cpu.regs.A>>1)|((cpu.regs.A&1)<<7);
 				cpu.cycles += 4;
 				cpu.regs.PC++;
@@ -499,6 +500,7 @@ void cpu_execute(unsigned int max) {
 			// ADD HL,DE
 			case 0x19:
 				ADD_REG_REG_16(cpu.regs.H, cpu.regs.L, cpu.regs.D, cpu.regs.E);
+				NLOGD("GbZ80", "ADD HL,DE => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
 				break;
 
 			// LD A,(DE)
@@ -537,7 +539,7 @@ void cpu_execute(unsigned int max) {
 			// JR NZ,n
 			case 0x20:
 				cpu.regs.PC += 2;
-				if ((cpu.regs.F&FLAG_Z)==0)
+				if ((cpu.regs.F & FLAG_Z)==0)
 				{
 					cpu.regs.PC += (signed char)mem_read_8(cpu.regs.PC-1);
 					cpu.cycles += 4;
@@ -549,6 +551,7 @@ void cpu_execute(unsigned int max) {
 			case 0x21:
 				LOAD_IMM_16(cpu.regs.H, cpu.regs.L);
 				break;
+
 			// LD (HL+),A
 			case 0x22:
 				mem_write_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8), cpu.regs.A);
@@ -580,16 +583,14 @@ void cpu_execute(unsigned int max) {
 				temp8 = cpu.regs.A;
 
                 temp16 = (unsigned short)cpu.regs.A;
-                if ( !(cpu.regs.F & FLAG_N) )
-                {
+                if ( !(cpu.regs.F & FLAG_N) ) {
                     if ( (cpu.regs.F & FLAG_H) || (temp16 & 0x0F) > 9 )
                         temp16 += 6;
 
                     if ( (cpu.regs.F & FLAG_C) || temp16 > 0x9F )
                         temp16 += 0x60;
                 }
-                else
-                {
+                else {
                     if ( cpu.regs.F & FLAG_H )
                         temp16 = (temp16 - 6) & 0xFF;
 
@@ -623,6 +624,7 @@ void cpu_execute(unsigned int max) {
 			// ADD HL,HL
 			case 0x29:
 				ADD_REG_REG_16(cpu.regs.H, cpu.regs.L, cpu.regs.H, cpu.regs.L);
+				NLOGD("GbZ80", "ADD HL,HL => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
 				break;
 
 			// LD A,(HL+)
@@ -664,8 +666,7 @@ void cpu_execute(unsigned int max) {
 			// JR NC,n
 			case 0x30:
 				cpu.regs.PC += 2;
-				if ((cpu.regs.F&FLAG_C)==0)
-				{
+				if ((cpu.regs.F&FLAG_C)==0)	{
 					cpu.regs.PC += (signed char)mem_read_8(cpu.regs.PC-1);
 					cpu.cycles += 4;
                 }
@@ -714,7 +715,7 @@ void cpu_execute(unsigned int max) {
 	            cpu.regs.F = (cpu.regs.F&FLAG_C)|FLAG_N;
 				if (temp9==0) cpu.regs.F |= FLAG_Z;
 				if ((temp9&0xF) > (temp8&0xF)) cpu.regs.F |= FLAG_H;
-				mem_write_8(cpu.regs.L + (cpu.regs.H<<8),temp9);
+				mem_write_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8),temp9);
 				cpu.cycles += 12;
                 cpu.regs.PC++;
 				break;
@@ -737,8 +738,7 @@ void cpu_execute(unsigned int max) {
 			// JR C,n
 			case 0x38:
 				cpu.regs.PC += 2;
-				if ((cpu.regs.F&FLAG_C)!=0)
-				{
+				if (cpu.regs.F&FLAG_C) {
 					cpu.regs.PC += (signed char)mem_read_8(cpu.regs.PC-1);
 					cpu.cycles += 4;
                 }
@@ -752,7 +752,7 @@ void cpu_execute(unsigned int max) {
 
 			// LD A,(HL-)
 			case 0x3A:
-				cpu.regs.A = mem_read_8(cpu.regs.L + (cpu.regs.H<<8));
+				cpu.regs.A = mem_read_8(cpu.regs.L + ((uint16_t)cpu.regs.H<<8));
 				cpu.regs.L--;
 				if (cpu.regs.L==0xFF) cpu.regs.H--;
 				cpu.cycles += 8;
@@ -1119,9 +1119,9 @@ void cpu_execute(unsigned int max) {
 				temp8 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
 				cpu.regs.F = FLAG_N;
 				if (cpu.regs.A < temp8) cpu.regs.F |= FLAG_C;
+				if ((cpu.regs.A & 0xF) < (temp8 & 0x0F)) cpu.regs.F |= FLAG_H;
 				temp8 = cpu.regs.A - temp8;
 				if (temp8 == 0) cpu.regs.F |= FLAG_Z;
-				if ((temp8 & 0xF) > (cpu.regs.A & 0xF)) cpu.regs.F |= FLAG_H;
 				cpu.regs.A = temp8;
 				cpu.cycles += 8;
 				cpu.regs.PC++;
@@ -1150,13 +1150,13 @@ void cpu_execute(unsigned int max) {
 			case 0x9D:
 				SBC_REG_REG_8(cpu.regs.A, cpu.regs.L);
 				break;
-			case 0x9E:
+			case 0x9E:	// SBC A,(HL)
 				temp8 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8)) + ((cpu.regs.F&FLAG_C)>>4);
 				cpu.regs.F = FLAG_N;
 				if (cpu.regs.A < temp8) cpu.regs.F |= FLAG_C;
+				if ((cpu.regs.A & 0xF) < (temp8 & 0xF)) cpu.regs.F |= FLAG_H;
 				temp8 = cpu.regs.A - temp8;
 				if (temp8 == 0) cpu.regs.F |= FLAG_Z;
-				if ((temp8 & 0xF) > (cpu.regs.A & 0xF)) cpu.regs.F |= FLAG_H;
 				cpu.regs.A = temp8;
 				cpu.cycles += 8;
 				cpu.regs.PC++;
@@ -1282,9 +1282,9 @@ void cpu_execute(unsigned int max) {
 				temp8 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
 				cpu.regs.F = FLAG_N;
 				if (cpu.regs.A < temp8) cpu.regs.F |= FLAG_C;
+				if ((cpu.regs.A&0xF) < (temp8&0x0F)) cpu.regs.F |= FLAG_H;
 				temp8 = cpu.regs.A - temp8;
 				if (temp8 == 0) cpu.regs.F |= FLAG_Z;
-				if ((temp8&0xF) > (cpu.regs.A&0xF)) cpu.regs.F |= FLAG_H;
 				cpu.cycles += 8;
 				cpu.regs.PC++;
 				break;
@@ -1295,12 +1295,13 @@ void cpu_execute(unsigned int max) {
 
 			// RET NZ
 			case 0xC0:
-				if ((cpu.regs.F & FLAG_Z)==0) {
+				if ((cpu.regs.F & FLAG_Z) == 0) {
 					cpu.regs.PC = mem_read_16(cpu.regs.SP);
 					cpu.regs.SP += 2;
 					cpu.cycles += 12;
-				} else
+				} else {
 					cpu.regs.PC++;
+				}
 				cpu.cycles += 8;
 				break;
 
@@ -1315,9 +1316,9 @@ void cpu_execute(unsigned int max) {
 				{
 					cpu.regs.PC = mem_read_16(cpu.regs.PC+1);
 					cpu.cycles += 4;
-				}
-                else
+				} else {
 					cpu.regs.PC += 3;
+				}
 				cpu.cycles += 12;
 				break;
 
@@ -1465,8 +1466,6 @@ void cpu_execute(unsigned int max) {
 						RRC_REG_8(cpu.regs.L);
 						break;
 					case 0x0E:
-						/*sprintf(szBuffer,"RRC (hl)\n");
-						WriteConsole(hout,szBuffer,strlen(szBuffer),&templ,NULL);*/
 						temp9 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
 				        temp8 = (temp9&0x01)?FLAG_C:0;
                         temp9 = (temp9>>1)|((temp9&0x01)<<7);
@@ -1532,7 +1531,7 @@ void cpu_execute(unsigned int max) {
 						break;
 					case 0x1E:
 						temp9 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
-						temp8 = (temp9&0x01)?FLAG_C:0;
+						temp8 = (temp9 & 0x01) ? FLAG_C : 0;
 						temp9 = (temp9>>1)|((cpu.regs.F&FLAG_C)<<3);
 						cpu.regs.F = temp8;
 						if (temp9==0) cpu.regs.F |= FLAG_Z;
@@ -1563,8 +1562,6 @@ void cpu_execute(unsigned int max) {
 						SLA_REG_8(cpu.regs.L);
 						break;
 					case 0x26:
-						/*sprintf(szBuffer,"SLA (hl)\n");
-						WriteConsole(hout,szBuffer,strlen(szBuffer),&templ,NULL);*/
 						temp9 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
                         cpu.regs.F = (temp9&0x80)?FLAG_C:0;
                         temp9 <<= 1;
@@ -1596,8 +1593,6 @@ void cpu_execute(unsigned int max) {
 						SRA_REG_8(cpu.regs.L);
 						break;
 					case 0x2E:
-						/*sprintf(szBuffer,"SRA (hl)\n");
-						WriteConsole(hout,szBuffer,strlen(szBuffer),&templ,NULL);*/
 						temp8 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
                         cpu.regs.F = (temp8&0x01)?FLAG_C:0;
                         temp8 = (temp8>>1)|(temp8&0x80);
@@ -1629,8 +1624,6 @@ void cpu_execute(unsigned int max) {
 						SWAP_REG_8(cpu.regs.L);
 						break;
 					case 0x36:
-						/*sprintf(szBuffer,"SWAP (hl)\n");
-						WriteConsole(hout,szBuffer,strlen(szBuffer),&templ,NULL);*/
 						temp8 = mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8));
                         temp8 = ((temp8&0xF)<<4) | (temp8>>4);
 	                    cpu.regs.F = 0;
@@ -1790,7 +1783,6 @@ void cpu_execute(unsigned int max) {
 					case 0x9D:
 						RES_REG_8(cpu.regs.L,3);
 						break;
-
 					case 0x9F:
 						RES_REG_8(cpu.regs.A,3);
 						break;
@@ -1861,7 +1853,7 @@ void cpu_execute(unsigned int max) {
 
 					case 0x86: case 0x8E: case 0x96: case 0x9E:
 					case 0xA6: case 0xAE: case 0xB6: case 0xBE:
-						mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8))&~(1<<((opcode2-0x86)>>3)));
+						mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8)) & ~(1<<((opcode2-0x86)>>3)));
 						cpu.cycles += 16;
 						cpu.regs.PC++;
 						break;
@@ -1899,18 +1891,16 @@ void cpu_execute(unsigned int max) {
 					case 0xC7:
 						SET_REG_8(cpu.regs.A,0);
 						break;
-
 					case 0xCF:
 						SET_REG_8(cpu.regs.A,1);
 						break;
-
 					case 0xD7:
 						SET_REG_8(cpu.regs.A,2);
 						break;
 
 					case 0xC6: case 0xCE: case 0xD6: case 0xDE:
 					case 0xE6: case 0xEE: case 0xF6: case 0xFE:
-						mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8),mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8))|(1<<((opcode2-0xC6)>>3)));
+						mem_write_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8), mem_read_8(cpu.regs.L + ((unsigned short)cpu.regs.H<<8))|(1<<((opcode2-0xC6)>>3)));
 						cpu.cycles += 16;
 						cpu.regs.PC++;
 						break;
@@ -1918,25 +1908,21 @@ void cpu_execute(unsigned int max) {
 					case 0xDF:
 						SET_REG_8(cpu.regs.A,3);
 						break;
-
 					case 0xE7:
 						SET_REG_8(cpu.regs.A,4);
 						break;
-
 					case 0xEF:
 						SET_REG_8(cpu.regs.A,5);
 						break;
-
 					case 0xF7:
 						SET_REG_8(cpu.regs.A,6);
 						break;
-
 					case 0xFF:
 						SET_REG_8(cpu.regs.A,7);
 						break;
 
 					default:
-						fprintf(stderr,"Unhandled at PC=%04X: A=%02X, B=%02X, D=%02X, E=%02X, H=%02X, L=%02X, F=%02X, SP=%02X, opcode=%02X\n",
+						NLOGW("GbZ80", "Unhandled at PC=%04X: A=%02X, B=%02X, D=%02X, E=%02X, H=%02X, L=%02X, F=%02X, SP=%02X, opcode=%02X\n",
 								cpu.regs.PC,cpu.regs.A,cpu.regs.B,cpu.regs.D,cpu.regs.E,cpu.regs.H,cpu.regs.L,cpu.regs.F,
 								cpu.regs.SP,opcode2);
 						//WriteConsole(hout,szBuffer,strlen(szBuffer),&templ,NULL);
@@ -1948,7 +1934,7 @@ void cpu_execute(unsigned int max) {
 
 			// CALL Z,nn
 			case 0xCC:
-				if ((cpu.regs.F & FLAG_Z)!=0) {
+				if (cpu.regs.F & FLAG_Z) {
 					cpu.regs.SP -= 2;
 					mem_write_16(cpu.regs.SP, cpu.regs.PC+3);
 					cpu.regs.PC = mem_read_16(cpu.regs.PC+1);
@@ -1975,7 +1961,7 @@ void cpu_execute(unsigned int max) {
 				if (temp8==0) cpu.regs.F |= FLAG_Z;
 				if (temp16 >= 0x100) cpu.regs.F |= FLAG_C;
 				if ((temp8&0xF) < (cpu.regs.A&0xF)) cpu.regs.F |= FLAG_H;
-				if (((temp8&0xF) == (cpu.regs.A&0xF)) && temp9) cpu.regs.F |= FLAG_H;
+				//if (((temp8&0xF) == (cpu.regs.A&0xF)) && temp9) cpu.regs.F |= FLAG_H;
 				cpu.regs.A = temp8;
 				cpu.cycles += 8;
 				cpu.regs.PC += 2;
@@ -1994,8 +1980,9 @@ void cpu_execute(unsigned int max) {
 					cpu.regs.PC = mem_read_16(cpu.regs.SP);
 					cpu.regs.SP += 2;
 					cpu.cycles += 12;
-				} else
+				} else {
 					cpu.regs.PC++;
+				}
 				cpu.cycles += 8;
 				break;
 
@@ -2006,13 +1993,13 @@ void cpu_execute(unsigned int max) {
 
 			// JP NC,nn
 			case 0xD2:
-				if ((cpu.regs.F & FLAG_C)==0)
-				{
+				if ((cpu.regs.F & FLAG_C)==0) {
 					cpu.regs.PC = mem_read_16(cpu.regs.PC+1);
 					cpu.cycles += 4;
 				}
-                else
+                else {
 					cpu.regs.PC += 3;
+                }
 				cpu.cycles += 12;
 				break;
 
@@ -2055,12 +2042,13 @@ void cpu_execute(unsigned int max) {
 
 			// RET C
 			case 0xD8:
-				if ((cpu.regs.F & FLAG_C)!=0) {
+				if (cpu.regs.F & FLAG_C) {
 					cpu.regs.PC = mem_read_16(cpu.regs.SP);
 					cpu.regs.SP += 2;
 					cpu.cycles += 12;
-				} else
+				} else {
 					cpu.regs.PC++;
+				}
 				cpu.cycles += 8;
 				break;
 
@@ -2074,13 +2062,13 @@ void cpu_execute(unsigned int max) {
 
 			// JP C,nn
 			case 0xDA:
-				if ((cpu.regs.F & FLAG_C)!=0)
-				{
+				if (cpu.regs.F & FLAG_C) {
 					cpu.regs.PC = mem_read_16(cpu.regs.PC+1);
 					cpu.cycles += 4;
 				}
-                else
+                else {
 					cpu.regs.PC += 3;
+                }
 				cpu.cycles += 12;
 				break;
 
@@ -2307,10 +2295,9 @@ void cpu_execute(unsigned int max) {
 				break;
 
 			default:
-				fprintf(stderr,"PC=%04X: A=%02X, B=%02X, D=%02X, E=%02X, H=%02X, L=%02X, F=%02X, SP=%02X, opcode=%02X\n",
+				NLOGW("GbZ80","PC=%04X: A=%02X, B=%02X, D=%02X, E=%02X, H=%02X, L=%02X, F=%02X, SP=%02X, opcode=%02X\n",
 					cpu.regs.PC,cpu.regs.A,cpu.regs.B,cpu.regs.D,cpu.regs.E,cpu.regs.H,cpu.regs.L,cpu.regs.F,
 					cpu.regs.SP,opcode);
-				fflush(stderr);
 				cpu.halted = 1;
 				cpu.cycles++;
 				while (1) {}
