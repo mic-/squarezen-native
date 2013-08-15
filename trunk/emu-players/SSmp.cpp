@@ -253,6 +253,18 @@ void SSmp::Run(uint32_t maxCycles)
 			ADC(mRegs.A, operand);
 			mCycles += 5;
 			break;
+		case 0x87:		// ADC A,[aa+X]
+			INDX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ADC(mRegs.A, operand);
+			mCycles += 6;
+			break;
+		case 0x97:		// ADC A,[aa]+Y
+			INDY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ADC(mRegs.A, operand);
+			mCycles += 6;
+			break;
 
 		case 0xA8:		// SBC A,#nn
 			operand = mMemory->ReadByte(mRegs.PC++) ^ 0xFF;
@@ -291,6 +303,18 @@ void SSmp::Run(uint32_t maxCycles)
 			operand = mMemory->ReadByte(addr) ^ 0xFF;
 			ADC(mRegs.A, operand);
 			mCycles += 5;
+			break;
+		case 0xA7:		// SBC A,[aa+X]
+			INDX_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 6;
+			break;
+		case 0xB7:		// SBC A,[aa]+Y
+			INDY_ADDR(addr);
+			operand = mMemory->ReadByte(addr) ^ 0xFF;
+			ADC(mRegs.A, operand);
+			mCycles += 6;
 			break;
 
 		// == Rotate/shift ==
@@ -560,6 +584,36 @@ void SSmp::Run(uint32_t maxCycles)
 			UPDATE_NZC(mRegs.A, operand, operand);
 			mCycles += 4;
 			break;
+		case 0x65:		// CMP A,!aaaa
+			operand = mMemory->ReadByte(ABS_ADDR());
+			mRegs.PC += 2;
+			UPDATE_NZC(mRegs.A, operand, operand);
+			mCycles += 4;
+			break;
+		case 0x75:		// CMP A,!aaaa+X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			UPDATE_NZC(mRegs.A, operand, operand);
+			mCycles += 5;
+			break;
+		case 0x76:		// CMP A,!aaaa+Y
+			ABSY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			UPDATE_NZC(mRegs.A, operand, operand);
+			mCycles += 5;
+			break;
+		case 0x67:		// CMP A,[aa+X]
+			INDX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			UPDATE_NZC(mRegs.A, operand, operand);
+			mCycles += 6;
+			break;
+		case 0x77:		// CMP A,[aa]+Y
+			INDY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			UPDATE_NZC(mRegs.A, operand, operand);
+			mCycles += 6;
+			break;
 		case 0x79:		// CMP (X),(Y)
 			operand = mMemory->ReadByte(Y_ADDR());
 			temp8 = mMemory->ReadByte(X_ADDR());
@@ -603,7 +657,6 @@ void SSmp::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.Y);
 			mCycles += 2;
 			break;
-
 		case 0x7D:		// MOV A,X
 			mRegs.A = mRegs.X;
 			UPDATE_NZ(mRegs.A);
@@ -624,7 +677,6 @@ void SSmp::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.Y);
 			mCycles += 2;
 			break;
-
 		case 0x9D:		// MOV X,SP
 			mRegs.X = mRegs.SP;
 			UPDATE_NZ(mRegs.X);
@@ -664,6 +716,17 @@ void SSmp::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.A);
 			mCycles += 5;
 			break;
+		case 0xE6:		// MOV A,(X)
+			mRegs.A = mMemory->ReadByte(X_ADDR());
+			UPDATE_NZ(mRegs.A);
+			mCycles += 3;
+			break;
+		case 0xBF:		// MOV A,(X)+
+			mRegs.A = mMemory->ReadByte(X_ADDR());
+			mRegs.X++;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 4;
+			break;
 		case 0xE7:		// MOV A,[aa+X]
 			INDX_ADDR(addr);
 			mRegs.A = mMemory->ReadByte(addr);
@@ -684,17 +747,6 @@ void SSmp::Run(uint32_t maxCycles)
 		case 0xF9:		// MOV X,aa+Y
 			mRegs.X = mMemory->ReadByte(ZPY_ADDR());
 			UPDATE_NZ(mRegs.X);
-			mCycles += 4;
-			break;
-		case 0xE6:		// MOV A,(X)
-			mRegs.A = mMemory->ReadByte(X_ADDR());
-			UPDATE_NZ(mRegs.A);
-			mCycles += 3;
-			break;
-		case 0xBF:		// MOV A,(X)+
-			mRegs.A = mMemory->ReadByte(X_ADDR());
-			mRegs.X++;
-			UPDATE_NZ(mRegs.A);
 			mCycles += 4;
 			break;
 		case 0xE9:		// MOV X,!aaaa
@@ -719,6 +771,15 @@ void SSmp::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.Y);
 			mCycles += 4;
 			break;
+		case 0xBA:		// MOV YA,aa
+			addr = ZP_ADDR();
+			mRegs.A = mMemory->ReadByte(addr);
+			mRegs.Y = mMemory->ReadByte(addr+1);
+			mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N);
+			mRegs.PSW |= (mRegs.A == 0 && mRegs.Y == 0) ? SSmp::FLAG_Z : 0;
+			mRegs.PSW |= (mRegs.Y & 0x80);
+			mCycles += 5;
+			break;
 
 		// == MOV mem,reg/imm ==
 		case 0x8F:		// MOV aa,#nn
@@ -735,6 +796,24 @@ void SSmp::Run(uint32_t maxCycles)
 			mMemory->WriteByte(ZP_ADDR(), mRegs.A);
 			mCycles += 4;
 			break;
+		case 0xD4:		// MOV aa+X,A
+			mMemory->WriteByte(ZPX_ADDR(), mRegs.A);
+			mCycles += 5;
+			break;
+		case 0xC5:		// MOV !aaaa,A
+			mMemory->WriteByte(ABS_ADDR(), mRegs.A);
+			mRegs.PC += 2;
+			mCycles += 5;
+			break;
+		case 0xAF:		// MOV (X),A
+			mMemory->WriteByte(X_ADDR(), mRegs.A);
+			mCycles += 4;
+			break;
+		case 0xC6:		// MOV (X)+,A
+			mMemory->WriteByte(X_ADDR(), mRegs.A);
+			mRegs.X++;
+			mCycles += 4;
+			break;
 		case 0xC7:		// MOV [aa+X],A
 			INDX_ADDR(addr);
 			mMemory->WriteByte(addr, mRegs.A);
@@ -749,11 +828,34 @@ void SSmp::Run(uint32_t maxCycles)
 			mMemory->WriteByte(ZP_ADDR(), mRegs.X);
 			mCycles += 4;
 			break;
+		case 0xD9:		// MOV aa+Y,X
+			mMemory->WriteByte(ZPY_ADDR(), mRegs.X);
+			mCycles += 5;
+			break;
+		case 0xC9:		// MOV !aaaa,X
+			mMemory->WriteByte(ABS_ADDR(), mRegs.X);
+			mRegs.PC += 2;
+			mCycles += 5;
+			break;
 		case 0xCB:		// MOV aa,Y
 			mMemory->WriteByte(ZP_ADDR(), mRegs.Y);
 			mCycles += 4;
 			break;
-
+		case 0xDB:		// MOV aa+X,Y
+			mMemory->WriteByte(ZPX_ADDR(), mRegs.Y);
+			mCycles += 5;
+			break;
+		case 0xCC:		// MOV !aaaa,Y
+			mMemory->WriteByte(ABS_ADDR(), mRegs.Y);
+			mRegs.PC += 2;
+			mCycles += 5;
+			break;
+		case 0xDA:		// MOVW aa,YA
+			addr = ZP_ADDR();
+			mMemory->WriteByte(addr, mRegs.A);
+			mMemory->WriteByte(addr+1, mRegs.Y);
+			mCycles += 5;
+			break;
 
 		// == Push/Pop ==
 		case 0x2D:		// PUSH A
