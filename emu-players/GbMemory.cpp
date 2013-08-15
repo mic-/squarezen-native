@@ -160,6 +160,8 @@ void mem_write_8_F000(unsigned short address,unsigned char data)
 {
 	int i;
 
+	//NLOGD("GbMemory", "Writing to %#x to %#x", data, address);
+
 	if (address < 0xFE00) {
 		RAM[address&0x1FFF] = data;
 
@@ -317,6 +319,7 @@ unsigned char mem_read_8_F000(unsigned short address) {
 	static unsigned char NR3xSet[] = {0x7F,0xFF,0x9F,0xFF,0xBF};
 	static unsigned char NR4xSet[] = {0xFF,0xFF,0x00,0x00,0xBF};
 	
+	//NLOGD("GbMemory", "Reading from %#x", address);
 	
 	if (address < 0xFE00) {
 		return RAM[address&0x1FFF];
@@ -451,8 +454,8 @@ int mem_reset()
 		write_8_tbl[0x7] = mem_write_8_4000_mbc3;
 		write_8_tbl[0x8] = mem_write_8_8000;
 		write_8_tbl[0x9] = mem_write_8_8000;
-		write_8_tbl[0xA] = mem_write_8_null;
-		write_8_tbl[0xB] = mem_write_8_null;
+		write_8_tbl[0xA] = mem_write_8_A000_mbc1; //mem_write_8_null;
+		write_8_tbl[0xB] = mem_write_8_A000_mbc1; //mem_write_8_null;
 		write_8_tbl[0xC] = mem_write_8_C000;
 		write_8_tbl[0xD] = mem_write_8_C000;
 		write_8_tbl[0xE] = mem_write_8_C000;
