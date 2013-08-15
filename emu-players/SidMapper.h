@@ -92,6 +92,27 @@ public:
 };
 
 
+class VicII : public Oscillator
+{
+public:
+	VicII() {}
+	virtual ~VicII() {}
+
+	virtual void Reset();
+	virtual void Step();
+	void Write(uint16_t addr, uint8_t data);
+	uint8_t Read(uint16_t addr);
+
+	void SetMapper(SidMapper *memory) { mMemory = memory; }
+
+	SidMapper *mMemory;
+	uint32_t mCycles;
+	uint32_t mScanline, mRasterIrqLine;
+	uint8_t mCtrl;
+	uint8_t mStatus;
+};
+
+
 class SidMapper : public MemoryMapper
 {
 public:
@@ -115,6 +136,7 @@ public:
 
 	Emu6502 *m6502;
 	Cia6526 mCia[2];
+	VicII mVicII;
 	SidPlayer *mSidPlayer;
 
 private:

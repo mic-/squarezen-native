@@ -50,7 +50,7 @@ static const uint8_t SID_DRIVER[] = {
 	0xA9, 0x36,			// 2B: LDA #$36
 	0x85, 0x01,			// 2D: STA $01
 
-	0xA9, 0x00,			// 2F: LDA #song			  (song is filled in later)
+	0xA9, 0x00,			// 2F: LDA #song		  (song is filled in later)
 	0x20, 0x00, 0x00,	// 31: JSR init_address   (address is filled in later)
 	0x58,				// 34: CLI
 	0x4C, 0x35, 0x00,	// 35: JMP 35
@@ -59,7 +59,13 @@ static const uint8_t SID_DRIVER[] = {
 	0xAD, 0x0D, 0xDC,	// 3B: LDA $DC0D
 	0xA9, 0x81,			// 3E: LDA #$81
 	0x8D, 0x0D, 0xDC,	// 40: STA $DC0D
-	0x40				// 43: RTI
+	//0x40,				// 43: RTI
+	0xA5, 0x01,			// LDA $01
+	0x29, 0x03,			// AND #$03
+	0xC9, 0x02,			// CMP #$02
+	0x90, 0x03,			// BCC +
+	0x4C, 0x81, 0xEA,	// JMP $EA81
+	0x40,				// +: RTI
 };
 
 
@@ -335,6 +341,7 @@ int SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		}
 
 		mMemory->mCia[SidMapper::CIA1].mTimer[Cia6526::TIMER_A]->Step();
+		mMemory->mVicII.Step();
 		mSid->Step();
 
 		for (i = 0; i < 3; i++) {
