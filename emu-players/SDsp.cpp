@@ -22,6 +22,7 @@
 void SDsp::Write(uint32_t addr, uint8_t data)
 {
 	uint8_t group = addr & 0x0F;
+	uint8_t chn = (addr >> 4) & 7;
 
 	switch (group) {
 	case R_VxPITCHL:
