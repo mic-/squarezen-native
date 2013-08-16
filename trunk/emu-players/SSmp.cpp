@@ -1000,6 +1000,16 @@ void SSmp::Run(uint32_t maxCycles)
 			mRegs.PC += 2;
 			mCycles += 5;
 			break;
+		case 0xD5:		// MOV !aaaa+X,A
+			ABSX_ADDR(addr);
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 6;
+			break;
+		case 0xD6:		// MOV !aaaa+Y,A
+			ABSY_ADDR(addr);
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 6;
+			break;
 		case 0xAF:		// MOV (X),A
 			mMemory->WriteByte(X_ADDR(), mRegs.A);
 			mCycles += 4;
