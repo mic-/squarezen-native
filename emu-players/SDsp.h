@@ -28,6 +28,16 @@ class SDsp
 public:
 	void Write(uint32_t addr, uint8_t data);
 
+	// Gain modes
+	enum
+	{
+		GAIN_MODE_LINEAR_DEC = 0,
+		GAIN_MODE_EXP_DEC = 1,
+		GAIN_MODE_LINEAR_INC = 2,
+		GAIN_MODE_BENT_INC = 3,
+	};
+
+	// Registers
 	enum
 	{
 		R_VxPITCHL = 0x02,
@@ -89,6 +99,27 @@ public:
 		R_V5GAIN = 0x57,
 		R_V6GAIN = 0x67,
 		R_V7GAIN = 0x77,
+
+		R_VxENVX = 0x08,
+		R_VxOUTX = 0x09,
+		R_FIRx = 0x0F,
+
+		R_MOVLL = 0x0C,
+		R_EFB = 0x0D,	// Echo feedback volume (-128..+127)
+		R_MOVLR = 0x1C,
+		R_EVOLL = 0x2C,
+		R_PMON = 0x2D,
+		R_EVOLR = 0x3C,
+		R_NON = 0x3D,
+		R_KON = 0x4C,
+		R_EON = 0x4D,
+		R_KOFF = 0x5C,
+		R_DIR = 0x5D,	// Sample directory address (/ 0x100)
+		R_FLG = 0x6C,
+		R_ESA = 0x6D,	// Echo buffer start address (/ 0x100)
+		R_ENDX = 0x7C,
+		R_EDL = 0x7D, 	// Echo delay (d0..3: size in 2kB (==16ms) steps)
+
 	};
 };
 
