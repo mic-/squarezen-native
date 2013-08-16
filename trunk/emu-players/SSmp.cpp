@@ -218,6 +218,7 @@ void SSmp::Reset()
 
 void SSmp::Run(uint32_t maxCycles)
 {
+	uint32_t temp32;
 	uint16_t addr, temp16;
 	uint8_t operand, temp8;
     int8_t relAddr;
@@ -517,6 +518,38 @@ void SSmp::Run(uint32_t maxCycles)
 			break;
 
 		// == 16-bit ALU operations ==
+		case 0x7A:		// ADDW YA,aa
+			addr = ZP_ADDR();
+			temp16 = mMemory->ReadByte(addr);
+			temp16 |= (uint16_t)(mMemory->ReadByte(addr+1)) << 8;
+			addr = (((uint16_t)mRegs.Y) << 8) | mRegs.A;
+			temp32 = temp16 + addr;
+			mRegs.A = temp32 & 0xFF;
+			mRegs.Y = (temp32 >> 8) & 0xFF;
+			mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N | SSmp::FLAG_C | SSmp::FLAG_V);
+			mRegs.PSW |= ((uint16_t)temp32 == 0) ? SSmp::FLAG_Z : 0;
+			mRegs.PSW |= (mRegs.Y & 0x80);
+			mRegs.PSW |= (temp32 >= 0x10000) ? SSmp::FLAG_C : 0;
+			mRegs.PSW |= ((!((addr ^ temp16) & 0x8000)) && ((addr ^ temp32) & 0x8000)) ? SSmp::FLAG_V : 0;
+			mCycles += 5;
+			break;
+		case 0x9A:		// SUBW YA,aa
+			addr = ZP_ADDR();
+			temp16 = mMemory->ReadByte(addr);
+			temp16 |= (uint16_t)(mMemory->ReadByte(addr+1)) << 8;
+			addr = (((uint16_t)mRegs.Y) << 8) | mRegs.A;
+			addr = -addr;
+			temp32 = temp16 + addr;
+			mRegs.A = temp32 & 0xFF;
+			mRegs.Y = (temp32 >> 8) & 0xFF;
+			mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N | SSmp::FLAG_C | SSmp::FLAG_V);
+			mRegs.PSW |= ((uint16_t)temp32 == 0) ? SSmp::FLAG_Z : 0;
+			mRegs.PSW |= (mRegs.Y & 0x80);
+			mRegs.PSW |= (temp32 >= 0x10000) ? SSmp::FLAG_C : 0;
+			mRegs.PSW |= ((!((addr ^ temp16) & 0x8000)) && ((addr ^ temp32) & 0x8000)) ? SSmp::FLAG_V : 0;
+			mCycles += 5;
+			break;
+
 		case 0x1A:		// DECW aa
 			addr = ZP_ADDR();
 			operand = mMemory->ReadByte(addr) - 1;
