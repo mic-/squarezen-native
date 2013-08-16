@@ -20,9 +20,14 @@
 #include <stddef.h>
 #include "NativeLogger.h"
 #include "SpcMapper.h"
+#include "SDsp.h"
+#include "SSmp.h"
 
 
 SpcMapper::SpcMapper()
+	: mTest(0x0A)
+	, mCtrl(0xB0)
+	, mSDsp(NULL)
 {
 	// TODO: implement
 	mRam = new uint8_t[64 * 1024];
@@ -40,15 +45,42 @@ void SpcMapper::Reset()
 	// TODO: implement
 }
 
+
 uint8_t SpcMapper::ReadByte(uint16_t addr)
 {
-	// TODO: handle special addresses
+	if (addr >= 0xFFC0 && (mCtrl & 0x80)) {
+		// ToDo: reference IPL ROM
+	}
 	return mRam[addr];
 }
 
+
 void SpcMapper::WriteByte(uint16_t addr, uint8_t data)
 {
-	// TODO: handle special addresses
-	mRam[addr] = data;
+	if (addr < 0xFFC0 || (mCtrl & 0x80) == 0) {
+		mRam[addr] = data;
+	}
+
+	switch (addr) {
+	case R_TEST:
+		if (data & 4) {
+			// "Crash" the CPU
+			mSSmp->mRegs.PC ^= 0xAA55;
+			mSSmp->mRegs.SP ^= 0xAA;
+			mSSmp->mHalted = true;
+		}
+		break;
+
+	case R_CONTROL:
+		mCtrl = data;
+		break;
+
+	case R_DSPDATA:
+		mSDsp->Write(mRam[R_DSPADDR], data);
+		break;
+
+	default:
+		break;
+	}
 }
 

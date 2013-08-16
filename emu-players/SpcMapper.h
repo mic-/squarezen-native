@@ -24,6 +24,9 @@
 #include <stdint.h>
 #include "MemoryMapper.h"
 
+class SDsp;
+class SSmp;
+
 class SpcMapper : public MemoryMapper
 {
 public:
@@ -34,7 +37,26 @@ public:
 	virtual uint8_t ReadByte(uint16_t addr);
 	virtual void WriteByte(uint16_t addr, uint8_t data);
 
+	void SetCpu(SSmp *cpu) { mSSmp = cpu; }
+	void SetDsp(SDsp *dsp) { mSDsp = dsp; }
+
+	enum
+	{
+		R_TEST = 0xF0,
+		R_CONTROL,
+		R_DSPADDR,
+		R_DSPDATA,
+		R_CPUIO0,
+		R_CPUIO1,
+		R_CPUIO2,
+		R_CPUIO3,
+	};
+
 	uint8_t *mRam;
+	uint8_t mTest, mCtrl;
+	uint8_t mDspAddr;
+	SSmp *mSSmp;
+	SDsp *mSDsp;
 };
 
 #endif /* SPCMAPPER_H_ */

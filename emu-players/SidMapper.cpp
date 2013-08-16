@@ -346,7 +346,11 @@ void VicII::Step()
 			mScanline = 0;
 		}
 
-		if ((mCtrl & 1) && mScanline == mRasterIrqLine) {
+		if (mScanline == mRasterIrqLine) {
+			NLOGD("VicII", "scanline=%d, ctrl=%#x, status=%#x, mRegs.F=%#x", mScanline, mCtrl, mStatus, mMemory->m6502->mRegs.F);
+		}
+
+		if ((mCtrl & 1) && ((mStatus & 1) == 0) && (mScanline == mRasterIrqLine)) {
 			mStatus |= 1;
 			if (!(mMemory->m6502->mRegs.F & Emu6502::FLAG_I)) {
 				if ((mMemory->ReadByte(0x0001) & 3) < 2) {
