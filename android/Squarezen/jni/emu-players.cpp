@@ -3,6 +3,7 @@
 #include <string>
 #include <GbsPlayer.h>
 #include <NsfPlayer.h>
+#include <SidPlayer.h>
 #include <VgmPlayer.h>
 #include <YmPlayer.h>
 #include <SLES/OpenSLES.h>
@@ -300,6 +301,10 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 		player = new VgmPlayer;
 	} else if (strstr(str, ".ym") || strstr(str, ".YM")) {
 		player = new YmPlayer;
+	} else if (strstr(str, ".nsf") || strstr(str, ".NSF")) {
+		player = new NsfPlayer;
+	} else if (strstr(str, ".sid") || strstr(str, ".SID")) {
+		player = new SidPlayer;
 	} else {
 		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "unrecognized file type");
 		ioEnv->ReleaseStringUTFChars(filePath, str);

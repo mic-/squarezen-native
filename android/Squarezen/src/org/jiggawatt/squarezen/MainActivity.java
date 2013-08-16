@@ -27,9 +27,10 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements AudioManager.OnAudioFocusChangeListener {
 	private static final int SAMPLE_RATE = 44100;
 	
+	private AudioManager audioManager;
 	private AudioTrack audioTrack;
 	private int minBufferSize;
 	private ByteBuffer[] pcmFromNative;
@@ -117,7 +118,9 @@ public class MainActivity extends Activity {
         	            return nameUpper.endsWith(".YM") ||
         	            	   nameUpper.endsWith(".VGM") ||
         	            	   nameUpper.endsWith(".VGZ") ||
-        	            	   nameUpper.endsWith(".GBS");
+        	            	   nameUpper.endsWith(".GBS") ||
+        	            	   nameUpper.endsWith(".NSF") ||
+        	            	   nameUpper.endsWith(".SID");
         	        }
         	    });
 
@@ -146,6 +149,8 @@ public class MainActivity extends Activity {
         stopAudioRunner = false;
         playing = false;
         
+        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+
         final Button button = (Button) findViewById(R.id.button1);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -156,7 +161,19 @@ public class MainActivity extends Activity {
         });        
     }
 
+    @Override
+    public void onAudioFocusChange(int focusChange) {
+    	if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+            // Pause playback
+        } else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+            // Resume playback      	
+        } else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+        	stopSong();
+        }   	
+    }
+    
     public void stopSong() {
+    	audioManager.abandonAudioFocus(this);
     	if (playing) {
 	    	stopAudioRunner = true;
 	    	//while (stopAudioRunner) {}
@@ -167,7 +184,13 @@ public class MainActivity extends Activity {
     	}
     }
     
-    public void playSong(String songName) {  	
+    public void playSong(String songName) {
+    	int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+    	if (result != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+    		//am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
+    		Log.e("Squarezen", "Failed to get audio focus");
+    	}
+
     	Prepare(Environment.getExternalStorageDirectory().getPath() + "/YM/" + songName);
     	playing = true;
         /*Run(minBufferSize>>2, pcmFromNative[0]);
@@ -206,8 +229,7 @@ public class MainActivity extends Activity {
         t.start();*/
         
         activityWindow = getWindow();
-        activityWindow.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        		
+        activityWindow.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);       		
     }
 
     @Override
