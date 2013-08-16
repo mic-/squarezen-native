@@ -517,6 +517,31 @@ void SSmp::Run(uint32_t maxCycles)
 			break;
 
 		// == 16-bit ALU operations ==
+		case 0x1A:		// DECW aa
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr) - 1;
+			temp8 = mMemory->ReadByte(addr+1);
+			if (operand == 0xFF) temp8--;
+			mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N);
+			mRegs.PSW |= (operand == 0 && temp8 == 0) ? SSmp::FLAG_Z : 0;
+			mRegs.PSW |= (temp8 & 0x80);
+			mMemory->WriteByte(addr, operand);
+			mMemory->WriteByte(addr+1, temp8);
+			mCycles += 6;
+			break;
+		case 0x3A:		// INCW aa
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr) + 1;
+			temp8 = mMemory->ReadByte(addr+1);
+			if (operand == 0x00) temp8++;
+			mRegs.PSW &= ~(SSmp::FLAG_Z | SSmp::FLAG_N);
+			mRegs.PSW |= (operand == 0 && temp8 == 0) ? SSmp::FLAG_Z : 0;
+			mRegs.PSW |= (temp8 & 0x80);
+			mMemory->WriteByte(addr, operand);
+			mMemory->WriteByte(addr+1, temp8);
+			mCycles += 6;
+			break;
+
 		case 0xCF:		// MUL YA
 			temp16 = mRegs.Y * mRegs.A;
 			mRegs.A = temp16 & 0xFF;
