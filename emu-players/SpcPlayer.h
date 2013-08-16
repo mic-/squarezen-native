@@ -71,7 +71,7 @@ private:
 	SSmp *mSSmp;
 	SDsp *mSDsp;
 	SpcMapper *mMemory;
-
+	uint8_t mDspRegisterInit[128];
 	SpcFileHeader mFileHeader;
 };
 

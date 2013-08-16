@@ -16,6 +16,8 @@
 
 #define NLOG_LEVEL_VERBOSE 0
 
+#include <iostream>
+#include <fstream>
 #include "NativeLogger.h"
 #include "SpcPlayer.h"
 
@@ -30,9 +32,59 @@ int SpcPlayer::Reset()
 
 int SpcPlayer::Prepare(std::string fileName)
 {
-	// ToDo: implement
+	size_t fileSize;
+
 	NLOGV("SpcPlayer", "SpcPlayer::Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::STATE_PREPARING;
+
+    if (MusicPlayer::STATE_CREATED != GetState()) {
+    	Reset();
+    }
+
+    mState = MusicPlayer::STATE_PREPARING;
+
+    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
+    if (!musicFile) {
+    	NLOGE("SpcPlayer", "Failed to open file %S", fileName.c_str());
+    	return MusicPlayer::ERROR_FILE_IO;
+    }
+    musicFile.seekg(0, musicFile.end);
+    fileSize = musicFile.tellg();
+    musicFile.seekg(0, musicFile.beg);
+
+    NLOGV("SpcPlayer", "Reading header");
+    musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
+	if (!musicFile) {
+		NLOGE("SpcPlayer", "Reading SPC header failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+	mMemory = new SpcMapper;
+	mSSmp = new SSmp;
+	mSDsp = new SDsp;
+	mMemory->SetCpu(mSSmp);
+	mMemory->SetDsp(mSDsp);
+
+    musicFile.read((char*)mMemory->mRam, 0x10000);
+	if (!musicFile) {
+		NLOGE("SpcPlayer", "Reading SPC RAM dump failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+    musicFile.read((char*)mDspRegisterInit, 128);
+	if (!musicFile) {
+		NLOGE("SpcPlayer", "Reading DSP register values failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+	NLOGV("SpcPlayer", "File read done");
+	musicFile.close();
+
+	NLOGD("SpcPlayer", "Prepare finished");
+
+	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
 }
 
