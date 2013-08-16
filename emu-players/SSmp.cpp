@@ -166,6 +166,20 @@
 	val >>= 1; \
 	UPDATE_NZ(val)
 
+#define ROL(val) \
+	temp8 = (val << 1) | ((mRegs.PSW & SSmp::FLAG_C) ? 1 : 0); \
+	mRegs.PSW &= ~SSmp::FLAG_C; \
+	mRegs.PSW |= (val & 0x80) ? SSmp::FLAG_C : 0; \
+	val = temp8; \
+	UPDATE_NZ(val)
+
+#define ROR(val) \
+	temp8 = (val >> 1) | ((mRegs.PSW & SSmp::FLAG_C) ? 0x80 : 0); \
+	mRegs.PSW &= ~SSmp::FLAG_C; \
+	mRegs.PSW |= (val & 0x01) ? SSmp::FLAG_C : 0; \
+	val = temp8; \
+	UPDATE_NZ(val)
+
 // ====
 
 #define CLR1_aa_b(b) \
@@ -327,7 +341,188 @@ void SSmp::Run(uint32_t maxCycles)
 			operand = mMemory->ReadByte(addr);
 			ASL(operand);
 			mMemory->WriteByte(addr, operand);
+			mCycles += 4;
+			break;
+		case 0x1B:		// ASL aa+X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ASL(operand);
+			mMemory->WriteByte(addr, operand);
 			mCycles += 5;
+			break;
+		case 0x0C:		// ASL !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			ASL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x5C:		// LSR A
+			LSR(mRegs.A);
+			mCycles += 2;
+			break;
+		case 0x4B:		// LSR aa
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			LSR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 4;
+			break;
+		case 0x5B:		// LSR aa+X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			LSR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+		case 0x4C:		// LSR !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			LSR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x3C:		// ROL A
+			ROL(mRegs.A);
+			mCycles += 2;
+			break;
+		case 0x2B:		// ROL aa
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 4;
+			break;
+		case 0x3B:		// ROL aa+X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+		case 0x2C:		// ROL !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			ROL(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x7C:		// ROR A
+			ROR(mRegs.A);
+			mCycles += 2;
+			break;
+		case 0x6B:		// ROR aa
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 4;
+			break;
+		case 0x7B:		// ROR aa+X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr);
+			ROR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+		case 0x6C:		// ROR !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr);
+			ROR(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+
+		case 0x9C:		// DEC A
+			mRegs.A--;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 2;
+			break;
+		case 0x8B:		// DEC aa
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr) - 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 4;
+			break;
+		case 0x9B:		// DEC aa+X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr) - 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+		case 0x8C:		// DEC !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr) - 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+		case 0x1D:		// DEC X
+			mRegs.X--;
+			UPDATE_NZ(mRegs.X);
+			mCycles += 2;
+			break;
+		case 0xDC:		// DEC Y
+			mRegs.Y--;
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 2;
+			break;
+
+		case 0xBC:		// INC A
+			mRegs.A++;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 2;
+			break;
+		case 0xAB:		// INC aa
+			addr = ZP_ADDR();
+			operand = mMemory->ReadByte(addr) + 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 4;
+			break;
+		case 0xBB:		// INC aa+X
+			addr = ZPX_ADDR();
+			operand = mMemory->ReadByte(addr) + 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+		case 0xAC:		// INC !aaaa
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			operand = mMemory->ReadByte(addr) + 1;
+			UPDATE_NZ(operand);
+			mMemory->WriteByte(addr, operand);
+			mCycles += 5;
+			break;
+		case 0x3D:		// INC X
+			mRegs.X++;
+			UPDATE_NZ(mRegs.X);
+			mCycles += 2;
+			break;
+		case 0xFC:		// INC Y
+			mRegs.Y++;
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 2;
+			break;
+
+		// == 16-bit ALU operations ==
+		case 0xCF:		// MUL YA
+			temp16 = mRegs.Y * mRegs.A;
+			mRegs.A = temp16 & 0xFF;
+			mRegs.Y = (temp16 >> 8) & 0xFF;
+			UPDATE_NZ(mRegs.Y);
+			mCycles += 9;
 			break;
 
 		// == 1-bit ALU operations ==
