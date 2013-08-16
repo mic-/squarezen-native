@@ -248,7 +248,7 @@ int SidPlayer::Prepare(std::string fileName)
 	ram[mDriverPage + 0x37] = mDriverPage >> 8;
 	ram[mDriverPage + 0x39] = mFileHeader.playAddress & 0xFF;
 	ram[mDriverPage + 0x3A] = mFileHeader.playAddress >> 8;
-	if (mFileHeader.initAddress >= 0xE000 || mFileHeader.playAddress >= 0xE000) {
+	if ((mFileHeader.initAddress >= 0xE000) || mFileHeader.playAddress >= 0xE000) {
 		ram[mDriverPage + 0x2C] = 0x35;
 	}
 	ram[0x314] = (mDriverPage + 0x38) & 0xFF;

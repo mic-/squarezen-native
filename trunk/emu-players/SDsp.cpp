@@ -18,3 +18,23 @@
 
 #include "NativeLogger.h"
 #include "SDsp.h"
+
+void SDsp::Write(uint32_t addr, uint8_t data)
+{
+	uint8_t group = addr & 0x0F;
+
+	switch (group) {
+	case R_VxPITCHL:
+		break;
+	case R_VxPITCHH:
+		break;
+	case R_VxSRCN:
+		break;
+	case R_VxADSR1:
+		break;
+	case R_VxADSR2:
+		break;
+	case R_VxGAIN:
+		break;
+	}
+}

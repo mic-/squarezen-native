@@ -144,6 +144,7 @@ void Emu6502::Irq(uint16_t vector) {
 	mRegs.F |= (Emu6502::FLAG_I);
 	mRegs.PC = mMemory->ReadByte(vector);
 	mRegs.PC |= (uint16_t)mMemory->ReadByte(vector+1) << 8;
+	NLOGD("Emu6502", "Irq, PC <- %#x", mRegs.PC);
 }
 
 void Emu6502::Reset()
