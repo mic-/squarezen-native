@@ -22,6 +22,16 @@
 #include "SpcPlayer.h"
 
 
+SpcPlayer::SpcPlayer()
+{
+
+}
+
+SpcPlayer::~SpcPlayer()
+{
+
+}
+
 int SpcPlayer::Reset()
 {
 	// ToDo: implement
@@ -64,6 +74,13 @@ int SpcPlayer::Prepare(std::string fileName)
 	mSDsp = new SDsp;
 	mMemory->SetCpu(mSSmp);
 	mMemory->SetDsp(mSDsp);
+	mSSmp->SetMapper(mMemory);
+
+	if (mFileHeader.id666Present == 26) {
+		mMetaData.SetTitle(mFileHeader.title);
+		mMetaData.SetAuthor(mFileHeader.artist);
+		mMetaData.SetComment(mFileHeader.game);
+	}
 
     musicFile.read((char*)mMemory->mRam, 0x10000);
 	if (!musicFile) {
@@ -81,6 +98,19 @@ int SpcPlayer::Prepare(std::string fileName)
 
 	NLOGV("SpcPlayer", "File read done");
 	musicFile.close();
+
+	mMemory->Reset();
+	mSSmp->Reset();
+	//mSDsp->Reset();
+
+	mSSmp->mRegs.PC = mFileHeader.regPC;
+	mSSmp->mRegs.A = mFileHeader.regA;
+	mSSmp->mRegs.X = mFileHeader.regX;
+	mSSmp->mRegs.Y = mFileHeader.regY;
+	mSSmp->mRegs.SP = mFileHeader.regSP;
+	mSSmp->mRegs.PSW = mFileHeader.regPSW;
+	/*mSSmp->mCycles = 0;
+	mSSmp->Run(500);*/
 
 	NLOGD("SpcPlayer", "Prepare finished");
 
