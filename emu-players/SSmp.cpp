@@ -227,6 +227,8 @@ void SSmp::Run(uint32_t maxCycles)
 
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
 
+		NLOGD("SSmp", "%04x: %#x, A=%#x, X=%#x, Y=%#x, SP=%#x, PSW=%#x", mRegs.PC-1, opcode, mRegs.A, mRegs.X, mRegs.Y, mRegs.SP, mRegs.PSW);
+
 		switch (opcode) {
 
 		// == Arithmetic ==
@@ -632,6 +634,25 @@ void SSmp::Run(uint32_t maxCycles)
 			break;
 		case 0xE2:		// SET1 aa.7
 			SET1_aa_b(7);
+			break;
+
+		case 0xAA:		// MOV1 C,aaa.b
+			operand = mMemory->ReadByte(mRegs.PC++);
+			addr = mMemory->ReadByte(mRegs.PC++);
+			temp8 = (addr >> 5) & 0x07;
+			addr = ((addr & 0x1F) << 8) | operand;
+			mRegs.PSW &= ~SSmp::FLAG_C;
+			mRegs.PSW |= ((mMemory->ReadByte(addr) & (1 << temp8)) ? SSmp::FLAG_C : 0);
+			mCycles += 4;
+			break;
+		case 0xCA:		// MOV1 aaa.b,C
+			operand = mMemory->ReadByte(mRegs.PC++);
+			addr = mMemory->ReadByte(mRegs.PC++);
+			temp8 = (addr >> 5) & 0x07;
+			addr = ((addr & 0x1F) << 8) | operand;
+			operand = mMemory->ReadByte(addr) & ~SSmp::FLAG_C;
+			mMemory->WriteByte(addr, operand & ((mRegs.PSW & SSmp::FLAG_C) << temp8));
+			mCycles += 5;
 			break;
 
 		case 0x60:		// CLRC
