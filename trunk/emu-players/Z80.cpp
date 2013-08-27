@@ -39,6 +39,17 @@
 	mCycles += 4
 
 
+// ====
+
+#define ADD(dest8, val) \
+	temp16 = (uint16_t)(val) + (uint16_t)dest8; \
+	mRegs.F = temp16 & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= ((temp16 >= 0x100) ? Z80::FLAG_C : 0); \
+	mRegs.F |= (((uint8_t)temp16 == 0) ? Z80::FLAG_Z : 0); \
+	mRegs.F |= ((!((dest8 ^ val) & 0x80)) && ((dest8 ^ temp16) & 0x80)) ? Z80::FLAG_P : 0; \
+	dest8 = (uint8_t)temp16
+
+
 void Z80::Reset()
 {
 	// TODO: implement
