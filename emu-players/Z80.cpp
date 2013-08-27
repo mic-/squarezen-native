@@ -21,6 +21,24 @@
 #include "NativeLogger.h"
 #include "Z80.h"
 
+
+// LD R,N
+#define MOVE_REG8_IMM8(R) \
+	R = mMemory->ReadByte(mRegs.PC++); \
+	mCycles += 7
+
+// LD Q,A
+#define MOVE_REG16_IMM16(Qhi, Qlo) \
+	Qlo = mMemory->ReadByte(mRegs.PC++); \
+	Qhi = mMemory->ReadByte(mRegs.PC++); \
+	mCycles += 10
+
+// LD R1,R2
+#define MOVE_REG8_REG8(R1, R2) \
+	R1 = R2; \
+	mCycles += 4
+
+
 void Z80::Reset()
 {
 	// TODO: implement
