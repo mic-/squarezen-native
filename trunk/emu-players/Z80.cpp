@@ -21,6 +21,8 @@
 #include "NativeLogger.h"
 #include "Z80.h"
 
+static uint8_t gParityTable[256];
+
 
 // LD R,N
 #define MOVE_REG8_IMM8(R) \
@@ -37,6 +39,11 @@
 #define MOVE_REG8_REG8(R1, R2) \
 	R1 = R2; \
 	mCycles += 4
+
+// LD R,J
+#define MOVE_REG8_IXREG8(R1, J) \
+	R1 = J; \
+	mCycles += 8
 
 #define CMD_GROUP_1OP(operation, base, R1) \
 	operation(R1, mRegs.B); \
@@ -56,9 +63,75 @@
 	case base+5: \
 	operation(R1, mRegs.L); \
 	break; \
+	case base+6: \
+	operand = mMemory->ReadByte(((uint16_t)mRegs.H << 8) + mRegs.L); \
+	operation(R1, operand); \
+	mCycles += 3; \
+	break; \
 	case base+7: \
 	operation(R1, mRegs.A); \
 	break
+
+#define CMD_GROUP_J_R(operation, base, J) \
+	operation(J, mRegs.B); \
+	break; \
+	case base+1: \
+	operation(J, mRegs.C); \
+	break; \
+	case base+2: \
+	operation(J, mRegs.D); \
+	break; \
+	case base+3: \
+	operation(J, mRegs.E); \
+	break; \
+	case base+7: \
+	operation(J, mRegs.A); \
+	break
+
+#define CMD_GROUP_R_J(operation, base, J) \
+	operation(mRegs.B, J); \
+	break; \
+	case base+1*8: \
+	operation(mRegs.C, J); \
+	break; \
+	case base+2*8: \
+	operation(mRegs.D, J); \
+	break; \
+	case base+3*8: \
+	operation(mRegs.E, J); \
+	break; \
+	case base+4*8: \
+	operation(mRegs.H, J); \
+	break; \
+	case base+5*8: \
+	operation(mRegs.L, J); \
+	break; \
+	case base+7*8: \
+	operation(mRegs.A,J); \
+	break
+
+// ====
+
+#define AND8(R1, R2) \
+	R1 &= R2;\
+	mRegs.F = (R1 & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y)) | Z80::FLAG_H; \
+	mRegs.F |= gParityTable[R1]; \
+	mRegs.F |= (R1 == 0) ? Z80::FLAG_Z : 0; \
+	mCycles += 4
+
+#define OR8(R1, R2) \
+	R1 |= R2;\
+	mRegs.F = R1 & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= gParityTable[R1]; \
+	mRegs.F |= (R1 == 0) ? Z80::FLAG_Z : 0; \
+	mCycles += 4
+
+#define XOR8(R1, R2) \
+	R1 ^= R2;\
+	mRegs.F = R1 & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= gParityTable[R1]; \
+	mRegs.F |= (R1 == 0) ? Z80::FLAG_Z : 0; \
+	mCycles += 4
 
 // ====
 
@@ -84,7 +157,34 @@
 					 mCycles += 2; \
 					 mRegs.PC++
 
+#define ILLEGAL_OP2() NLOGE("Z80", "Run(): Illegal opcode: %#x%#x at PC=%#x", opcode, opcode2, mRegs.PC); \
+					 mCycles += 2; \
+					 mRegs.PC++
+
 // ====
+
+static uint8_t parity(uint8_t val)
+{
+	uint8_t result = val ^
+			         (val >> 1) ^
+			         (val >> 2) ^
+			         (val >> 3) ^
+			         (val >> 4) ^
+			         (val >> 5) ^
+			         (val >> 6) ^
+			         (val >> 7);
+	// FLAG_P if val had an even number of bits set; 0 otherwise
+	return (result & 1) ? 0 : Z80::FLAG_P;
+}
+
+
+Z80::Z80()
+{
+	for (int i = 0; i < 256; i++) {
+		gParityTable[i] = parity(i);
+	}
+	mHalted = false;
+}
 
 
 void Z80::Reset()
@@ -98,7 +198,7 @@ void Z80::Run(uint32_t maxCycles)
 {
 	uint32_t temp32;
 	uint16_t addr, temp16;
-	uint8_t operand, temp8;
+	uint8_t opcode2, operand, temp8;
     int8_t relAddr;
 
 	while ((mCycles < maxCycles) && !mHalted) {
@@ -152,6 +252,57 @@ void Z80::Run(uint32_t maxCycles)
 			CMD_GROUP_1OP(ADC8, 0x88, mRegs.A);
 			break;
 
+		case 0xA0:	// AND A,R2
+			CMD_GROUP_1OP(AND8, 0xA0, mRegs.A);
+			break;
+		case 0xA8:	// XOR A,R2
+			CMD_GROUP_1OP(XOR8, 0xA8, mRegs.A);
+			break;
+		case 0xB0:	// OR A,R2
+			CMD_GROUP_1OP(OR8, 0xB0, mRegs.A);
+			break;
+
+		case 0xDD:	// IX prefix
+			opcode2 = mMemory->ReadByte(mRegs.PC++);
+			switch (opcode2) {
+			case 0x44:	// LD R,IXH
+				CMD_GROUP_R_J(MOVE_REG8_IXREG8, 0x44, mRegs.ixh);
+				break;
+			case 0x45:	// LD R,IXL
+				CMD_GROUP_R_J(MOVE_REG8_IXREG8, 0x45, mRegs.ixl);
+				break;
+			case 0x60:	// LD IXH,R
+				CMD_GROUP_J_R(MOVE_REG8_IXREG8, 0x60, mRegs.ixh);
+				break;
+			case 0x68:	// LD IXL,R
+				CMD_GROUP_J_R(MOVE_REG8_IXREG8, 0x68, mRegs.ixl);
+				break;
+			default:
+				ILLEGAL_OP2();
+				break;
+			}
+			break;
+
+		case 0xFD:	// IY prefix
+			opcode2 = mMemory->ReadByte(mRegs.PC++);
+			switch (opcode2) {
+			case 0x44:	// LD R,IYH
+				CMD_GROUP_R_J(MOVE_REG8_IXREG8, 0x44, mRegs.iyh);
+				break;
+			case 0x45:	// LD R,IYL
+				CMD_GROUP_R_J(MOVE_REG8_IXREG8, 0x45, mRegs.iyl);
+				break;
+			case 0x60:	// LD IYH,R
+				CMD_GROUP_J_R(MOVE_REG8_IXREG8, 0x60, mRegs.iyh);
+				break;
+			case 0x68:	// LD IYL,R
+				CMD_GROUP_J_R(MOVE_REG8_IXREG8, 0x68, mRegs.iyl);
+				break;
+			default:
+				ILLEGAL_OP2();
+				break;
+			}
+			break;
 
 		default:
 			ILLEGAL_OP();

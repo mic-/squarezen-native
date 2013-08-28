@@ -27,6 +27,7 @@
 class Z80
 {
 public:
+	Z80();
 	void Reset();
 	void Run(uint32_t maxCycles);
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
@@ -44,6 +45,7 @@ public:
 
 	struct  __attribute__ ((__packed__)) {
 		uint8_t F,A, C,B, E,D, L,H;
+		uint8_t ixh,ixl, iyh,iyl;
 		uint16_t SP, PC;
 	} mRegs;
 
