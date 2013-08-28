@@ -380,7 +380,7 @@ uint8_t VicII::Read(uint16_t addr)
 	return 0;
 }
 
-void VicII::Write(uint16_t addr, uint8_t data)
+void VicII::Write(uint32_t addr, uint8_t data)
 {
 	NLOGD("SidMapper", "Write(%#x, %#x)", addr, data);
 

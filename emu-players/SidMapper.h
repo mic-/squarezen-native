@@ -100,7 +100,7 @@ public:
 
 	virtual void Reset();
 	virtual void Step();
-	void Write(uint16_t addr, uint8_t data);
+	virtual void Write(uint32_t addr, uint8_t data);
 	uint8_t Read(uint16_t addr);
 
 	void SetMapper(SidMapper *memory) { mMemory = memory; }
