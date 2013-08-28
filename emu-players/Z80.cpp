@@ -141,7 +141,8 @@ static uint8_t gParityTable[256];
 	mRegs.F |= ((temp16 >= 0x100) ? Z80::FLAG_C : 0); \
 	mRegs.F |= (((uint8_t)temp16 == 0) ? Z80::FLAG_Z : 0); \
 	mRegs.F |= ((!((dest8 ^ val) & 0x80)) && ((dest8 ^ temp16) & 0x80)) ? Z80::FLAG_P : 0; \
-	dest8 = (uint8_t)temp16
+	dest8 = (uint8_t)temp16; \
+	mCycles += 4
 
 #define ADC8(dest8, val) \
 	temp16 = (uint16_t)(val) + (uint16_t)dest8 + ((mRegs.F & Z80::FLAG_C) ? 1 : 0); \
@@ -149,7 +150,8 @@ static uint8_t gParityTable[256];
 	mRegs.F |= ((temp16 >= 0x100) ? Z80::FLAG_C : 0); \
 	mRegs.F |= (((uint8_t)temp16 == 0) ? Z80::FLAG_Z : 0); \
 	mRegs.F |= ((!((dest8 ^ val) & 0x80)) && ((dest8 ^ temp16) & 0x80)) ? Z80::FLAG_P : 0; \
-	dest8 = (uint8_t)temp16
+	dest8 = (uint8_t)temp16; \
+	mCycles += 4
 
 // ====
 
@@ -277,6 +279,46 @@ void Z80::Run(uint32_t maxCycles)
 			case 0x68:	// LD IXL,R
 				CMD_GROUP_J_R(MOVE_REG8_IXREG8, 0x68, mRegs.ixl);
 				break;
+			case 0x84:	// ADD A,IXH
+				ADD8(mRegs.A, mRegs.ixh);
+				mCycles += 4;
+				break;
+			case 0x85:	// ADD A,IXL
+				ADD8(mRegs.A, mRegs.ixl);
+				mCycles += 4;
+				break;
+			case 0x8C:	// ADC A,IXH
+				ADC8(mRegs.A, mRegs.ixh);
+				mCycles += 4;
+				break;
+			case 0x8D:	// ADC A,IXL
+				ADC8(mRegs.A, mRegs.ixl);
+				mCycles += 4;
+				break;
+			case 0xA4:	// AND A,IXH
+				AND8(mRegs.A, mRegs.ixh);
+				mCycles += 4;
+				break;
+			case 0xA5:	// AND A,IXL
+				AND8(mRegs.A, mRegs.ixl);
+				mCycles += 4;
+				break;
+			case 0xAC:	// XOR A,IXH
+				XOR8(mRegs.A, mRegs.ixh);
+				mCycles += 4;
+				break;
+			case 0xAD:	// XOR A,IXL
+				XOR8(mRegs.A, mRegs.ixl);
+				mCycles += 4;
+				break;
+			case 0xB4:	// OR A,IXH
+				OR8(mRegs.A, mRegs.ixh);
+				mCycles += 4;
+				break;
+			case 0xB5:	// OR A,IXL
+				OR8(mRegs.A, mRegs.ixl);
+				mCycles += 4;
+				break;
 			default:
 				ILLEGAL_OP2();
 				break;
@@ -297,6 +339,46 @@ void Z80::Run(uint32_t maxCycles)
 				break;
 			case 0x68:	// LD IYL,R
 				CMD_GROUP_J_R(MOVE_REG8_IXREG8, 0x68, mRegs.iyl);
+				break;
+			case 0x84:	// ADD A,IYH
+				ADD8(mRegs.A, mRegs.iyh);
+				mCycles += 4;
+				break;
+			case 0x85:	// ADD A,IYL
+				ADD8(mRegs.A, mRegs.iyl);
+				mCycles += 4;
+				break;
+			case 0x8C:	// ADC A,IYH
+				ADC8(mRegs.A, mRegs.iyh);
+				mCycles += 4;
+				break;
+			case 0x8D:	// ADC A,IYL
+				ADC8(mRegs.A, mRegs.iyl);
+				mCycles += 4;
+				break;
+			case 0xA4:	// AND A,IYH
+				AND8(mRegs.A, mRegs.iyh);
+				mCycles += 4;
+				break;
+			case 0xA5:	// AND A,IYL
+				AND8(mRegs.A, mRegs.iyl);
+				mCycles += 4;
+				break;
+			case 0xAC:	// XOR A,IYH
+				XOR8(mRegs.A, mRegs.iyh);
+				mCycles += 4;
+				break;
+			case 0xAD:	// XOR A,IYL
+				XOR8(mRegs.A, mRegs.iyl);
+				mCycles += 4;
+				break;
+			case 0xB4:	// OR A,IYH
+				OR8(mRegs.A, mRegs.iyh);
+				mCycles += 4;
+				break;
+			case 0xB5:	// OR A,IYL
+				OR8(mRegs.A, mRegs.iyl);
+				mCycles += 4;
 				break;
 			default:
 				ILLEGAL_OP2();
