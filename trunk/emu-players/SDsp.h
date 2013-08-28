@@ -32,6 +32,26 @@ public:
 
 	virtual void Reset();
 	virtual void Step();
+
+	enum
+	{
+		GAIN_SETTING_ADSR,
+		GAIN_SETTING_DIRECT,
+		GAIN_SETTING_CUSTOM,
+	};
+
+	// Custom gain modes
+	enum
+	{
+		GAIN_MODE_LINEAR_DEC = 0,
+		GAIN_MODE_EXP_DEC = 1,
+		GAIN_MODE_LINEAR_INC = 2,
+		GAIN_MODE_BENT_INC = 3,
+	};
+
+private:
+	uint8_t mSetting, mMode;
+
 };
 
 
@@ -53,15 +73,6 @@ class SDsp
 public:
 	void Write(uint32_t addr, uint8_t data);
 	void Step();
-
-	// Gain modes
-	enum
-	{
-		GAIN_MODE_LINEAR_DEC = 0,
-		GAIN_MODE_EXP_DEC = 1,
-		GAIN_MODE_LINEAR_INC = 2,
-		GAIN_MODE_BENT_INC = 3,
-	};
 
 	// Registers
 	enum

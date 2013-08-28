@@ -19,15 +19,20 @@
 #include "NativeLogger.h"
 #include "SDsp.h"
 
+
 void SDspEnvelopeGenerator::Reset()
 {
 	// ToDo: implement
+	mSetting = GAIN_SETTING_DIRECT;
+	mMode = GAIN_MODE_LINEAR_DEC;
 }
+
 
 void SDspEnvelopeGenerator::Step()
 {
 	// ToDo: implement
 }
+
 
 void SDspVoice::Reset()
 {
@@ -35,14 +40,31 @@ void SDspVoice::Reset()
 	mEG.Reset();
 }
 
+
 void SDspVoice::Step()
 {
 	// ToDo: impelement
 }
 
+
 void SDspVoice::Write(uint32_t addr, uint8_t val)
 {
-	// ToDo: implement
+	uint8_t group = addr & 0x0F;
+
+	switch (group) {
+	case SDsp::R_VxPITCHL:
+		break;
+	case SDsp::R_VxPITCHH:
+		break;
+	case SDsp::R_VxSRCN:
+		break;
+	case SDsp::R_VxADSR1:
+		break;
+	case SDsp::R_VxADSR2:
+		break;
+	case SDsp::R_VxGAIN:
+		break;
+	}
 }
 
 void SDsp::Step()
@@ -62,16 +84,12 @@ void SDsp::Write(uint32_t addr, uint8_t data)
 
 	switch (group) {
 	case R_VxPITCHL:
-		break;
 	case R_VxPITCHH:
-		break;
 	case R_VxSRCN:
-		break;
 	case R_VxADSR1:
-		break;
 	case R_VxADSR2:
-		break;
 	case R_VxGAIN:
+		mVoices[chn].Write(addr, data);
 		break;
 	}
 }
