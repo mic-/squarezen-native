@@ -22,11 +22,37 @@
 #define SDSP_H_
 
 #include <stdint.h>
+#include "Oscillator.h"
+
+
+class SDspEnvelopeGenerator : public Oscillator
+{
+public:
+	virtual ~SDspEnvelopeGenerator() {}
+
+	virtual void Reset();
+	virtual void Step();
+};
+
+
+class SDspVoice : public Oscillator
+{
+public:
+	virtual ~SDspVoice() {}
+
+	virtual void Reset();
+	virtual void Step();
+	virtual void Write(uint32_t addr, uint8_t val);
+
+	SDspEnvelopeGenerator mEG;
+};
+
 
 class SDsp
 {
 public:
 	void Write(uint32_t addr, uint8_t data);
+	void Step();
 
 	// Gain modes
 	enum
@@ -119,8 +145,10 @@ public:
 		R_ESA = 0x6D,	// Echo buffer start address (/ 0x100)
 		R_ENDX = 0x7C,
 		R_EDL = 0x7D, 	// Echo delay (d0..3: size in 2kB (==16ms) steps)
-
 	};
+
+private:
+	SDspVoice mVoices[8];
 };
 
 #endif /* SDSP_H_ */

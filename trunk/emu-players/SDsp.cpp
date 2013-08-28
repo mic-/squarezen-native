@@ -19,6 +19,40 @@
 #include "NativeLogger.h"
 #include "SDsp.h"
 
+void SDspEnvelopeGenerator::Reset()
+{
+	// ToDo: implement
+}
+
+void SDspEnvelopeGenerator::Step()
+{
+	// ToDo: implement
+}
+
+void SDspVoice::Reset()
+{
+	// ToDo: implement
+	mEG.Reset();
+}
+
+void SDspVoice::Step()
+{
+	// ToDo: impelement
+}
+
+void SDspVoice::Write(uint32_t addr, uint8_t val)
+{
+	// ToDo: implement
+}
+
+void SDsp::Step()
+{
+	for (int i = 0; i < 8; i++) {
+		mVoices[i].Step();
+	}
+}
+
+
 void SDsp::Write(uint32_t addr, uint8_t data)
 {
 	NLOGD("SDsp", "Write(%#x, %#x)", addr, data);
