@@ -140,6 +140,7 @@ static uint8_t gParityTable[256];
 	mRegs.F = temp16 & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
 	mRegs.F |= ((temp16 >= 0x100) ? Z80::FLAG_C : 0); \
 	mRegs.F |= (((uint8_t)temp16 == 0) ? Z80::FLAG_Z : 0); \
+	mRegs.F |= ((temp16 & 0xF) < (dest8 & 0xF)) ? Z80::FLAG_H : 0; \
 	mRegs.F |= ((!((dest8 ^ val) & 0x80)) && ((dest8 ^ temp16) & 0x80)) ? Z80::FLAG_P : 0; \
 	dest8 = (uint8_t)temp16; \
 	mCycles += 4
@@ -152,6 +153,17 @@ static uint8_t gParityTable[256];
 	mRegs.F |= ((!((dest8 ^ val) & 0x80)) && ((dest8 ^ temp16) & 0x80)) ? Z80::FLAG_P : 0; \
 	dest8 = (uint8_t)temp16; \
 	mCycles += 4
+
+#define SUB8(dest8, val) \
+	operand = -(val); \
+	ADD8(dest8, operand); \
+	mRegs.F |= Z80::FLAG_N
+
+#define CP8(dest, src) \
+	temp8 = dest; \
+	SUB8(temp8, src); \
+	mRegs.F &= ~(Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= src & (Z80::FLAG_X | Z80::FLAG_Y)
 
 // ====
 
@@ -253,6 +265,9 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x88:	// ADC A,R2
 			CMD_GROUP_1OP(ADC8, 0x88, mRegs.A);
 			break;
+		case 0x90:	// SUB A,R2
+			CMD_GROUP_1OP(SUB8, 0x90, mRegs.A);
+			break;
 
 		case 0xA0:	// AND A,R2
 			CMD_GROUP_1OP(AND8, 0xA0, mRegs.A);
@@ -262,6 +277,9 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 		case 0xB0:	// OR A,R2
 			CMD_GROUP_1OP(OR8, 0xB0, mRegs.A);
+			break;
+		case 0xB8:	// CP A,R2
+			CMD_GROUP_1OP(CP8, 0xB8, mRegs.A);
 			break;
 
 		case 0xDD:	// IX prefix
