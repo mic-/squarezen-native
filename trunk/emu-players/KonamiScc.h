@@ -37,6 +37,7 @@ public:
 	uint8_t *mWaveform;
 	uint16_t mVol;
 	uint16_t mOut;
+	bool mEnabled;
 };
 
 

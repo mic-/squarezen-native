@@ -23,6 +23,7 @@ void KonamiSccChannel::Reset()
 {
 	// ToDo: implement
 	mOut = 0;
+	mEnabled = false;
 }
 
 
@@ -64,13 +65,17 @@ void KonamiScc::Reset()
 void KonamiScc::Step()
 {
 	for (int i = 0; i < 5; i++) {
-		mChannels[i].Step();
+		if (mChannels[i].mEnabled) {
+			mChannels[i].Step();
+		}
 	}
 }
 
 
 void KonamiScc::Write(uint32_t addr, uint8_t data)
 {
+	NLOGV("KonamiScc", "Write(%#x, %#x)", addr, data);
+
 	if (addr >= R_WAVEFORM_RAM && addr < R_CHN1_PERL) {
 		mWaveformRam[addr & 0x7F] = data;
 	} else if (addr >= 0x9880 && addr <= 0x989F) {
@@ -80,6 +85,11 @@ void KonamiScc::Write(uint32_t addr, uint8_t data)
 		} else if (addr >= R_CHN1_VOL && addr <= R_CHN5_VOL) {
 			mChannels[addr - R_CHN1_VOL].Write(addr, data);
 		} else if (addr == R_CHN_ENABLE) {
+			mChannels[0].mEnabled = ((data & 0x01) != 0);
+			mChannels[1].mEnabled = ((data & 0x02) != 0);
+			mChannels[2].mEnabled = ((data & 0x04) != 0);
+			mChannels[3].mEnabled = ((data & 0x08) != 0);
+			mChannels[4].mEnabled = ((data & 0x10) != 0);
 		}
 	}
 }
