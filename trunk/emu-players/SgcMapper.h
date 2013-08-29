@@ -1,7 +1,7 @@
 /*
- * MemoryMapper.h
+ * SgcMapper.h
  *
- *  Created on: Jun 2, 2013
+ *  Created on: Aug 29, 2013
  *
  * Copyright 2013 Mic
  *
@@ -18,23 +18,25 @@
  * limitations under the License.
  */
 
-#ifndef MEMORYMAPPER_H_
-#define MEMORYMAPPER_H_
+#ifndef SGCMAPPER_H_
+#define SGCMAPPER_H_
 
 #include <stdint.h>
+#include "MemoryMapper.h"
+#include "Z80.h"
 
-class MemoryMapper
+
+class SgcMapper : public MemoryMapper
 {
 public:
-	virtual ~MemoryMapper() {}
+	SgcMapper(uint32_t numRomBanks);
+	virtual ~SgcMapper();
 
-	virtual void Reset() = 0;
-	virtual uint8_t ReadByte(uint16_t addr) = 0;
-	virtual void WriteByte(uint16_t addr, uint8_t data) = 0;
-
-	virtual uint8_t ReadPort(uint16_t port) { return 0; }
-	virtual void WritePort(uint16_t port, uint8_t data) {}
+	virtual void Reset();
+	virtual uint8_t ReadByte(uint16_t addr);
+	virtual void WriteByte(uint16_t addr, uint8_t data);
+	virtual uint8_t ReadPort(uint16_t port);
+	virtual void WritePort(uint16_t port, uint8_t addr);
 };
 
-
-#endif /* MEMORYMAPPER_H_ */
+#endif
