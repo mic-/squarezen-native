@@ -45,6 +45,7 @@ static uint8_t gParityTable[256];
 	R1 = J; \
 	mCycles += 8
 
+// CMD R/(HL)
 #define CMD_GROUP_1OP(operation, base) \
 	operation(mRegs.B); \
 	break; \
@@ -74,6 +75,7 @@ static uint8_t gParityTable[256];
 	operation(mRegs.A); \
 	break
 
+// CMD A,R/(HL)
 #define CMD_GROUP_2OP(operation, base, R1) \
 	operation(R1, mRegs.B); \
 	break; \
@@ -101,6 +103,7 @@ static uint8_t gParityTable[256];
 	operation(R1, mRegs.A); \
 	break
 
+// CMD J,R
 #define CMD_GROUP_J_R(operation, base, J) \
 	operation(J, mRegs.B); \
 	break; \
@@ -117,6 +120,7 @@ static uint8_t gParityTable[256];
 	operation(J, mRegs.A); \
 	break
 
+// CMD R,J
 #define CMD_GROUP_R_J(operation, base, J) \
 	operation(mRegs.B, J); \
 	break; \
@@ -225,6 +229,22 @@ static uint8_t gParityTable[256];
 #define SRL8(R) \
 	mRegs.F = (R & 0x01) ? Z80::FLAG_C : 0; \
     R >>= 1; \
+	mRegs.F |= R & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= gParityTable[R]; \
+    mRegs.F |= (R == 0) ? Z80::FLAG_Z : 0; \
+    mCycles += 8
+
+#define SLA8(R) \
+	mRegs.F = (R & 0x01) ? Z80::FLAG_C : 0; \
+    R <<= 1; \
+	mRegs.F |= R & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= gParityTable[R]; \
+    mRegs.F |= (R == 0) ? Z80::FLAG_Z : 0; \
+    mCycles += 8
+
+#define SLL8(R) \
+	mRegs.F = (R & 0x01) ? Z80::FLAG_C : 0; \
+    R = (R << 1) + 1; \
 	mRegs.F |= R & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
 	mRegs.F |= gParityTable[R]; \
     mRegs.F |= (R == 0) ? Z80::FLAG_Z : 0; \
@@ -356,8 +376,14 @@ void Z80::Run(uint32_t maxCycles)
 			case 0x18:	// RR R
 				CMD_GROUP_1OP(RR8, 0x18);
 				break;
+			case 0x20:	// SLA R
+				CMD_GROUP_1OP(SLA8, 0x20);
+				break;
 			case 0x28:	// SRA R
 				CMD_GROUP_1OP(SRA8, 0x28);
+				break;
+			case 0x30:	// SLL R
+				CMD_GROUP_1OP(SLL8, 0x30);
 				break;
 			case 0x38:	// SRL R
 				CMD_GROUP_1OP(SRL8, 0x38);
