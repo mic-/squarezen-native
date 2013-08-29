@@ -394,6 +394,18 @@ void Z80::Run(uint32_t maxCycles)
 			}
 			break;
 
+		case 0xD3:	// OUT (N),A
+			addr = mMemory->ReadByte(mRegs.PC++);
+			mMemory->WritePort(addr, mRegs.A);
+			mCycles += 11;
+			break;
+
+		case 0xDB:	// IN A,(N)
+			addr = mMemory->ReadByte(mRegs.PC++);
+			mRegs.A = mMemory->ReadPort(addr);
+			mCycles += 11;
+			break;
+
 		case 0xDD:	// IX prefix
 			opcode2 = mMemory->ReadByte(mRegs.PC++);
 			switch (opcode2) {
