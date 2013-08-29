@@ -32,9 +32,11 @@ public:
 
 	virtual void Reset();
 	virtual void Step();
+	virtual void Write(uint32_t addr, uint8_t data);
 
 	uint8_t *mWaveform;
-	uint8_t mVolume;
+	uint16_t mVol;
+	uint16_t mOut;
 };
 
 
@@ -44,6 +46,26 @@ public:
 	void Reset();
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
+
+	enum {
+		R_WAVEFORM_RAM = 0x9800,
+		R_CHN1_PERL = 0x9880,
+		R_CHN1_PERH = 0x9881,
+		R_CHN2_PERL = 0x9882,
+		R_CHN2_PERH = 0x9883,
+		R_CHN3_PERL = 0x9884,
+		R_CHN3_PERH = 0x9885,
+		R_CHN4_PERL = 0x9886,
+		R_CHN4_PERH = 0x9887,
+		R_CHN5_PERL = 0x9888,
+		R_CHN5_PERH = 0x9889,
+		R_CHN1_VOL = 0x988A,
+		R_CHN2_VOL = 0x988B,
+		R_CHN3_VOL = 0x988C,
+		R_CHN4_VOL = 0x988D,
+		R_CHN5_VOL = 0x988E,
+		R_CHN_ENABLE = 0x988F,
+	};
 
 	KonamiSccChannel mChannels[5];
 private:

@@ -22,21 +22,42 @@
 void KonamiSccChannel::Reset()
 {
 	// ToDo: implement
+	mOut = 0;
 }
 
 
 void KonamiSccChannel::Step()
 {
-	// ToDo: implement
+	mPos++;
+
+	if (mPos >= mPeriod) {
+		mPos -= mPeriod;
+		mOut = mWaveform[mStep];
+		mStep = (mStep + 1) & 0x1F;
+	}
+}
+
+
+void KonamiSccChannel::Write(uint32_t addr, uint8_t data)
+{
+	if (addr >= KonamiScc::R_CHN1_PERL && addr <= KonamiScc::R_CHN5_PERH) {
+		if (addr & 1) {
+			mPeriod = (mPeriod & 0xFF) | ((uint16_t)(data & 0xF) << 8);
+		} else {
+			mPeriod = (mPeriod & 0xF00) | data;
+		}
+	} else if (addr >= KonamiScc::R_CHN1_VOL && addr <= KonamiScc::R_CHN5_VOL) {
+		mVol = data;
+	}
 }
 
 
 void KonamiScc::Reset()
 {
-	mChannels[0].mWaveform = &mWaveformRam[0];
-	mChannels[1].mWaveform = &mWaveformRam[32];
-	mChannels[2].mWaveform = &mWaveformRam[64];
-	mChannels[3].mWaveform = mChannels[4].mWaveform = &mWaveformRam[96];
+	mChannels[0].mWaveform = &mWaveformRam[0x00];
+	mChannels[1].mWaveform = &mWaveformRam[0x20];
+	mChannels[2].mWaveform = &mWaveformRam[0x40];
+	mChannels[3].mWaveform = mChannels[4].mWaveform = &mWaveformRam[0x60];
 }
 
 
@@ -50,7 +71,15 @@ void KonamiScc::Step()
 
 void KonamiScc::Write(uint32_t addr, uint8_t data)
 {
-	if (addr >= 0x9800 && addr < 0x9880) {
+	if (addr >= R_WAVEFORM_RAM && addr < R_CHN1_PERL) {
 		mWaveformRam[addr & 0x7F] = data;
+	} else if (addr >= 0x9880 && addr <= 0x989F) {
+		addr &= 0x988F;
+		if (addr >= R_CHN1_PERL && addr <= R_CHN5_PERH) {
+			mChannels[(addr - R_CHN1_PERL) / 2].Write(addr, data);
+		} else if (addr >= R_CHN1_VOL && addr <= R_CHN5_VOL) {
+			mChannels[addr - R_CHN1_VOL].Write(addr, data);
+		} else if (addr == R_CHN_ENABLE) {
+		}
 	}
 }
