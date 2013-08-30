@@ -198,6 +198,11 @@ static uint8_t gParityTable[256];
 	mRegs.F &= ~(Z80::FLAG_X | Z80::FLAG_Y); \
 	mRegs.F |= src & (Z80::FLAG_X | Z80::FLAG_Y)
 
+#define NEG8(dest8) \
+	temp8 = 0; \
+	SUB8(temp8, dest8); \
+	mCycles += 4
+
 // ====
 
 #define RL8(R) \
@@ -504,6 +509,31 @@ void Z80::Run(uint32_t maxCycles)
 			mRegs.E = mRegs.L;
 			mRegs.L = temp8;
 			mCycles += 4;
+			break;
+
+		case 0xED:	// ED prefix
+			opcode2 = mMemory->ReadByte(mRegs.PC++);
+			switch (opcode2) {
+			case 0x40:	// IN B,(C)
+				mRegs.B = mMemory->ReadPort(mRegs.C);
+				// ToDo: update flags
+				mCycles += 12;
+				break;
+
+			case 0x44:
+			case 0x4C:
+			case 0x54:
+			case 0x5C:
+			case 0x64:
+			case 0x6C:
+			case 0x74:
+			case 0x7C:
+				NEG8(mRegs.A);
+				break;
+			default:
+				ILLEGAL_OP2();
+				break;
+			}
 			break;
 
 		case 0xFD:	// IY prefix

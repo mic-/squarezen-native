@@ -52,6 +52,7 @@ class HuC6280
 public:
 	void Reset();
 	void Run(uint32_t maxCycles);
+	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
 	enum {
 		FLAG_C = 0x01,
@@ -69,6 +70,7 @@ public:
 	} mRegs;
 
 	uint32_t mCycles;
+	uint8_t mSpeed;
 private:
 	MemoryMapper *mMemory;
 };
