@@ -1,5 +1,5 @@
 /*
- * HuC6280.h
+ * M68000.h
  *
  *  Created on: Aug 30, 2013
  *
@@ -18,36 +18,13 @@
  * limitations under the License.
  */
 
-#ifndef HUC62802_H_
-#define HUC62802_H_
+#ifndef M68000_H_
+#define M68000_H_
 
 #include <stdint.h>
 #include "MemoryMapper.h"
-#include "Oscillator.h"
 
-
-class HuC6280PsgChannel : public Oscillator
-{
-public:
-	virtual ~HuC6280PsgChannel() {}
-
-	virtual void Reset();
-	virtual void Step();
-};
-
-
-class HuC6280Psg
-{
-public:
-	void Reset();
-	void Step();
-	void Write(uint32_t addr, uint8_t data);
-
-	HuC6280PsgChannel mChannels[6];
-};
-
-
-class HuC6280
+class M68000
 {
 public:
 	void Reset();
@@ -55,23 +32,20 @@ public:
 
 	enum {
 		FLAG_C = 0x01,
-		FLAG_Z = 0x02,
-		FLAG_I = 0x04,
-		FLAG_D = 0x08,
-		FLAG_T = 0x10,
-		FLAG_V = 0x40,
-		FLAG_N = 0x80,
+		FLAG_V = 0x02,
+		FLAG_Z = 0x04,
+		FLAG_N = 0x08,
+		FLAG_X = 0x10,
 	};
 
 	struct {
-		uint8_t A, X, Y, S, F;
-		uint16_t PC;
+		uint32_t D[8];
+		uint32_t A[8];
+		uint32_t PC;
+		uint8_t CCR;
 	} mRegs;
 
 	uint32_t mCycles;
-private:
-	MemoryMapper *mMemory;
 };
 
 #endif
-
