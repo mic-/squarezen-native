@@ -257,6 +257,20 @@ static uint8_t gParityTable[256];
 
 // ====
 
+#define IN8_C(R) \
+	R = mMemory->ReadPort(mRegs.C); \
+    mRegs.F &= Z80::FLAG_C; \
+	mRegs.F |= R & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= gParityTable[R]; \
+    mRegs.F |= (R == 0) ? Z80::FLAG_Z : 0; \
+	mCycles += 12
+
+#define OUT8_C(R) \
+	mMemory->WritePort(mRegs.C, R); \
+	mCycles += 12
+
+// ====
+
 #define ILLEGAL_OP() NLOGE("Z80", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
 					 mCycles += 2; \
 					 mRegs.PC++
@@ -515,9 +529,47 @@ void Z80::Run(uint32_t maxCycles)
 			opcode2 = mMemory->ReadByte(mRegs.PC++);
 			switch (opcode2) {
 			case 0x40:	// IN B,(C)
-				mRegs.B = mMemory->ReadPort(mRegs.C);
-				// ToDo: update flags
-				mCycles += 12;
+				IN8_C(mRegs.B);
+				break;
+			case 0x48:	// IN C,(C)
+				IN8_C(mRegs.C);
+				break;
+			case 0x50:	// IN D,(C)
+				IN8_C(mRegs.D);
+				break;
+			case 0x58:	// IN E,(C)
+				IN8_C(mRegs.E);
+				break;
+			case 0x60:	// IN H,(C)
+				IN8_C(mRegs.H);
+				break;
+			case 0x68:	// IN L,(C)
+				IN8_C(mRegs.L);
+				break;
+			case 0x78:	// IN A,(C)
+				IN8_C(mRegs.A);
+				break;
+
+			case 0x41:	// OUT (C),B
+				OUT8_C(mRegs.B);
+				break;
+			case 0x49:	// OUT (C),C
+				OUT8_C(mRegs.C);
+				break;
+			case 0x51:	// OUT (C),D
+				OUT8_C(mRegs.D);
+				break;
+			case 0x59:	// OUT (C),E
+				OUT8_C(mRegs.E);
+				break;
+			case 0x61:	// OUT (C),H
+				OUT8_C(mRegs.H);
+				break;
+			case 0x69:	// OUT (C),L
+				OUT8_C(mRegs.L);
+				break;
+			case 0x79:	// OUT (C),A
+				OUT8_C(mRegs.A);
 				break;
 
 			case 0x44:
