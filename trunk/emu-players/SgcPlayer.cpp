@@ -24,6 +24,7 @@
 
 SgcPlayer::SgcPlayer()
 	: mZ80(NULL)
+	, mSN76489(NULL)
 	, mMemory(NULL)
 {
 }
@@ -31,8 +32,10 @@ SgcPlayer::SgcPlayer()
 SgcPlayer::~SgcPlayer()
 {
 	delete mZ80;
+	delete mSN76489;
 	delete mMemory;
 	mZ80 = NULL;
+	mSN76489 = NULL;
 	mMemory = NULL;
 }
 
@@ -88,6 +91,14 @@ int SgcPlayer::Prepare(std::string fileName)
 
 	NLOGV("SgcPlayer", "File read done");
 	musicFile.close();
+
+	mZ80 = new Z80;
+	mMemory = new SgcMapper(0);
+	mZ80->SetMapper(mMemory);
+
+	mSN76489 = new SnChip;
+	mSN76489->Reset();
+	mMemory->SetPsg(mSN76489);
 
 	NLOGD("SgcPlayer", "Prepare finished");
 

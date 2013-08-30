@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include "MemoryMapper.h"
 #include "Z80.h"
+#include "SN76489.h"
 
 
 class SgcMapper : public MemoryMapper
@@ -32,11 +33,16 @@ public:
 	SgcMapper(uint32_t numRomBanks);
 	virtual ~SgcMapper();
 
+	void SetPsg(SnChip *psg) { mPsg = psg; }
+
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint16_t addr);
 	virtual void WriteByte(uint16_t addr, uint8_t data);
 	virtual uint8_t ReadPort(uint16_t port);
 	virtual void WritePort(uint16_t port, uint8_t addr);
+
+private:
+	SnChip *mPsg;
 };
 
 #endif

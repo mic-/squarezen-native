@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include "MusicPlayer.h"
 #include "Z80.h"
+#include "SN76489.h"
 #include "SgcMapper.h"
 
 
@@ -66,6 +67,7 @@ public:
 private:
 	SgcFileHeader mFileHeader;
 	Z80 *mZ80;
+	SnChip *mSN76489;
 	SgcMapper *mMemory;
 };
 
