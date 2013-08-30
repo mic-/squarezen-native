@@ -21,6 +21,14 @@
 #include "NativeLogger.h"
 #include "HuC6280.h"
 
+// ====
+
+#define ILLEGAL_OP() NLOGE("HuC6280", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
+					 mCycles += 2; \
+					 mRegs.PC++
+
+// ====
+
 
 void HuC6280::Reset()
 {
@@ -30,7 +38,91 @@ void HuC6280::Reset()
 
 void HuC6280::Run(uint32_t maxCycles)
 {
-	// ToDo: implement
+	uint16_t addr, temp16;
+	uint8_t operand, temp8;
+    int8_t relAddr;
+
+	while (mCycles < maxCycles) {
+
+		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
+
+		switch (opcode) {
+		case 0x02:	// SXY
+			temp8 = mRegs.Y;
+			mRegs.Y = mRegs.X;
+			mRegs.X = temp8;
+			mRegs.F &= ~FLAG_T;
+			mCycles += 3;
+			break;
+		case 0x18:	// CLC
+			mRegs.F &= ~(FLAG_C | FLAG_T);
+			mCycles += 2;
+			break;
+		case 0x22:	// SAX
+			temp8 = mRegs.A;
+			mRegs.A = mRegs.X;
+			mRegs.X = temp8;
+			mRegs.F &= ~FLAG_T;
+			mCycles += 3;
+			break;
+		case 0x38:	// SEC
+			mRegs.F &= ~FLAG_T;
+			mRegs.F |= FLAG_C;
+			mCycles += 2;
+			break;
+		case 0x42:	// SAY
+			temp8 = mRegs.A;
+			mRegs.A = mRegs.Y;
+			mRegs.Y = temp8;
+			mRegs.F &= ~FLAG_T;
+			mCycles += 3;
+			break;
+		case 0x58:	// CLI
+			mRegs.F &= ~(FLAG_I | FLAG_T);
+			mCycles += 2;
+			break;
+		case 0x62:	// CLA
+			mRegs.A = 0;
+			mRegs.F &= ~FLAG_T;
+			mCycles += 2;
+			break;
+		case 0x78:	// SEI
+			mRegs.F &= ~FLAG_T;
+			mRegs.F |= FLAG_I;
+			mCycles += 2;
+			break;
+		case 0x82:	// CLX
+			mRegs.X = 0;
+			mRegs.F &= ~FLAG_T;
+			mCycles += 2;
+			break;
+		case 0xB8:	// CLV
+			mRegs.F &= ~(FLAG_V | FLAG_T);
+			mCycles += 2;
+			break;
+		case 0xC2:	// CLY
+			mRegs.Y = 0;
+			mRegs.F &= ~FLAG_T;
+			mCycles += 2;
+			break;
+		case 0xD8:	// CLD
+			mRegs.F &= ~(FLAG_D | FLAG_T);
+			mCycles += 2;
+			break;
+		case 0xF4:	// SET
+			mRegs.F |= FLAG_T;
+			mCycles += 2;
+			break;
+		case 0xF8:	// SED
+			mRegs.F &= ~FLAG_T;
+			mRegs.F |= FLAG_D;
+			mCycles += 2;
+			break;
+		default:
+			ILLEGAL_OP();
+			break;
+		}
+	}
 }
 
 
