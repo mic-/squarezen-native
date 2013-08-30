@@ -30,7 +30,7 @@
 #define UPDATE_NZC(val, val2, sub) mRegs.F &= ~(Emu6502::FLAG_Z | Emu6502::FLAG_N | Emu6502::FLAG_C); \
 				       mRegs.F |= ((uint8_t)val == (uint8_t)val2) ? Emu6502::FLAG_Z : 0; \
 				       mRegs.F |= ((val - sub) & 0x80); \
-				       mRegs.F |= (val >= val2) ? FLAG_C : 0
+				       mRegs.F |= (val >= val2) ? Emu6502::FLAG_C : 0
 
 // == Arithmetic ==
 
