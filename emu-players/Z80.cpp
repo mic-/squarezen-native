@@ -311,6 +311,15 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x01:	// LD BC,aaaa
 			MOVE_REG16_IMM16(mRegs.B, mRegs.C);
 			break;
+		case 0x08:	// EX AF,AF'
+			temp8 = mRegs.A;
+			mRegs.A = mRegs.A2;
+			mRegs.A2 = temp8;
+			temp8 = mRegs.F;
+			mRegs.F = mRegs.F2;
+			mRegs.F2 = temp8;
+			mCycles += 4;
+			break;
 		case 0x11:	// LD DE,aaaa
 			MOVE_REG16_IMM16(mRegs.D, mRegs.E);
 			break;
@@ -339,6 +348,10 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 		case 0x68:	// LD L,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x68, mRegs.L);
+			break;
+		case 0x76:	// HALT
+			mHalted = true;
+			mCycles += 4;
 			break;
 		case 0x78:	// LD A,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x78, mRegs.A);
@@ -481,6 +494,16 @@ void Z80::Run(uint32_t maxCycles)
 				ILLEGAL_OP2();
 				break;
 			}
+			break;
+
+		case 0xEB:	// EX DE,HL
+			temp8 = mRegs.D;
+			mRegs.D = mRegs.H;
+			mRegs.H = temp8;
+			temp8 = mRegs.E;
+			mRegs.E = mRegs.L;
+			mRegs.L = temp8;
+			mCycles += 4;
 			break;
 
 		case 0xFD:	// IY prefix
