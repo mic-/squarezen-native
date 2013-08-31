@@ -184,6 +184,11 @@ int VgmPlayer::Prepare(std::string fileName)
 	}
 	mFileHeader = (VgmFileHeader*)mVgmData;
 
+	if (mFileHeader->sn76489Clock == 0) {
+		NLOGE("VgmPlayer", "Only the SN76489 is supported, but is not used by this song");
+		return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+	}
+
 	ParseGd3(fileSize);
 
 	if ((mFileHeader->version & 0xFF) >= 0x50) {

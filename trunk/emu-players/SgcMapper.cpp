@@ -25,8 +25,10 @@
 
 SgcMapper::SgcMapper(uint32_t numRomBanks)
 	: mRam(NULL)
+	, mExRam(NULL)
 {
 	mRam = new uint8_t[0x2000];
+	mExRam = new uint8_t[0x4000];
 	SetSystemType(SgcPlayer::SYSTEM_SMS);
 }
 
@@ -34,7 +36,9 @@ SgcMapper::~SgcMapper()
 {
 	// ToDo: implement
 	delete [] mRam;
+	delete [] mExRam;
 	mRam = NULL;
+	mExRam = NULL;
 }
 
 
@@ -68,7 +72,17 @@ void SgcMapper::Reset()
 uint8_t SgcMapper::ReadByteSMSGG(uint16_t addr)
 {
 	// ToDo: implement
-	if (addr >= 0xC000) {
+	if (addr >= 0x8000 && addr <= 0xBFFF) {
+		if (mMapperRegs[FRAME2_CTRL & 3] & FRAME2_AS_RAM) {
+			return mExRam[addr & 0x3FFF];
+		} else {
+			// ToDo: read from ROM
+		}
+
+	} else if (addr >= 0xC000) {
+		if (addr >= FRAME2_CTRL) {
+			return mMapperRegs[addr - FRAME2_CTRL];
+		}
 		return mRam[addr & 0x1FFF];
 	}
 	return 0;
@@ -77,6 +91,10 @@ uint8_t SgcMapper::ReadByteSMSGG(uint16_t addr)
 uint8_t SgcMapper::ReadByteCV(uint16_t addr)
 {
 	// ToDo: implement
+	if (addr >= 0x6000 && addr <= 0x7FFF) {
+		// 1 kB of RAM, mirrored 8 times
+		return mRam[addr & 0x3FF];
+	}
 	return 0;
 }
 
@@ -89,11 +107,16 @@ uint8_t SgcMapper::ReadByte(uint16_t addr)
 void SgcMapper::WriteByteSMSGG(uint16_t addr, uint8_t data)
 {
 	// ToDo: implement
-	if (addr >= 0xC000) {
+	if (addr >= 0x8000 && addr <= 0xBFFF) {
+		if (mMapperRegs[FRAME2_CTRL & 3] & FRAME2_AS_RAM) {
+			mExRam[addr & 0x3FFF] = data;
+		}
+
+	} else if (addr >= 0xC000) {
 		// 8 kB of RAM, mirrored once
 		mRam[addr & 0x1FFF] = data;
-		if ((addr & 0x1FFF) >= 0x1FFC) {
-			// ToDo: handle memory mapping
+		if (addr >= FRAME2_CTRL) {
+			mMapperRegs[addr - FRAME2_CTRL] = data;
 		}
 	}
 }
