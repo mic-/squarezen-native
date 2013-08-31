@@ -93,12 +93,22 @@ int SgcPlayer::Prepare(std::string fileName)
 	musicFile.close();
 
 	mZ80 = new Z80;
-	mMemory = new SgcMapper(0);
-	mZ80->SetMapper(mMemory);
-
 	mSN76489 = new SnChip;
-	mSN76489->Reset();
+	mMemory = new SgcMapper(0);	// ToDo: set number of ROM banks
+
+	mZ80->SetMapper(mMemory);
 	mMemory->SetPsg(mSN76489);
+	mMemory->SetSystemType(mFileHeader.systemType);
+
+	mMemory->Reset();
+	mZ80->Reset();
+	mSN76489->Reset();
+
+	if (mFileHeader.systemType <= SgcPlayer::SYSTEM_GG) {
+		for (int i = 0; i < 4; i++) {
+			mMemory->WriteByte(0xFFFC + i, mFileHeader.mapperInit[i]);
+		}
+	}
 
 	NLOGD("SgcPlayer", "Prepare finished");
 
