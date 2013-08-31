@@ -30,7 +30,7 @@
 class SgcMapper : public MemoryMapper
 {
 public:
-	SgcMapper(uint32_t numRomBanks);
+	SgcMapper(uint32_t numRomPages);
 	virtual ~SgcMapper();
 
 	void SetPsg(SnChip *psg) { mPsg = psg; }
@@ -75,8 +75,11 @@ private:
 	WriteFunc mWritePortFunc;
 
 	SnChip *mPsg;
+	uint8_t *mCart;
+	uint8_t *mRomTbl[3];
 	uint8_t *mRam;
 	uint8_t *mExRam;
+	uint16_t mNumRomPages;
 	uint8_t mSystemType;
 	uint8_t mMapperRegs[4];
 };
