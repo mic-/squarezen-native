@@ -42,6 +42,18 @@ public:
 	virtual uint8_t ReadPort(uint16_t port);
 	virtual void WritePort(uint16_t port, uint8_t addr);
 
+	enum {
+		FRAME2_CTRL = 0xFFFC,
+		FRAME0_PAGE = 0xFFFD,
+		FRAME1_PAGE = 0xFFFE,
+		FRAME2_PAGE = 0xFFFF,
+	};
+
+	enum {
+		FRAME2_AS_ROM = 0,
+		FRAME2_AS_RAM = 8,
+	};
+
 private:
 	uint8_t ReadByteSMSGG(uint16_t addr);
 	uint8_t ReadByteCV(uint16_t addr);
@@ -64,7 +76,9 @@ private:
 
 	SnChip *mPsg;
 	uint8_t *mRam;
+	uint8_t *mExRam;
 	uint8_t mSystemType;
+	uint8_t mMapperRegs[4];
 };
 
 #endif
