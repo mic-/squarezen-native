@@ -34,6 +34,7 @@ public:
 	virtual ~SgcMapper();
 
 	void SetPsg(SnChip *psg) { mPsg = psg; }
+	void SetSystemType(uint8_t systemType);
 
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint16_t addr);
@@ -42,7 +43,28 @@ public:
 	virtual void WritePort(uint16_t port, uint8_t addr);
 
 private:
+	uint8_t ReadByteSMSGG(uint16_t addr);
+	uint8_t ReadByteCV(uint16_t addr);
+
+	uint8_t ReadPortSMSGG(uint16_t port);
+	uint8_t ReadPortCV(uint16_t port);
+
+	void WriteByteSMSGG(uint16_t addr, uint8_t data);
+	void WriteByteCV(uint16_t addr, uint8_t data);
+
+	void WritePortSMSGG(uint16_t port, uint8_t data);
+	void WritePortCV(uint16_t port, uint8_t data);
+
+	typedef uint8_t (SgcMapper::*ReadFunc)(uint16_t);
+	typedef void (SgcMapper::*WriteFunc)(uint16_t, uint8_t);
+	ReadFunc mReadByteFunc;
+	WriteFunc mWriteByteFunc;
+	ReadFunc mReadPortFunc;
+	WriteFunc mWritePortFunc;
+
 	SnChip *mPsg;
+	uint8_t *mRam;
+	uint8_t mSystemType;
 };
 
 #endif

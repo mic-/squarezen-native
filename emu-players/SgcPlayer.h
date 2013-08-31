@@ -39,6 +39,17 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
+	enum {
+		SYSTEM_SMS = 0,
+		SYSTEM_GG = 1,
+		SYSTEM_CV = 2,
+	};
+
+	enum {
+		REGION_NTSC = 0,
+		REGION_PAL = 1,
+	};
+
 	typedef struct __attribute__ ((__packed__))
 	{
 		char signature[4];
