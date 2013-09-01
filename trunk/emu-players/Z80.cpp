@@ -354,6 +354,10 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x01:	// LD BC,aaaa
 			MOVE_REG16_IMM16(mRegs.B, mRegs.C);
 			break;
+		case 0x02:	// LD (BC),A
+			mMemory->WriteByte(((uint16_t)mRegs.B << 8) + mRegs.C, mRegs.A);
+			mCycles += 7;
+			break;
 		case 0x03:	// INC BC
 			INC16(mRegs.B, mRegs.C);
 			break;
@@ -384,6 +388,10 @@ void Z80::Run(uint32_t maxCycles)
 
 		case 0x11:	// LD DE,aaaa
 			MOVE_REG16_IMM16(mRegs.D, mRegs.E);
+			break;
+		case 0x12:	// LD (DE),A
+			mMemory->WriteByte(((uint16_t)mRegs.D << 8) + mRegs.E, mRegs.A);
+			mCycles += 7;
 			break;
 		case 0x13:	// INC DE
 			INC16(mRegs.D, mRegs.E);
@@ -430,11 +438,22 @@ void Z80::Run(uint32_t maxCycles)
 			MOVE_REG16_IMM16(operand, temp8);
 			mRegs.SP = (((uint16_t)operand) << 8) | temp8;
 			break;
+		case 0x37:	// SCF
+			mRegs.F &= ~(Z80::FLAG_H | Z80::FLAG_N);
+			mRegs.F |= Z80::FLAG_C;
+			mCycles += 4;
+			break;
 		case 0x3C:	// INC A
 			INC8(mRegs.A, 1);
 			break;
 		case 0x3D:	// DEC A
 			DEC8(mRegs.A, 1);
+			break;
+		case 0x3F:	// CCF
+			mRegs.F &= ~(Z80::FLAG_H | Z80::FLAG_N);
+			mRegs.F |= (mRegs.F & Z80::FLAG_C) ? Z80::FLAG_H : 0;
+			mRegs.F ^= Z80::FLAG_C;
+			mCycles += 4;
 			break;
 
 		case 0x40:	// LD B,R2
@@ -443,21 +462,52 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x48:	// LD C,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x48, mRegs.C);
 			break;
+
 		case 0x50:	// LD D,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x50, mRegs.D);
 			break;
 		case 0x58:	// LD E,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x58, mRegs.E);
 			break;
+
 		case 0x60:	// LD H,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x60, mRegs.H);
 			break;
 		case 0x68:	// LD L,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x68, mRegs.L);
 			break;
+
+		case 0x70:	// LD (HL),B
+			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.B);
+			mCycles += 7;
+			break;
+		case 0x71:	// LD (HL),C
+			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.C);
+			mCycles += 7;
+			break;
+		case 0x72:	// LD (HL),D
+			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.D);
+			mCycles += 7;
+			break;
+		case 0x73:	// LD (HL),E
+			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.E);
+			mCycles += 7;
+			break;
+		case 0x74:	// LD (HL),H
+			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.H);
+			mCycles += 7;
+			break;
+		case 0x75:	// LD (HL),L
+			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.L);
+			mCycles += 7;
+			break;
 		case 0x76:	// HALT
 			mHalted = true;
 			mCycles += 4;
+			break;
+		case 0x77:	// LD (HL),A
+			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.A);
+			mCycles += 7;
 			break;
 		case 0x78:	// LD A,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x78, mRegs.A);
