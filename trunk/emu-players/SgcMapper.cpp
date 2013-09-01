@@ -26,7 +26,7 @@
 SgcMapper::SgcMapper(uint32_t numRomPages)
 	: mRam(NULL)
 	, mExRam(NULL)
-	, mNumRomPages(NULL)
+	, mNumRomPages(numRomPages)
 {
     mCart = new uint8_t[(uint32_t)numRomPages << 14];
     memset(mCart, 0, (uint32_t)numRomPages << 14);
@@ -74,12 +74,20 @@ void SgcMapper::Reset()
 	mRomTbl[0] = mCart;
 	mRomTbl[1] = mCart + (1 % mNumRomPages) * 0x4000;
 	mRomTbl[2] = mCart + (2 % mNumRomPages) * 0x4000;
+
+	memset(mRam, 0, 0x2000);
 }
 
 
 uint8_t SgcMapper::ReadByteSMSGG(uint16_t addr)
 {
-	if (addr >= 0x4000 && addr <= 0x7FFF) {
+	if (addr <= 0x03FF) {
+		return mCart[addr];
+
+	} else if (addr <= 0x3FFF) {
+		return mRomTbl[0][addr];
+
+	} else if (addr >= 0x4000 && addr <= 0x7FFF) {
 		return mRomTbl[1][addr - 0x4000];
 
 	} else if (addr >= 0x8000 && addr <= 0xBFFF) {
@@ -93,6 +101,7 @@ uint8_t SgcMapper::ReadByteSMSGG(uint16_t addr)
 		if (addr >= FRAME2_CTRL) {
 			return mMapperRegs[addr - FRAME2_CTRL];
 		}
+		// 8 kB of RAM, mirrored once
 		return mRam[addr & 0x1FFF];
 	}
 	return 0;
