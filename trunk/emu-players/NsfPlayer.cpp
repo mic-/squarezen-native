@@ -30,6 +30,7 @@ static float tndTable[203];
 NsfPlayer::NsfPlayer()
 	: m6502(NULL)
 	, m2A03(NULL)
+	, mVrc6(NULL)
 	, mMemory(NULL)
 	, mSongIsBankswitched(false)
 {
@@ -46,9 +47,11 @@ NsfPlayer::~NsfPlayer()
 {
 	delete m6502;
 	delete m2A03;
+	delete mVrc6;
 	delete mMemory;
 	m6502 = NULL;
 	m2A03 = NULL;
+	mVrc6 = NULL;
 	mMemory = NULL;
 }
 
@@ -58,15 +61,17 @@ int NsfPlayer::Reset()
 	NLOGV("NsfPlayer", "Reset");
 
 	delete mBlipBuf;
-	mBlipBuf = NULL;
 	delete [] mSynth;
-	mSynth = NULL;
+	mBlipBuf = NULL;
+	mSynth   = NULL;
 
 	delete m6502;
 	delete m2A03;
+	delete mVrc6;
 	delete mMemory;
-	m6502 = NULL;
-	m2A03 = NULL;
+	m6502   = NULL;
+	m2A03   = NULL;
+	mVrc6   = NULL;
 	mMemory = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
@@ -143,8 +148,15 @@ int NsfPlayer::Prepare(std::string fileName)
     	}
     }
 
+	uint32_t numSynths = 2;
+
 	m6502 = new Emu6502;
 	m2A03 = new Emu2A03;
+	if (mFileHeader.extraChips & NsfPlayer::USES_VRC6) {
+		NLOGD("NsfPlayer", "This song uses the Konami VRC6");
+		mVrc6 = new KonamiVrc6;
+		numSynths += 3;
+	}
 
 	uint32_t offset = mFileHeader.loadAddress & 0x0fff;
 	if (!mSongIsBankswitched) {
@@ -174,9 +186,10 @@ int NsfPlayer::Prepare(std::string fileName)
 	mMemory->Reset();
 	m6502->Reset();
 	m2A03->Reset();
+	if (mVrc6) mVrc6->Reset();
 
 	mBlipBuf = new Blip_Buffer();
-	mSynth = new Blip_Synth<blip_low_quality,4096>[2]; //5];
+	mSynth = new Blip_Synth<blip_low_quality,4096>[numSynths];
 
 	if (mBlipBuf->set_sample_rate(44100)) {
     	NLOGE("NsfPlayer", "Failed to set blipbuffer sample rate");
@@ -195,9 +208,10 @@ int NsfPlayer::Prepare(std::string fileName)
 	mCycleCount = 0;
 	mPlayCounter = 0;
 
+	float synthVolume = 0.95f / (float)numSynths;
     // Setup waves
 	for (int i = 0; i < 2; i++) {
-		mSynth[i].volume(0.88); //0.17);
+		mSynth[i].volume(synthVolume);
 		mSynth[i].output(mBlipBuf);
 	}
 
@@ -307,6 +321,10 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		if (tndOut != m2A03->mChannels[1].mOut) {
 			mSynth[1].update(k, tndOut);
 			m2A03->mChannels[1].mOut = tndOut;
+		}
+
+		if (mVrc6) {
+			// ToDo: output VRC6 channels to blip synths
 		}
 
 		mCycleCount++;

@@ -72,7 +72,7 @@ public:
 	virtual void Step();
 	virtual void Write(uint8_t *regs);
 
-	void SetChip(YmChip *chip) { mChip = chip; }
+	virtual void SetChip(YmChip *chip) { mChip = chip; }
 
 	YmChip *mChip;
 	uint16_t *mEnvTable;

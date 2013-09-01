@@ -26,6 +26,8 @@
 #include "MusicPlayer.h"
 #include "Emu6502.h"
 #include "Emu2A03.h"
+#include "KonamiVrc6.h"
+#include "Sunsoft5B.h"
 #include "NsfMapper.h"
 
 
@@ -82,6 +84,8 @@ private:
 
 	Emu6502 *m6502;
 	Emu2A03 *m2A03;
+	KonamiVrc6 *mVrc6;
+	Sunsoft5B *mSunsoft5B;
 	NsfMapper *mMemory;
 
 	NsfFileHeader mFileHeader;
