@@ -203,6 +203,30 @@ static uint8_t gParityTable[256];
 	SUB8(temp8, dest8); \
 	mCycles += 4
 
+#define INC8(R, Step) \
+	temp16 = (uint16_t)(R) + (uint16_t)(Step); \
+	mRegs.F &= Z80::FLAG_C; \
+	mRegs.F |= temp16 & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= (((uint8_t)temp16 == 0) ? Z80::FLAG_Z : 0); \
+	mRegs.F |= ((temp16 & 0xF) < (R & 0xF)) ? Z80::FLAG_H : 0; \
+	mRegs.F |= ((!((R ^ Step) & 0x80)) && ((R ^ temp16) & 0x80)) ? Z80::FLAG_P : 0; \
+	R = (uint8_t)temp16; \
+	mCycles += 4
+
+#define DEC8(R, Step) \
+	INC8(R, -Step); \
+	mRegs.F |= Z80::FLAG_N
+
+#define INC16(Rhi, Rlo) \
+	Rlo++; \
+	if (Rlo == 0) Rhi++; \
+    mCycles += 6
+
+#define DEC16(Rhi, Rlo) \
+	Rlo--; \
+	if (Rlo == 0xFF) Rhi--; \
+    mCycles += 6
+
 // ====
 
 #define RL8(R) \
@@ -330,6 +354,15 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x01:	// LD BC,aaaa
 			MOVE_REG16_IMM16(mRegs.B, mRegs.C);
 			break;
+		case 0x03:	// INC BC
+			INC16(mRegs.B, mRegs.C);
+			break;
+		case 0x04:	// INC B
+			INC8(mRegs.B, 1);
+			break;
+		case 0x05:	// DEC B
+			DEC8(mRegs.B, 1);
+			break;
 		case 0x08:	// EX AF,AF'
 			temp8 = mRegs.A;
 			mRegs.A = mRegs.A2;
@@ -339,15 +372,69 @@ void Z80::Run(uint32_t maxCycles)
 			mRegs.F2 = temp8;
 			mCycles += 4;
 			break;
+		case 0x0B:	// DEC BC
+			DEC16(mRegs.B, mRegs.C);
+			break;
+		case 0x0C:	// INC C
+			INC8(mRegs.C, 1);
+			break;
+		case 0x0D:	// DEC C
+			DEC8(mRegs.C, 1);
+			break;
+
 		case 0x11:	// LD DE,aaaa
 			MOVE_REG16_IMM16(mRegs.D, mRegs.E);
 			break;
+		case 0x13:	// INC DE
+			INC16(mRegs.D, mRegs.E);
+			break;
+		case 0x14:	// INC D
+			INC8(mRegs.D, 1);
+			break;
+		case 0x15:	// DEC D
+			DEC8(mRegs.D, 1);
+			break;
+		case 0x1B:	// DEC DE
+			DEC16(mRegs.D, mRegs.E);
+			break;
+		case 0x1C:	// INC E
+			INC8(mRegs.E, 1);
+			break;
+		case 0x1D:	// DEC E
+			DEC8(mRegs.E, 1);
+			break;
+
 		case 0x21:	// LD HL,aaaa
 			MOVE_REG16_IMM16(mRegs.H, mRegs.L);
 			break;
+		case 0x23:	// INC HL
+			INC16(mRegs.H, mRegs.L);
+			break;
+		case 0x24:	// INC H
+			INC8(mRegs.H, 1);
+			break;
+		case 0x25:	// DEC H
+			DEC8(mRegs.H, 1);
+			break;
+		case 0x2B:	// DEC HL
+			DEC16(mRegs.H, mRegs.L);
+			break;
+		case 0x2C:	// INC L
+			INC8(mRegs.L, 1);
+			break;
+		case 0x2D:	// DEC L
+			DEC8(mRegs.L, 1);
+			break;
+
 		case 0x31:	// LD SP,aaaa
 			MOVE_REG16_IMM16(operand, temp8);
 			mRegs.SP = (((uint16_t)operand) << 8) | temp8;
+			break;
+		case 0x3C:	// INC A
+			INC8(mRegs.A, 1);
+			break;
+		case 0x3D:	// DEC A
+			DEC8(mRegs.A, 1);
 			break;
 
 		case 0x40:	// LD B,R2
