@@ -37,9 +37,10 @@ GbsPlayer::GbsPlayer()
 GbsPlayer::~GbsPlayer()
 {
 	delete mBlipBufRight;
-	mBlipBufRight = NULL;
 	delete [] mSynthRight;
-	mSynthRight = NULL;
+
+	mBlipBufRight = NULL;
+	mSynthRight   = NULL;
 }
 
 
@@ -49,14 +50,14 @@ int GbsPlayer::Reset()
 	cart = NULL;
 
 	delete mBlipBuf;
-	mBlipBuf = NULL;
 	delete [] mSynth;
-	mSynth = NULL;
+	mBlipBuf = NULL;
+	mSynth   = NULL;
 
 	delete mBlipBufRight;
-	mBlipBufRight = NULL;
 	delete [] mSynthRight;
-	mSynthRight = NULL;
+	mBlipBufRight = NULL;
+	mSynthRight   = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
 
@@ -71,7 +72,7 @@ void GbsPlayer::ExecuteGbZ80(uint16_t address)
 	cart[0xF2] = address >> 8;
 	cart[0xF3] = 0x76;	// HALT
 	cpu.regs.PC = 0xF0;
-	cpu.cycles = 0;
+	cpu.cycles  = 0;
 	cpu.stopped = 0;
 	cpu_execute(mFrameCycles*2);
 }

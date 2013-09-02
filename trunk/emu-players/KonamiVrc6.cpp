@@ -20,22 +20,60 @@
 #include "KonamiVrc6.h"
 
 
+const uint8_t KonamiVrc6::SQUARE_WAVES[8][16] =
+{
+	{0,1,0,0,0,0,0,0, 0,0,0,0,0,0,0,0},	// 6.25%
+	{0,1,1,0,0,0,0,0, 0,0,0,0,0,0,0,0},	// 12.5%
+	{0,1,1,1,0,0,0,0, 0,0,0,0,0,0,0,0},	// 18.75%
+	{0,1,1,1,1,0,0,0, 0,0,0,0,0,0,0,0},	// 25%
+	{0,1,1,1,1,1,0,0, 0,0,0,0,0,0,0,0},	// 31.25%
+	{0,1,1,1,1,1,1,0, 0,0,0,0,0,0,0,0},	// 37.5%
+	{0,1,1,1,1,1,1,1, 0,0,0,0,0,0,0,0},	// 43.75%
+	{0,1,1,1,1,1,1,1, 1,0,0,0,0,0,0,0}	// 50%
+};
+
+
 void KonamiVrc6Channel::Reset()
 {
 	// ToDo: implement
+	mEnabled = false;
 }
 
 
 void KonamiVrc6Channel::Step()
 {
-	// ToDo: implement
+	if (mEnabled) mPos++;
 
+	if (mIndex <= KonamiVrc6::CHN_PULSE2) {
+		if (mPos >= mPeriod*2) {
+			mPos = 0;
+			mWaveStep &= 0x0F;
+			mPhase = (mMode) ? 1 : KonamiVrc6::SQUARE_WAVES[mDuty][mWaveStep++];
+			if (mPeriod < 8) mPhase = 0;
+		}
+	}
+	// ToDo: handle saw wave
 }
 
 
 void KonamiVrc6Channel::Write(uint32_t addr, uint8_t data)
 {
-	// ToDo: implement
+	switch (addr & 3) {
+	case 0:	// control
+		mVol = data = 0x0F;
+		mDuty = (data >> 4) & 7;
+		mMode = data & 0x80;
+		break;
+	case 1:	// freq low
+		mPeriod = (mPeriod & 0xF00) | data;
+		break;
+	case 2:	// freq high
+		mPeriod = (mPeriod & 0xFF) | ((uint16_t)(data & 0x0F) << 8);
+		mEnabled = ((data & 0x80) == 0x80);
+		break;
+	default:
+		break;
+	}
 }
 
 
@@ -53,5 +91,23 @@ void KonamiVrc6::Step()
 
 void KonamiVrc6::Write(uint32_t addr, uint8_t data)
 {
-	// ToDo: implement
+	switch (addr) {
+	case 0x9000:	// VRC6 pulse1 control (MDDDVVVV)
+	case 0x9001:	// VRC6 pulse1 freq low (LLLLLLLL)
+	case 0x9002:	// VRC6 pulse1 freq high (E...HHHH)
+		mChannels[KonamiVrc6::CHN_PULSE1].Write(addr, data);
+		break;
+	case 0xA000:	// VRC6 pulse2 control
+	case 0xA001:	// VRC6 pulse2 freq low
+	case 0xA002:	// VRC6 pulse2 freq high
+		mChannels[KonamiVrc6::CHN_PULSE2].Write(addr, data);
+		break;
+	case 0xB000:	// VRC6 saw accumulator rate
+	case 0xB001:	// VRC6 saw freq low
+	case 0xB002:	// VRC6 saw freq high
+		mChannels[KonamiVrc6::CHN_SAW].Write(addr, data);
+		break;
+	default:
+		break;
+	}
 }

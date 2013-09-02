@@ -33,6 +33,16 @@ public:
 	virtual void Reset();
 	virtual void Step();
 	virtual void Write(uint32_t addr, uint8_t val);
+
+	void SetIndex(uint8_t index) { mIndex = index; }
+
+	bool mEnabled;
+	uint16_t mWaveStep;
+	uint16_t mIndex;
+	uint16_t mVol;
+	uint8_t mPhase;
+	uint8_t mDuty;
+	uint8_t mMode;
 };
 
 
@@ -50,6 +60,8 @@ public:
 		CHN_PULSE2  = 1,
 		CHN_SAW 	= 2,
 	};
+
+	static const uint8_t SQUARE_WAVES[8][16];
 
 private:
 	KonamiVrc6Channel mChannels[3];
