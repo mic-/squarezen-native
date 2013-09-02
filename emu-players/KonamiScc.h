@@ -73,4 +73,4 @@ private:
 	uint8_t mWaveformRam[128];
 };
 
-#endif
+#endif	/* KONAMISCC_H_ */

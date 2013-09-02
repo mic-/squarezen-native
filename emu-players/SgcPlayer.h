@@ -82,5 +82,5 @@ private:
 	SgcMapper *mMemory;
 };
 
-#endif
+#endif	/* SGCPLAYER_H_ */
 

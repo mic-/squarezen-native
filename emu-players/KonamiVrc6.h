@@ -67,4 +67,4 @@ private:
 	KonamiVrc6Channel mChannels[3];
 };
 
-#endif
+#endif	/* KONAMIVRC6_H_ */

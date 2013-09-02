@@ -57,4 +57,4 @@ private:
 	HesMapper *mMemory;
 };
 
-#endif
+#endif	/* HESPLAYER_H_ */

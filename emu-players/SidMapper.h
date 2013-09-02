@@ -145,4 +145,4 @@ private:
 };
 
 
-#endif
+#endif	/* SIDMAPPER_H_ */

@@ -33,6 +33,10 @@ public:
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
 	enum {
+		S_SMP_CLOCK = 2048000
+	};
+
+	enum {
 		FLAG_C = 0x01,
 		FLAG_Z = 0x02,
 		FLAG_I = 0x04,

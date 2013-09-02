@@ -57,4 +57,4 @@ private:
 	MemoryMapper *mMemory;
 };
 
-#endif
+#endif	/* Z80_H_ */

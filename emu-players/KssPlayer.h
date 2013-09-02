@@ -86,4 +86,4 @@ private:
 	bool mSccEnabled;
 };
 
-#endif
+#endif	/* KSSPLAYER_H_ */
