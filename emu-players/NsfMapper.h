@@ -25,6 +25,9 @@
 #include "MemoryMapper.h"
 #include "Emu2A03.h"
 
+class KonamiVrc6;
+class Sunsoft5B;
+
 
 class NsfMapper : public MemoryMapper
 {
@@ -38,6 +41,8 @@ public:
 
 	uint8_t *GetRomPointer() const { return mCart; }
 	void SetApu(Emu2A03 *apu) { mApu = apu; }
+	void SetVrc6(KonamiVrc6 *vrc6) { mVrc6 = vrc6; }
+	void SetSunsoft5B(Sunsoft5B *s5b) { mSunsoft5B = s5b; }
 
 private:
 	uint8_t ReadByte_0000(uint16_t addr);
@@ -61,8 +66,11 @@ private:
 	uint8_t *mExRam;
 	uint8_t *mCart;
 	Emu2A03 *mApu;
+	KonamiVrc6 *mVrc6;
+	Sunsoft5B * mSunsoft5B;
 	uint16_t mNumRomBanks;
 	uint8_t mCallCode[0x10];
+	uint8_t mSunsoft5BAddressLatch;
 };
 
 #endif /* NSFMAPPER_H_ */
