@@ -39,7 +39,7 @@ public:
 
 private:
 	Z80 *mZ80;
-	YmChip mChip;
+	YmChip mAy;
 };
 
 

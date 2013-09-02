@@ -25,6 +25,7 @@
 #include <stdint.h>
 #include "MusicPlayer.h"
 #include "Z80.h"
+#include "KssMapper.h"
 #include "SN76489.h"
 #include "YM2149.h"
 #include "KonamiScc.h"
@@ -73,8 +74,10 @@ public:
 private:
 	KssFileHeader mFileHeader;
 	Z80 *mZ80;
-	YmChip *mYm;
-	SnChip mSN76489;
+	KssMapper *mMemory;
+	YmChip *mAy;
+	SnChip *mSN76489;
+	KonamiScc *mScc;
 };
 
 #endif
