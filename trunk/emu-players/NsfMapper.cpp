@@ -20,10 +20,14 @@
 #include <stddef.h>
 #include "NativeLogger.h"
 #include "NsfMapper.h"
+#include "KonamiVrc6.h"
+#include "Sunsoft5B.h"
 
 
 NsfMapper::NsfMapper(uint32_t numRomBanks)
-	: mNumRomBanks(numRomBanks)
+	: mVrc6(NULL)
+	, mSunsoft5B(NULL)
+	, mNumRomBanks(numRomBanks)
 {
     mCart = new uint8_t[(uint32_t)numRomBanks << 12];
     memset(mCart, 0, (uint32_t)numRomBanks << 12);
@@ -37,8 +41,8 @@ NsfMapper::~NsfMapper()
 	delete [] mRam;
 	delete [] mExRam;
 
-	mCart = NULL;
-	mRam = NULL;
+	mCart  = NULL;
+	mRam   = NULL;
 	mExRam = NULL;
 }
 
@@ -125,6 +129,33 @@ void NsfMapper::WriteByte_6000(uint16_t addr, uint8_t data)
 
 void NsfMapper::WriteByte_8000(uint16_t addr, uint8_t data)
 {
+	switch (addr) {
+	case 0x9000:	// VRC6 pulse1 control (MDDDVVVV)
+	case 0x9001:	// VRC6 pulse1 freq low (LLLLLLLL)
+	case 0x9002:	// VRC6 pulse1 freq high (E...HHHH)
+	case 0xA000:	// VRC6 pulse2 control
+	case 0xA001:	// VRC6 pulse2 freq low
+	case 0xA002:	// VRC6 pulse2 freq high
+	case 0xB000:	// VRC6 saw accumulator rate
+	case 0xB001:	// VRC6 saw freq low
+	case 0xB002:	// VRC6 saw freq high
+		if (mVrc6) {
+			mVrc6->Write(addr, data);
+		}
+		break;
+	case 0xC000:	// Sunsoft5B address port
+		if (mSunsoft5B) {
+			mSunsoft5BAddressLatch = data;
+		}
+		break;
+	case 0xE000:	// Sonsoft5B data port
+		if (mSunsoft5B) {
+			mSunsoft5B->Write(mSunsoft5BAddressLatch, data);
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 
