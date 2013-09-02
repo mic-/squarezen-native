@@ -86,6 +86,9 @@ int HesPlayer::Prepare(std::string fileName)
 	NLOGV("HesPlayer", "File read done");
 	musicFile.close();
 
+	m6280 = new HuC6280;
+	mMemory = new HesMapper(0);	// ToDo: set number of ROM banks
+
 	NLOGD("HesPlayer", "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
@@ -95,6 +98,17 @@ int HesPlayer::Prepare(std::string fileName)
 
 int HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
-	// ToDo: implement
+	int32_t k;
+
+    if (MusicPlayer::STATE_PREPARED != GetState()) {
+    	return MusicPlayer::ERROR_BAD_STATE;
+    }
+
+	int blipLen = mBlipBuf->count_clocks(numSamples);
+
+	for (k = 0; k < blipLen; k++) {
+
+	}
+
 	return MusicPlayer::OK;
 }

@@ -27,6 +27,7 @@ KssPlayer::KssPlayer()
 	, mMemory(NULL)
 	, mAy(NULL)
 	, mSN76489(NULL)
+	, mScc(NULL)
 {
 }
 
@@ -36,11 +37,13 @@ KssPlayer::~KssPlayer()
 	delete mMemory;
 	delete mAy;
 	delete mSN76489;
+	delete mScc;
 
 	mZ80     = NULL;
 	mMemory  = NULL;
 	mAy      = NULL;
 	mSN76489 = NULL;
+	mScc     = NULL;
 }
 
 int KssPlayer::Reset()
@@ -87,6 +90,14 @@ int KssPlayer::Prepare(std::string fileName)
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
+    mZ80 = new Z80;
+    mMemory = new KssMapper(0);	// ToDo: set number of ROM banks
+    mAy = new YmChip;
+    if ((mFileHeader.extraChips & SN76489_MASK) == USES_SN76489) {
+    	mSN76489 = new SnChip;
+    }
+    mScc = new KonamiScc;
+
 	// ToDo: finish
 
 	NLOGV("KssPlayer", "File read done");
@@ -101,8 +112,35 @@ int KssPlayer::Prepare(std::string fileName)
 
 int KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
-	// ToDo: implement
+	int32_t k;
+
+    if (MusicPlayer::STATE_PREPARED != GetState()) {
+    	return MusicPlayer::ERROR_BAD_STATE;
+    }
+
+	int blipLen = mBlipBuf->count_clocks(numSamples);
+
+	for (k = 0; k < blipLen; k++) {
+
+	}
+
+	mBlipBuf->end_frame(blipLen);
+	PresentBuffer(buffer, mBlipBuf);
+
 	return MusicPlayer::OK;
+}
+
+
+void KssPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
+{
+	int count = in->samples_avail();
+
+	in->read_samples(out, count, 1);
+
+	// Copy each left channel sample to the right channel
+	for (int i = 0; i < count*2; i += 2) {
+		out[i+1] = out[i];
+	}
 }
 
 
