@@ -74,9 +74,12 @@ public:
 	void Write(uint32_t addr, uint8_t data);
 	void Step();
 
+	enum {
+		S_DSP_CLOCK = 1024000
+	};
+
 	// Registers
-	enum
-	{
+	enum {
 		R_VxPITCHL = 0x02,
 		R_V0PITCHL = 0x02,
 		R_V1PITCHL = 0x12,

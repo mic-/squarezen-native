@@ -69,4 +69,4 @@ private:
 	bool mSccEnabled;
 };
 
-#endif
+#endif	/* KSSMAPPER_H_ */

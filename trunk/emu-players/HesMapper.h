@@ -37,4 +37,4 @@ public:
 	virtual void WriteByte(uint16_t addr, uint8_t data);
 };
 
-#endif
+#endif	/* HESMAPPER_H_ */

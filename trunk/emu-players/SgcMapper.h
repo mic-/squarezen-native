@@ -84,4 +84,4 @@ private:
 	uint8_t mMapperRegs[4];
 };
 
-#endif
+#endif	/* SGCMAPPER_H_ */
