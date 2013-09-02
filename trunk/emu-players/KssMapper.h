@@ -55,6 +55,7 @@ private:
 	KonamiScc *mScc;
 	SnChip *mSN76489;
 	uint8_t mAyAddressLatch;
+	bool mSccEnabled;
 };
 
 #endif
