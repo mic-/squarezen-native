@@ -26,6 +26,7 @@ KssMapper::KssMapper(uint32_t numRomBanks)
 	: mAy(NULL)
 	, mScc(NULL)
 	, mSN76489(NULL)
+	, mSccEnabled(false)
 {
 	// ToDo: implement
 }
@@ -49,23 +50,29 @@ uint8_t KssMapper::ReadByte(uint16_t addr)
 void KssMapper::WriteByte(uint16_t addr, uint8_t data)
 {
 	// ToDo: implement
-	switch (addr) {
-	case SCC_ENABLE:
-		// ToDo: activate SCC if bits 0..5 == 0x3F
-		break;
-	case SN_PORT:
-	case SN_PORT_MIRROR:
-		if (mSN76489) {
-			mSN76489->Write(0x7F, data);
+	if (addr >= 0x9800 && addr <= 0x989F) {
+		if (mSccEnabled && mScc) {
+			mScc->Write(addr, data);
 		}
-		break;
-	case AY_ADDRESS_PORT:
-		mAyAddressLatch = data;
-		break;
-	case AY_DATA_PORT:
-		if (mAy) {
-			mAy->Write(mAyAddressLatch, data);
+	} else {
+		switch (addr) {
+		case SCC_ENABLE:
+			mSccEnabled = ((data & 0x3F) == 0x3F);
+			break;
+		case SN_PORT:
+		case SN_PORT_MIRROR:
+			if (mSN76489) {
+				mSN76489->Write(0x7F, data);
+			}
+			break;
+		case AY_ADDRESS_PORT:
+			mAyAddressLatch = data;
+			break;
+		case AY_DATA_PORT:
+			if (mAy) {
+				mAy->Write(mAyAddressLatch, data);
+			}
+			break;
 		}
-		break;
 	}
 }
