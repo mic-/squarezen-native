@@ -262,4 +262,9 @@ void YmChip::Write(uint8_t *regs)
 }
 
 
+void YmChip::Write(uint32_t addr, uint8_t data)
+{
+	// ToDo: implement
+}
+
 
