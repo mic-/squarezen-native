@@ -28,6 +28,7 @@ KssPlayer::KssPlayer()
 	, mAy(NULL)
 	, mSN76489(NULL)
 	, mScc(NULL)
+	, mSccEnabled(false)
 {
 }
 
@@ -45,6 +46,12 @@ KssPlayer::~KssPlayer()
 	mSN76489 = NULL;
 	mScc     = NULL;
 }
+
+void KssPlayer::SetSccEnabled(bool enabled)
+{
+	mSccEnabled = enabled;
+}
+
 
 int KssPlayer::Reset()
 {

@@ -28,6 +28,8 @@
 #include "YM2149.h"
 
 
+class KssPlayer;
+
 class KssMapper : public MemoryMapper
 {
 public:
@@ -42,18 +44,27 @@ public:
 	void SetScc(KonamiScc *scc) { mScc = scc; }
 	void SetSN76489(SnChip *sn76489) { mSN76489 = sn76489; }
 
+	void SetKssPlayer(KssPlayer *kssPlayer) { mKssPlayer = kssPlayer; }
+
 	enum {
-		SN_PORT = 0x7E,
-		SN_PORT_MIRROR = 0x7F,
-		AY_ADDRESS_PORT = 0xA0,
-		AY_DATA_PORT = 0xA1,
-		SCC_ENABLE = 0x9000,
+		FMPAC_ADDRESS_PORT     = 0x7C,
+		FMPAC_DATA_PORT        = 0x7D,
+		SN_PORT                = 0x7E,
+		SN_PORT_MIRROR         = 0x7F,
+		AY_ADDRESS_PORT        = 0xA0,
+		AY_DATA_PORT           = 0xA1,
+		MSX_AUDIO_ADDRESS_PORT = 0xC0,
+		MSX_AUDIO_DATA_PORT    = 0xC1,
+		FMUNIT_ADDRESS_PORT    = 0xF0,
+		FMUNIT_DATA_PORT       = 0xF1,
+		SCC_ENABLE             = 0x9000,
 	};
 
 private:
 	YmChip *mAy;
 	KonamiScc *mScc;
 	SnChip *mSN76489;
+	KssPlayer *mKssPlayer;
 	uint8_t mAyAddressLatch;
 	bool mSccEnabled;
 };

@@ -41,6 +41,8 @@ public:
 	virtual int Run(uint32_t numSamples, int16_t *buffer);
 	virtual int Reset();
 
+	void SetSccEnabled(bool enable);
+
 	typedef struct __attribute__ ((__packed__))
 	{
 		char ID[4];
@@ -55,21 +57,21 @@ public:
 	} KssFileHeader;
 
 	enum {
-		FMPAC_MASK = 0x03,
-		FMUNIT_MASK = 0x03,
-		SN76489_MASK = 0x03,
-		RAM1_MASK = 0x06,
+		FMPAC_MASK     = 0x03,
+		FMUNIT_MASK    = 0x03,
+		SN76489_MASK   = 0x03,
+		RAM1_MASK      = 0x06,
 		GG_STEREO_MASK = 0x06,
 		MSX_AUDIO_MASK = 0x0A,
-		RAM2_MASK = 0x0A,
+		RAM2_MASK      = 0x0A,
 
-		USES_FMPAC = 0x01,
-		USES_FMUNIT = 0x03,
-		USES_SN76489 = 0x02,
-		USES_RAM1 = 0x04,
+		USES_FMPAC     = 0x01,
+		USES_FMUNIT    = 0x03,
+		USES_SN76489   = 0x02,
+		USES_RAM1      = 0x04,
 		USES_GG_STEREO = 0x06,
 		USES_MSX_AUDIO = 0x08,
-		USES_RAM2 = 0x0A,
+		USES_RAM2      = 0x0A,
 	};
 
 private:
@@ -81,6 +83,7 @@ private:
 	YmChip *mAy;
 	SnChip *mSN76489;
 	KonamiScc *mScc;
+	bool mSccEnabled;
 };
 
 #endif

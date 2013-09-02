@@ -20,12 +20,14 @@
 #include <stddef.h>
 #include "NativeLogger.h"
 #include "KssMapper.h"
+#include "KssPlayer.h"
 
 
 KssMapper::KssMapper(uint32_t numRomBanks)
 	: mAy(NULL)
 	, mScc(NULL)
 	, mSN76489(NULL)
+	, mKssPlayer(NULL)
 	, mSccEnabled(false)
 {
 	// ToDo: implement
@@ -58,6 +60,7 @@ void KssMapper::WriteByte(uint16_t addr, uint8_t data)
 		switch (addr) {
 		case SCC_ENABLE:
 			mSccEnabled = ((data & 0x3F) == 0x3F);
+			mKssPlayer->SetSccEnabled(mSccEnabled);
 			break;
 		case SN_PORT:
 		case SN_PORT_MIRROR:
@@ -72,6 +75,14 @@ void KssMapper::WriteByte(uint16_t addr, uint8_t data)
 			if (mAy) {
 				mAy->Write(mAyAddressLatch, data);
 			}
+			break;
+		case MSX_AUDIO_ADDRESS_PORT:
+			break;
+		case MSX_AUDIO_DATA_PORT:
+			break;
+		case FMUNIT_ADDRESS_PORT:
+			break;
+		case FMUNIT_DATA_PORT:
 			break;
 		}
 	}
