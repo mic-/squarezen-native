@@ -71,7 +71,10 @@ public:
 		USES_MSX_AUDIO = 0x08,
 		USES_RAM2 = 0x0A,
 	};
+
 private:
+	void PresentBuffer(int16_t *out, Blip_Buffer *in);
+
 	KssFileHeader mFileHeader;
 	Z80 *mZ80;
 	KssMapper *mMemory;
