@@ -65,6 +65,8 @@ public:
 	virtual void Write(uint32_t addr, uint8_t val);
 
 	SDspEnvelopeGenerator mEG;
+	uint32_t mBrrShift;
+	uint32_t mBrrFilter;
 };
 
 
