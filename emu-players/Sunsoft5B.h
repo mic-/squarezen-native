@@ -26,27 +26,27 @@
 
 class Sunsoft5B;
 
-class Sunsoft5BChannel : public Oscillator
+class Sunsoft5BChannel : public YmChannel
 {
 public:
 	virtual ~Sunsoft5BChannel() {}
 
-	virtual void Reset();
+/*	virtual void Reset();
 	virtual void Step();
-	virtual void Write(uint32_t addr, uint8_t val);
+	virtual void Write(uint32_t addr, uint8_t val);*/
 
 	void SetChip(Sunsoft5B *chip) { mChip = chip; }
-	void SetIndex(uint16_t index) { mIndex = index; }
+	//void SetIndex(uint16_t index) { mIndex = index; }
 
 	Sunsoft5B *mChip;
-	uint16_t *mCurVol;
+/*	uint16_t *mCurVol;
 	uint16_t mIndex;
 	uint16_t mOut;
 	uint16_t mVol;
 	uint8_t mMode;
 	uint8_t mToneOff, mNoiseOff;
 	uint8_t mChnIndex;
-	uint8_t mPhase;
+	uint8_t mPhase;*/
 };
 
 
@@ -54,8 +54,6 @@ class Sunsoft5BNoise : public YmNoise
 {
 public:
 	virtual ~Sunsoft5BNoise() {}
-
-	virtual void Write(uint32_t addr, uint8_t val);
 };
 
 
@@ -63,9 +61,6 @@ class Sunsoft5BEnvelopeGenerator : public YmEnvelopeGenerator
 {
 public:
 	virtual ~Sunsoft5BEnvelopeGenerator() {}
-
-	virtual void Write(uint32_t addr, uint8_t val);
-	uint32_t mPeriodPremult;
 };
 
 

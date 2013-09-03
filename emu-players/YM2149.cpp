@@ -112,7 +112,32 @@ void YmEnvelopeGenerator::Write(uint8_t *regs)
 			 mChip->mChannels[2].mMode) ^ 0x10;
 
 	//NLOGV("YM2149", "EG output = %d, attack = %d, cycle = %d", mOut, mAttack, mCycle);
+}
 
+void YmEnvelopeGenerator::Write(uint32_t addr, uint8_t data)
+{
+	if (addr == YmChip::R_ENVE_SHAPE) {
+		if (data & 4)
+			mAttack = mMaxCycle;
+		else
+			mAttack = 0;
+
+		if (data & 8) {
+			mHold = (data & 1) ? mMaxCycle : 0;
+			mAlt  = (data & 2) ? mMaxCycle : 0;
+		} else {
+			mHold = mMaxCycle;
+			mAlt  = mAttack;
+		}
+		mCycle = mMaxCycle;
+		mOut = mEnvTable[mAttack ^ mCycle];
+	} else if (addr == YmChip::R_ENVE_FREQL) {
+		mPeriodPremult = (mPeriodPremult & 0xFF00) | data;
+		mPeriod = mPeriodPremult * ((mMaxCycle == 15) ? 16 : 8);
+	} else if (addr == YmChip::R_ENVE_FREQH) {
+		mPeriodPremult = (mPeriodPremult & 0xFF) | ((uint32_t)(data) << 8);
+		mPeriod = mPeriodPremult * ((mMaxCycle == 15) ? 16 : 8);
+	}
 }
 
 
@@ -142,6 +167,39 @@ void YmChannel::Write(uint8_t *regs)
 }
 
 
+void YmChannel::Write(uint32_t addr, uint8_t data)
+{
+	switch (addr) {
+	case 0:
+	case 2:
+	case 4:
+		mPeriodPremult = (mPeriodPremult & 0xF00) | data;
+		mPeriod = mPeriodPremult * 8;
+		break;
+	case 1:
+	case 3:
+	case 5:
+		mPeriodPremult = (mPeriodPremult & 0xFF) | ((uint16_t)(data & 0x0F) << 8);
+		mPeriod = mPeriodPremult * 8;
+		break;
+	case YmChip::R_LEVEL_A:
+	case YmChip::R_LEVEL_B:
+	case YmChip::R_LEVEL_C:
+		mMode = data & 0x10;
+		mVol = YmChip::YM2149_VOL_TB[data & 0x0F];
+		mCurVol = mMode ? &(mChip->mEG.mOut) : &mVol;
+		mChip->mEG.mHalt = (mChip->mChannels[0].mMode |
+				 	 	    mChip->mChannels[1].mMode |
+				 	 	 	mChip->mChannels[2].mMode) ^ 0x10;
+		break;
+	case YmChip::R_MIXER:
+		mToneOff = (data >> mIndex) & 1;
+		mNoiseOff = (data >> (mIndex + 3)) & 1;
+		break;
+	}
+}
+
+
 void YmNoise::Step()
 {
 	mPos++;
@@ -155,9 +213,15 @@ void YmNoise::Step()
 
 void YmNoise::Write(uint8_t *regs)
 {
-	mPeriod = (uint32_t)(regs[6] & 0x1F) * 8;
+	Write(6, regs[6]);
 }
 
+void YmNoise::Write(uint32_t addr, uint8_t data)
+{
+	if (addr == 6) {
+		mPeriod = (uint32_t)(data & 0x1F) * 8;
+	}
+}
 
 void YmSoundFX::Reset()
 {
@@ -264,7 +328,14 @@ void YmChip::Write(uint8_t *regs)
 
 void YmChip::Write(uint32_t addr, uint8_t data)
 {
-	// ToDo: implement
+	mChannels[0].Write(addr, data);
+	mChannels[1].Write(addr, data);
+	mChannels[2].Write(addr, data);
+	if (addr >= R_ENVE_FREQL && addr <= R_ENVE_SHAPE) {
+		mEG.Write(addr, data);
+	} else if (addr == 6) {
+		mNoise.Write(addr, data);
+	}
 }
 
 

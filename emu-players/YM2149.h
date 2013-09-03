@@ -33,11 +33,13 @@ public:
 	virtual void Reset();
 	virtual void Step();
 	virtual void Write(uint8_t *regs);
+	virtual void Write(uint32_t addr, uint8_t data);
 
 	void SetChip(YmChip *chip) { mChip = chip; }
 	void SetIndex(uint16_t index) { mIndex = index; }
 
 	YmChip *mChip;
+	uint32_t mPeriodPremult;
 	uint16_t *mCurVol;
 	uint16_t mIndex;
 	uint16_t mOut;
@@ -57,6 +59,7 @@ public:
 	virtual void Reset();
 	virtual void Step();
 	virtual void Write(uint8_t *regs);
+	virtual void Write(uint32_t addr, uint8_t data);
 
 	uint32_t mLfsr;
 	uint16_t mOut;
@@ -71,11 +74,13 @@ public:
 	virtual void Reset();
 	virtual void Step();
 	virtual void Write(uint8_t *regs);
+	virtual void Write(uint32_t addr, uint8_t data);
 
 	virtual void SetChip(YmChip *chip) { mChip = chip; }
 
 	YmChip *mChip;
 	uint16_t *mEnvTable;
+	uint32_t mPeriodPremult;
 	int16_t mCycle, mMaxCycle;
 	uint16_t mOut;
 	uint8_t mAttack, mAlt;
