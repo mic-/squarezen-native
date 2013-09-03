@@ -21,11 +21,13 @@
 #include "NativeLogger.h"
 #include "NsfMapper.h"
 #include "KonamiVrc6.h"
+#include "Namco163.h"
 #include "Sunsoft5B.h"
 
 
 NsfMapper::NsfMapper(uint32_t numRomBanks)
 	: mVrc6(NULL)
+	, mN163(NULL)
 	, mSunsoft5B(NULL)
 	, mNumRomBanks(numRomBanks)
 {
@@ -57,7 +59,6 @@ uint8_t NsfMapper::ReadByte_0000(uint16_t addr)
 
 uint8_t NsfMapper::ReadByte_4000(uint16_t addr)
 {
-	// TODO: fill out
 	if (addr >= 0x4f80 && addr < 0x4f90) {
 		return mCallCode[addr - 0x4f80];
 
@@ -103,6 +104,11 @@ void NsfMapper::WriteByte_4000(uint16_t addr, uint8_t data)
 	if (addr <= 0x4017) {
 		//NLOGV("NsfMapper", "APU write (%#x, %#x)", addr, data);
 		mApu->Write(addr, data);
+	} else if (addr == 0x4800 && mN163) {	// Namco163 data port
+		mN163->Write(mNamco163AddressLatch & 0x7F, data);
+		if (mNamco163AddressLatch & 0x80) {	// auto-increment mode
+			mNamco163AddressLatch = ((mNamco163AddressLatch + 1) & 0x7F) | 0x80;
+		}
 	} else 	if (addr >= 0x4f80 && addr < 0x4f90) {
 		mCallCode[addr - 0x4f80] = data;
 	}
@@ -151,6 +157,11 @@ void NsfMapper::WriteByte_8000(uint16_t addr, uint8_t data)
 	case 0xE000:	// Sonsoft5B data port
 		if (mSunsoft5B) {
 			mSunsoft5B->Write(mSunsoft5BAddressLatch, data);
+		}
+		break;
+	case 0xF800:	// Namco163 address port
+		if (mN163) {
+			mNamco163AddressLatch = data;
 		}
 		break;
 	default:

@@ -26,6 +26,7 @@
 #include "Emu2A03.h"
 
 class KonamiVrc6;
+class Namco163;
 class Sunsoft5B;
 
 
@@ -42,6 +43,7 @@ public:
 	uint8_t *GetRomPointer() const { return mCart; }
 	void SetApu(Emu2A03 *apu) { mApu = apu; }
 	void SetVrc6(KonamiVrc6 *vrc6) { mVrc6 = vrc6; }
+	void SetN163(Namco163 *n163) { mN163 = n163; }
 	void SetSunsoft5B(Sunsoft5B *s5b) { mSunsoft5B = s5b; }
 
 private:
@@ -65,11 +67,15 @@ private:
 	uint8_t *mRam;
 	uint8_t *mExRam;
 	uint8_t *mCart;
+
 	Emu2A03 *mApu;
 	KonamiVrc6 *mVrc6;
+	Namco163 *mN163;
 	Sunsoft5B * mSunsoft5B;
+
 	uint16_t mNumRomBanks;
 	uint8_t mCallCode[0x10];
+	uint8_t mNamco163AddressLatch;
 	uint8_t mSunsoft5BAddressLatch;
 };
 
