@@ -433,6 +433,12 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x2D:	// DEC L
 			DEC8(mRegs.L, 1);
 			break;
+		case 0x2F:	// CPL
+			mRegs.A = ~mRegs.A;
+			mRegs.F &= ~(Z80::FLAG_X | Z80::FLAG_Y);
+			mRegs.F |= Z80::FLAG_H | Z80::FLAG_N | (mRegs.A & (Z80::FLAG_X | Z80::FLAG_Y));
+			mCycles += 4;
+			break;
 
 		case 0x31:	// LD SP,aaaa
 			MOVE_REG16_IMM16(operand, temp8);

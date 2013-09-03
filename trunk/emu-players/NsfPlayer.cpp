@@ -31,6 +31,7 @@ NsfPlayer::NsfPlayer()
 	: m6502(NULL)
 	, m2A03(NULL)
 	, mVrc6(NULL)
+	, mSunsoft5B(NULL)
 	, mMemory(NULL)
 	, mSongIsBankswitched(false)
 {
@@ -48,11 +49,14 @@ NsfPlayer::~NsfPlayer()
 	delete m6502;
 	delete m2A03;
 	delete mVrc6;
+	delete mSunsoft5B;
 	delete mMemory;
-	m6502 = NULL;
-	m2A03 = NULL;
-	mVrc6 = NULL;
-	mMemory = NULL;
+
+	m6502      = NULL;
+	m2A03      = NULL;
+	mVrc6      = NULL;
+	mSunsoft5B = NULL;
+	mMemory    = NULL;
 }
 
 
@@ -68,11 +72,13 @@ int NsfPlayer::Reset()
 	delete m6502;
 	delete m2A03;
 	delete mVrc6;
+	delete mSunsoft5B;
 	delete mMemory;
-	m6502   = NULL;
-	m2A03   = NULL;
-	mVrc6   = NULL;
-	mMemory = NULL;
+	m6502      = NULL;
+	m2A03      = NULL;
+	mVrc6      = NULL;
+	mSunsoft5B = NULL;
+	mMemory    = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
@@ -157,6 +163,16 @@ int NsfPlayer::Prepare(std::string fileName)
 		mVrc6 = new KonamiVrc6;
 		numSynths += 3;
 	}
+	if (mFileHeader.extraChips & NsfPlayer::USES_N163) {
+		NLOGD("NsfPlayer", "This song uses the Namco163");
+		mN163 = new Namco163;
+		//numSynths += 8;
+	}
+	if (mFileHeader.extraChips & NsfPlayer::USES_SUNSOFT_5B) {
+		NLOGD("NsfPlayer", "This song uses the Sunsoft-5B");
+		mSunsoft5B = new Sunsoft5B;
+		//numSynths += 3;
+	}
 
 	uint32_t offset = mFileHeader.loadAddress & 0x0fff;
 	if (!mSongIsBankswitched) {
@@ -187,6 +203,8 @@ int NsfPlayer::Prepare(std::string fileName)
 	m6502->Reset();
 	m2A03->Reset();
 	if (mVrc6) mVrc6->Reset();
+	if (mN163) mN163->Reset();
+	if (mSunsoft5B) mSunsoft5B->Reset();
 
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,4096>[numSynths];
@@ -325,6 +343,12 @@ int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		if (mVrc6) {
 			// ToDo: output VRC6 channels to blip synths
+		}
+		if (mN163) {
+			// ToDo: output Namco163 channels to blip synths
+		}
+		if (mSunsoft5B) {
+			// ToDo: output Sunsoft-5B channels to blip synths
 		}
 
 		mCycleCount++;
