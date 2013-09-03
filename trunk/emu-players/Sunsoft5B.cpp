@@ -33,48 +33,6 @@ const uint16_t Sunsoft5B::SUNSOFT5B_ENVE_TB[] = {
 };
 
 
-void Sunsoft5BEnvelopeGenerator::Write(uint32_t addr, uint8_t val)
-{
-	if (addr == YmChip::R_ENVE_SHAPE) {
-		if (val & 4)
-			mAttack = mMaxCycle;
-		else
-			mAttack = 0;
-
-		if (val & 8) {
-			mHold = (val & 1) ? mMaxCycle : 0;
-			mAlt  = (val & 2) ? mMaxCycle : 0;
-		} else {
-			mHold = mMaxCycle;
-			mAlt  = mAttack;
-		}
-		mCycle = mMaxCycle;
-		mOut = mEnvTable[mAttack ^ mCycle];
-
-	} else if (addr == YmChip::R_ENVE_FREQL) {
-		mPeriodPremult = (mPeriodPremult & 0xFF00) | val;
-		mPeriod = mPeriodPremult * ((mMaxCycle == 15) ? 16 : 8);
-
-	} else if (addr == YmChip::R_ENVE_FREQH) {
-		mPeriodPremult &= 0xFF;
-		mPeriodPremult |= (uint32_t)(val) << 8;
-		mPeriod = mPeriodPremult * ((mMaxCycle == 15) ? 16 : 8);
-	}
-
-	/*mHalt = (mChip->mChannels[0].mMode |
-			 mChip->mChannels[1].mMode |
-			 mChip->mChannels[2].mMode) ^ 0x10;*/
-}
-
-
-void Sunsoft5BNoise::Write(uint32_t addr, uint8_t val)
-{
-	if (addr == 6) {
-		mPeriod = (uint32_t)(val & 0x1F) * 8;
-	}
-}
-
-
 void Sunsoft5B::Reset()
 {
 	for (int i = 0; i < 3; i++) {
