@@ -32,6 +32,8 @@ public:
 	void Run(uint32_t maxCycles);
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
+	void Rst(uint8_t vector);
+
 	enum {
 		FLAG_C = 0x01,
 		FLAG_N = 0x02,

@@ -336,6 +336,16 @@ void Z80::Reset()
 }
 
 
+void Z80::Rst(uint8_t vector)
+{
+	mHalted = false;
+	mRegs.SP -= 2;
+	mMemory->WriteByte(mRegs.SP, mRegs.PC & 0xFF);
+	mMemory->WriteByte(mRegs.SP + 1, mRegs.PC >> 8);
+	mRegs.PC = vector;  //+ gbsPlayer->GetLoadAddress();
+}
+
+
 void Z80::Run(uint32_t maxCycles)
 {
 	uint32_t temp32;
@@ -444,10 +454,18 @@ void Z80::Run(uint32_t maxCycles)
 			MOVE_REG16_IMM16(operand, temp8);
 			mRegs.SP = (((uint16_t)operand) << 8) | temp8;
 			break;
+		case 0x33:	// INC SP
+			mRegs.SP++;
+			mCycles += 6;
+			break;
 		case 0x37:	// SCF
 			mRegs.F &= ~(Z80::FLAG_H | Z80::FLAG_N);
 			mRegs.F |= Z80::FLAG_C;
 			mCycles += 4;
+			break;
+		case 0x3B:	// DEC SP
+			mRegs.SP--;
+			mCycles += 6;
 			break;
 		case 0x3C:	// INC A
 			INC8(mRegs.A, 1);
@@ -542,6 +560,10 @@ void Z80::Run(uint32_t maxCycles)
 			CMD_GROUP_2OP(CP8, 0xB8, mRegs.A);
 			break;
 
+		case 0xC7:	// RST 00
+			Rst(0x00);
+			mCycles += 11;
+			break;
 		case 0xCB:	// bit instruction prefix
 			opcode2 = mMemory->ReadByte(mRegs.PC++);
 			switch (opcode2) {
@@ -568,19 +590,25 @@ void Z80::Run(uint32_t maxCycles)
 				break;
 			}
 			break;
+		case 0xCF:	// RST 08
+			Rst(0x08);
+			mCycles += 11;
+			break;
 
 		case 0xD3:	// OUT (N),A
 			addr = mMemory->ReadByte(mRegs.PC++);
 			mMemory->WritePort(addr, mRegs.A);
 			mCycles += 11;
 			break;
-
+		case 0xD7:	// RST 10
+			Rst(0x10);
+			mCycles += 11;
+			break;
 		case 0xDB:	// IN A,(N)
 			addr = mMemory->ReadByte(mRegs.PC++);
 			mRegs.A = mMemory->ReadPort(addr);
 			mCycles += 11;
 			break;
-
 		case 0xDD:	// IX prefix
 			opcode2 = mMemory->ReadByte(mRegs.PC++);
 			switch (opcode2) {
@@ -657,7 +685,15 @@ void Z80::Run(uint32_t maxCycles)
 				break;
 			}
 			break;
+		case 0xDF:	// RST 18
+			Rst(0x18);
+			mCycles += 11;
+			break;
 
+		case 0xE7:	// RST 20
+			Rst(0x20);
+			mCycles += 11;
+			break;
 		case 0xEB:	// EX DE,HL
 			temp8 = mRegs.D;
 			mRegs.D = mRegs.H;
@@ -667,7 +703,6 @@ void Z80::Run(uint32_t maxCycles)
 			mRegs.L = temp8;
 			mCycles += 4;
 			break;
-
 		case 0xED:	// ED prefix
 			opcode2 = mMemory->ReadByte(mRegs.PC++);
 			switch (opcode2) {
@@ -730,7 +765,15 @@ void Z80::Run(uint32_t maxCycles)
 				break;
 			}
 			break;
+		case 0xEF:	// RST 28
+			Rst(0x28);
+			mCycles += 11;
+			break;
 
+		case 0xF7:	// RST 30
+			Rst(0x30);
+			mCycles += 11;
+			break;
 		case 0xFD:	// IY prefix
 			opcode2 = mMemory->ReadByte(mRegs.PC++);
 			switch (opcode2) {
@@ -806,6 +849,10 @@ void Z80::Run(uint32_t maxCycles)
 				ILLEGAL_OP2();
 				break;
 			}
+			break;
+		case 0xFF:	// RST 38
+			Rst(0x38);
+			mCycles += 11;
 			break;
 
 		default:
