@@ -57,6 +57,24 @@ int KssPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV("KssPlayer", "Reset");
+
+	delete mBlipBuf;
+	delete [] mSynth;
+	mBlipBuf = NULL;
+	mSynth   = NULL;
+
+	delete mZ80;
+	delete mMemory;
+	delete mAy;
+	delete mSN76489;
+	delete mScc;
+
+	mZ80     = NULL;
+	mMemory  = NULL;
+	mAy      = NULL;
+	mSN76489 = NULL;
+	mScc     = NULL;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
@@ -100,10 +118,15 @@ int KssPlayer::Prepare(std::string fileName)
     mZ80 = new Z80;
     mMemory = new KssMapper(0);	// ToDo: set number of ROM banks
     mAy = new YmChip;
+    mScc = new KonamiScc;
+    int numSynths = 3+2;	// 3 for the AY, 2 for the SCC (pre-mixed from the SCC's 6 channels)
     if ((mFileHeader.extraChips & SN76489_MASK) == USES_SN76489) {
     	mSN76489 = new SnChip;
+    	numSynths += 4;
     }
-    mScc = new KonamiScc;
+
+	mBlipBuf = new Blip_Buffer();
+	mSynth = new Blip_Synth<blip_low_quality,4096>[numSynths];
 
 	// ToDo: finish
 

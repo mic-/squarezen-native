@@ -225,7 +225,7 @@ void YmNoise::Write(uint32_t addr, uint8_t data)
 
 void YmSoundFX::Reset()
 {
-
+	mPeriod = 0;
 }
 
 

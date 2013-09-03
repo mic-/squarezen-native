@@ -1,4 +1,8 @@
 /*
+ * Namco163.h
+ *
+ *  Created on: Sep 3, 2013
+ *
  * Copyright 2013 Mic
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,14 +18,19 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_VERBOSE 0
+#ifndef NAMCO163_H_
+#define NAMCO163_H_
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
 #include <stdint.h>
-#include "Sunsoft5B.h"
+#include "Oscillator.h"
 
+class Namco163
+{
+public:
+	void Reset();
+	void Step();
+	void Write(uint32_t addr, uint8_t data);
+};
 
-
+#endif 	/* NAMCO163_H_ */
 

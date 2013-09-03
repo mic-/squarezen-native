@@ -24,59 +24,9 @@
 #include "Oscillator.h"
 #include "YM2149.h"
 
-class Sunsoft5B;
 
-class Sunsoft5BChannel : public YmChannel
+class Sunsoft5B : public YmChip
 {
-public:
-	virtual ~Sunsoft5BChannel() {}
-
-/*	virtual void Reset();
-	virtual void Step();
-	virtual void Write(uint32_t addr, uint8_t val);*/
-
-	void SetChip(Sunsoft5B *chip) { mChip = chip; }
-	//void SetIndex(uint16_t index) { mIndex = index; }
-
-	Sunsoft5B *mChip;
-/*	uint16_t *mCurVol;
-	uint16_t mIndex;
-	uint16_t mOut;
-	uint16_t mVol;
-	uint8_t mMode;
-	uint8_t mToneOff, mNoiseOff;
-	uint8_t mChnIndex;
-	uint8_t mPhase;*/
-};
-
-
-class Sunsoft5BNoise : public YmNoise
-{
-public:
-	virtual ~Sunsoft5BNoise() {}
-};
-
-
-class Sunsoft5BEnvelopeGenerator : public YmEnvelopeGenerator
-{
-public:
-	virtual ~Sunsoft5BEnvelopeGenerator() {}
-};
-
-
-class Sunsoft5B
-{
-public:
-	void Reset();
-	void Step();
-	void Write(uint32_t addr, uint8_t val);
-
-	static const uint16_t SUNSOFT5B_VOL_TB[16];
-	static const uint16_t SUNSOFT5B_ENVE_TB[32];
-
-	Sunsoft5BChannel mChannels[3];
-	Sunsoft5BNoise mNoise;
-	Sunsoft5BEnvelopeGenerator mEG;
 };
 
 

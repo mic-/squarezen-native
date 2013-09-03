@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-#define NLOG_LEVEL_VERBOSE 0
+#define NLOG_LEVEL_DEBUG 0
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
-#include "Sunsoft5B.h"
+#include "NativeLogger.h"
+#include "Namco163.h"
 
 
+void Namco163::Reset()
+{
+	// ToDo: implement
+}
 
+void Namco163::Step()
+{
+	// ToDo: implement
+}
+
+void Namco163::Write(uint32_t addr, uint8_t data)
+{
+	// ToDo: implement
+}
 
