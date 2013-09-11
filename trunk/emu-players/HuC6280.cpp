@@ -849,6 +849,8 @@ void HuC6280::Run(uint32_t maxCycles)
 void HuC6280PsgChannel::Reset()
 {
 	// ToDo: implement
+	mVolL = mVolR = 0;
+	mMode = HuC6280PsgChannel::MODE_WAVETABLE;
 }
 
 void HuC6280PsgChannel::Step()
@@ -859,7 +861,10 @@ void HuC6280PsgChannel::Step()
 
 void HuC6280Psg::Reset()
 {
-	// ToDo: implement
+	for (int i = 0; i < 6; i++) {
+		mChannels[i].Reset();
+	}
+	mMasterVolL = mMasterVolR = 0;
 }
 
 
@@ -875,4 +880,21 @@ void HuC6280Psg::Step()
 void HuC6280Psg::Write(uint32_t addr, uint8_t data)
 {
 	// ToDo: implement
+	switch (addr) {
+	case R_CHN_SELECT:
+		if (data < 6) {
+			mChannelSelect = data;
+		}
+		break;
+	case R_BALANCE:
+		mMasterVolR = data & 0x0F;
+		mMasterVolL = (data >> 4);
+		break;
+	case R_FREQ_LO:
+	case R_FREQ_HI:
+		mChannels[mChannelSelect].Write(addr, data);
+		break;
+	default:
+		break;
+	}
 }
