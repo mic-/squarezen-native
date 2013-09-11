@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include "NativeLogger.h"
 #include "HuC6280.h"
+#include "HesMapper.h"
 
 #define UPDATE_NZ(val) mRegs.F &= ~(HuC6280::FLAG_Z | HuC6280::FLAG_N); \
 				       mRegs.F |= ((uint8_t)val == 0) ? HuC6280::FLAG_Z : 0; \
@@ -392,6 +393,17 @@ void HuC6280::Run(uint32_t maxCycles)
 			operand = mMemory->ReadByte(addr);
 			EOR(operand);
 			mCycles += 7;
+			break;
+		case 0x53:	// TAM
+			operand = mMemory->ReadByte(mRegs.PC++);
+			for (int i = 0; i < 8; i++) {
+				if (operand & (1 << i)) {
+					MPR[i] = mRegs.A;
+					mMemory->SetMpr(i, mRegs.A);
+				}
+			}
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 5;
 			break;
 		case 0x54:	// CSL
 			// ToDo: tell player that the CPU speed has changed
@@ -846,18 +858,68 @@ void HuC6280::Run(uint32_t maxCycles)
 }
 
 
+HuC6280PsgChannel::HuC6280PsgChannel()
+	: mVolL(0), mVolR(0)
+	, mEnable(HuC6280Psg::WRITE_WAVEFORM_RAM)
+	, mWaveReadPos(0), mWaveWritePos(0)
+{
+}
+
 void HuC6280PsgChannel::Reset()
 {
 	// ToDo: implement
 	mVolL = mVolR = 0;
-	mMode = HuC6280PsgChannel::MODE_WAVETABLE;
+	mEnable = HuC6280Psg::WRITE_WAVEFORM_RAM;
 }
 
 void HuC6280PsgChannel::Step()
 {
 	// ToDo: implement
+	if ((mEnable & HuC6280Psg::WRITE_MODE) == HuC6280Psg::CHN_ENABLE) {
+		mPos++;
+		if (mPos >= mPeriod) {
+			mPeriod = 0;
+			mOut = mWaveformRam[mWaveReadPos++];
+			mWaveReadPos &= 0x1F;
+		}
+	}
 }
 
+void HuC6280PsgChannel::Write(uint32_t addr, uint8_t data)
+{
+	switch (addr) {
+	case HuC6280Psg::R_FREQ_LO:
+		mPeriod = (mPeriod & 0xF00) | data;
+		break;
+	case HuC6280Psg::R_FREQ_HI:
+		mPeriod = (mPeriod & 0xFF) | ((uint16_t)(data & 0x0F) << 8);
+		break;
+	case HuC6280Psg::R_CHN_BALANCE:
+		mVolR = data & 0x0F;
+		mVolL = data >> 4;
+		break;
+	case HuC6280Psg::R_WAVE_DATA:
+		switch (mEnable & HuC6280Psg::WRITE_MODE) {
+		case HuC6280Psg::WRITE_WAVEFORM_RAM:
+			mWaveformRam[mWaveWritePos++] = data & 0x1F;
+			mWaveWritePos &= 0x1F;
+			break;
+		case HuC6280Psg::DDA_ENABLE:
+			mOut = data & 0x1F;
+			break;
+		default:
+			break;	// Ignore the write
+		}
+		break;
+	default:
+		break;
+	}
+}
+
+HuC6280Psg::HuC6280Psg()
+	: mChannelSelect(0)
+{
+}
 
 void HuC6280Psg::Reset()
 {
@@ -879,7 +941,6 @@ void HuC6280Psg::Step()
 
 void HuC6280Psg::Write(uint32_t addr, uint8_t data)
 {
-	// ToDo: implement
 	switch (addr) {
 	case R_CHN_SELECT:
 		if (data < 6) {
@@ -888,11 +949,20 @@ void HuC6280Psg::Write(uint32_t addr, uint8_t data)
 		break;
 	case R_BALANCE:
 		mMasterVolR = data & 0x0F;
-		mMasterVolL = (data >> 4);
+		mMasterVolL = data >> 4;
 		break;
 	case R_FREQ_LO:
 	case R_FREQ_HI:
+	case R_ENABLE:
+	case R_CHN_BALANCE:
+	case R_WAVE_DATA:
 		mChannels[mChannelSelect].Write(addr, data);
+		break;
+	case R_LFO_FREQ:
+		// ToDo: handle
+		break;
+	case R_LFO_CTRL:
+		// ToDo: handle
 		break;
 	default:
 		break;

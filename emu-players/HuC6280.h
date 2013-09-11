@@ -25,30 +25,30 @@
 #include "MemoryMapper.h"
 #include "Oscillator.h"
 
+class HuC6280Mapper;
 
 class HuC6280PsgChannel : public Oscillator
 {
 public:
+	HuC6280PsgChannel();
 	virtual ~HuC6280PsgChannel() {}
 
 	virtual void Reset();
 	virtual void Step();
+	virtual void Write(uint32_t addr, uint8_t data);
 
-	enum {
-		MODE_WAVETABLE = 0,
-		MODE_DDA,
-		MODE_NOISE,
-	};
-
+	int16_t mOut;
 	uint16_t mVolL, mVolR;
-	uint16_t mMode;
+	uint16_t mEnable;
 	uint8_t mWaveformRam[32];
+	uint16_t mWaveReadPos, mWaveWritePos;
 };
 
 
 class HuC6280Psg
 {
 public:
+	HuC6280Psg();
 	void Reset();
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
@@ -66,6 +66,14 @@ public:
 		R_LFO_CTRL = 0x809,
 	};
 
+	// For R_ENABLE
+	enum {
+		WRITE_MODE = 0xC0,
+		WRITE_WAVEFORM_RAM = 0x00,
+		CHN_ENABLE = 0x80,
+		DDA_ENABLE = 0x40,
+	};
+
 	HuC6280PsgChannel mChannels[6];
 	uint16_t mMasterVolL, mMasterVolR;
 	uint16_t mChannelSelect;
@@ -77,7 +85,7 @@ class HuC6280
 public:
 	void Reset();
 	void Run(uint32_t maxCycles);
-	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+	void SetMapper(HuC6280Mapper *mapper) { mMemory = mapper; }
 
 	enum {
 		FLAG_C = 0x01,
@@ -89,6 +97,11 @@ public:
 		FLAG_N = 0x80,
 	};
 
+	enum {
+		R_TIMER_COUNT = 0xC00,
+		R_TIMER_CTRL = 0xC01,
+	};
+
 	struct {
 		uint8_t A, X, Y, S, F;
 		uint16_t PC;
@@ -96,8 +109,9 @@ public:
 
 	uint32_t mCycles;
 	uint8_t mSpeed;
+	uint8_t MPR[8];
 private:
-	MemoryMapper *mMemory;
+	HuC6280Mapper *mMemory;
 };
 
 #endif
