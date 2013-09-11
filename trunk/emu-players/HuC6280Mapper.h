@@ -1,7 +1,7 @@
 /*
- * HesMapper.h
+ * HuC6280Mapper.h
  *
- *  Created on: Aug 30, 2013
+ *  Created on: Sep 11, 2013
  *
  * Copyright 2013 Mic
  *
@@ -18,28 +18,22 @@
  * limitations under the License.
  */
 
-#ifndef HESMAPPER_H_
-#define HESMAPPER_H_
+#ifndef HUC6280MAPPER_H_
+#define HUC6280MAPPER_H_
 
 #include <stdint.h>
-#include "HuC6280Mapper.h"
-#include "HuC6280.h"
+#include "MemoryMapper.h"
 
-
-class HesMapper : public HuC6280Mapper
+class HuC6280Mapper : public MemoryMapper
 {
 public:
-	HesMapper(uint32_t numRomBanks);
-	virtual ~HesMapper();
+	virtual void SetMpr(uint8_t mprNum, uint8_t val) { MPR[mprNum & 7] = val; }
 
-	void SetPsg(HuC6280Psg *psg) { mPsg = psg; }
-
-	virtual void Reset();
-	virtual uint8_t ReadByte(uint16_t addr);
-	virtual void WriteByte(uint16_t addr, uint8_t data);
-
-private:
-	HuC6280Psg *mPsg;
+	enum {
+		MPR_RAM_PAGE = 0xF8,
+		MPR_IO_PAGE = 0xFF,
+	};
+	uint8_t MPR[8];
 };
 
-#endif	/* HESMAPPER_H_ */
+#endif	/* HUC6280MAPPER_H_ */
