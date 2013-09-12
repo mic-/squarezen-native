@@ -109,7 +109,8 @@ public:
 
 	uint32_t mCycles;
 	uint8_t mSpeed;
-	uint8_t MPR[8];
+	uint8_t mMPR[8];
+	uint8_t mMprLatch;
 private:
 	HuC6280Mapper *mMemory;
 };
