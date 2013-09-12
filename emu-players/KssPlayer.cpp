@@ -26,6 +26,7 @@ KssPlayer::KssPlayer()
 	: mZ80(NULL)
 	, mMemory(NULL)
 	, mAy(NULL)
+	, mYM2413(NULL)
 	, mSN76489(NULL)
 	, mScc(NULL)
 	, mSccEnabled(false)
@@ -37,12 +38,14 @@ KssPlayer::~KssPlayer()
 	delete mZ80;
 	delete mMemory;
 	delete mAy;
+	delete mYM2413;
 	delete mSN76489;
 	delete mScc;
 
 	mZ80     = NULL;
 	mMemory  = NULL;
 	mAy      = NULL;
+	mYM2413  = NULL;
 	mSN76489 = NULL;
 	mScc     = NULL;
 }
@@ -55,7 +58,6 @@ void KssPlayer::SetSccEnabled(bool enabled)
 
 int KssPlayer::Reset()
 {
-	// ToDo: implement
 	NLOGV("KssPlayer", "Reset");
 
 	delete mBlipBuf;
@@ -66,12 +68,14 @@ int KssPlayer::Reset()
 	delete mZ80;
 	delete mMemory;
 	delete mAy;
+	delete mYM2413;
 	delete mSN76489;
 	delete mScc;
 
 	mZ80     = NULL;
 	mMemory  = NULL;
 	mAy      = NULL;
+	mYM2413  = NULL;
 	mSN76489 = NULL;
 	mScc     = NULL;
 
@@ -124,6 +128,10 @@ int KssPlayer::Prepare(std::string fileName)
     	mSN76489 = new SnChip;
     	numSynths += 4;
     }
+    if ((mFileHeader.extraChips & FMPAC_MASK) == USES_FMPAC) {
+    	mYM2413 = new YM2413;
+    	numSynths += 3;		// pre-mixed from the YM2413's 9 channels
+    }
 
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,4096>[numSynths];
@@ -152,6 +160,17 @@ int KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	for (k = 0; k < blipLen; k++) {
 
+		if (mSccEnabled) {
+			// ToDo: add SCC audio to blip synths
+		}
+
+		if (mYM2413) {
+			// ToDo: add YM2413 audio to blip synths
+		}
+
+		if (mSN76489) {
+			// ToDo: add SN76489 audio to blip synths
+		}
 	}
 
 	mBlipBuf->end_frame(blipLen);

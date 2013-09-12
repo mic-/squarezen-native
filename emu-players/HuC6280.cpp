@@ -22,11 +22,11 @@
 #include "HuC6280.h"
 #include "HesMapper.h"
 
-#define UPDATE_NZ(val) mRegs.F &= ~(HuC6280::FLAG_Z | HuC6280::FLAG_N); \
+#define UPDATE_NZ(val) mRegs.F &= ~(HuC6280::FLAG_Z | HuC6280::FLAG_N | HuC6280::FLAG_T); \
 				       mRegs.F |= ((uint8_t)val == 0) ? HuC6280::FLAG_Z : 0; \
 				       mRegs.F |= (val & 0x80)
 
-#define UPDATE_NZC(val, val2, sub) mRegs.F &= ~(HuC6280::FLAG_Z | HuC6280::FLAG_N | HuC6280::FLAG_C); \
+#define UPDATE_NZC(val, val2, sub) mRegs.F &= ~(HuC6280::FLAG_Z | HuC6280::FLAG_N | HuC6280::FLAG_C | HuC6280::FLAG_T); \
 				       mRegs.F |= ((uint8_t)val == (uint8_t)val2) ? HuC6280::FLAG_Z : 0; \
 				       mRegs.F |= ((val - sub) & 0x80); \
 				       mRegs.F |= (val >= val2) ? HuC6280::FLAG_C : 0
@@ -57,8 +57,7 @@
 	} else { \
 		mRegs.A &= val; \
 		UPDATE_NZ(mRegs.A); \
-	} \
-	mRegs.F &= ~HuC6280::FLAG_T
+	}
 
 #define EOR(val) \
 	if (mRegs.F & HuC6280::FLAG_T) { \
@@ -69,8 +68,7 @@
 	} else { \
 		mRegs.A ^= val; \
 		UPDATE_NZ(mRegs.A); \
-	} \
-	mRegs.F &= ~HuC6280::FLAG_T
+	}
 
 #define ORA(val) \
 	if (mRegs.F & HuC6280::FLAG_T) { \
@@ -81,8 +79,7 @@
 	} else { \
 		mRegs.A |= val; \
 		UPDATE_NZ(mRegs.A); \
-	} \
-	mRegs.F &= ~HuC6280::FLAG_T
+	}
 
 #define BIT(val) \
 	mRegs.F &= ~(HuC6280::FLAG_Z | HuC6280::FLAG_V | HuC6280::FLAG_N | HuC6280::FLAG_T); \
@@ -161,6 +158,31 @@
 	mRegs.S++; \
 	dest = mMemory->ReadByte(0x100 + (uint16_t)mRegs.S)
 
+#define BLOCK_TRANSFER(destInc, srcInc, destAlt, srcAlt) \
+	temp8 = 0; \
+	addr = mMemory->ReadByte(mRegs.PC++); \
+	addr += (uint16_t)(mMemory->ReadByte(mRegs.PC++)) << 8; \
+	addr2 = mMemory->ReadByte(mRegs.PC++);	\
+	addr2 += (uint16_t)(mMemory->ReadByte(mRegs.PC++)) << 8; \
+	temp16 = mMemory->ReadByte(mRegs.PC++);	\
+	temp16 += (uint16_t)(mMemory->ReadByte(mRegs.PC++)) << 8; \
+	PUSHB(mRegs.Y); \
+	PUSHB(mRegs.A); \
+	PUSHB(mRegs.X); \
+	do { \
+		mMemory->WriteByte(addr + (temp8 & destAlt), mMemory->ReadByte(addr2 + (temp8 & srcAlt))); \
+		addr += destInc; \
+		addr2 += srcInc; \
+		temp16--; \
+		temp8 ^= 1; \
+		mCycles += 6; \
+	} while (temp16); \
+	PULLB(mRegs.X); \
+	PULLB(mRegs.A); \
+	PULLB(mRegs.Y); \
+	mRegs.F &= ~HuC6280::FLAG_T; \
+	mCycles += 17
+
 // ====
 
 #define ILLEGAL_OP() NLOGE("HuC6280", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
@@ -178,7 +200,7 @@ void HuC6280::Reset()
 
 void HuC6280::Run(uint32_t maxCycles)
 {
-	uint16_t addr, temp16;
+	uint16_t addr, addr2, temp16;
 	uint8_t operand, temp8;
     int8_t relAddr;
 
@@ -249,7 +271,6 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0x1A:	// INC A
 			mRegs.A++;
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0x1D:	// ORA abs,X
@@ -476,7 +497,6 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0x68:	// PLA
 			PULLB(mRegs.A);
 			UPDATE_NZ(mRegs.A);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0x69:	// ADC imm
@@ -507,6 +527,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			ADC(operand);
 			mCycles += 7;
 			break;
+		case 0x73:	// TII dddd,ssss,llll
+			BLOCK_TRANSFER(1, 1, 0, 0);	// destInc=1, srcInc=1, destAlt=0, srcAlt=0
+			break;
 		case 0x75:	// ADC zp,X
 			operand = mMemory->ReadByte(ZPX_ADDR());
 			ADC(operand);
@@ -526,7 +549,6 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0x7A:	// PLY
 			PULLB(mRegs.Y);
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0x7D:	// ADC abs,X
@@ -547,7 +569,6 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0x88:	// DEY
 			mRegs.Y--;
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0x89:	// BIT imm
@@ -558,7 +579,6 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0x8A:	// TXA
 			mRegs.A = mRegs.X;
 			UPDATE_NZ(mRegs.A);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 
@@ -574,51 +594,43 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0xA0:	// LDY imm
 			mRegs.Y = mMemory->ReadByte(mRegs.PC++);
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xA2:	// LDX imm
 			mRegs.X = mMemory->ReadByte(mRegs.PC++);
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xA4:	// LDY zp
 			mRegs.Y = mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0xA6:	// LDX zp
 			mRegs.X = mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0xA8:	// TAY
 			mRegs.Y = mRegs.A;
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xAA:	// TAX
 			mRegs.X = mRegs.A;
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xAC:	// LDY abs
 			mRegs.Y = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
 		case 0xAE:	// LDX abs
 			mRegs.X = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
 
@@ -628,13 +640,11 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0xB4:	// LDY zp,X
 			mRegs.Y = mMemory->ReadByte(ZPX_ADDR());
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0xB6:	// LDX zp,Y
 			mRegs.X = mMemory->ReadByte(ZPY_ADDR());
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0xB8:	// CLV
@@ -644,66 +654,60 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0xBA:	// TSX
 			mRegs.X = mRegs.S;
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xBC:	// LDY abs,X
 			ABSX_ADDR(addr);
 			mRegs.Y = mMemory->ReadByte(addr);
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
 		case 0xBE:	// LDX abs,Y
 			ABSY_ADDR(addr);
 			mRegs.X = mMemory->ReadByte(addr);
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
 
 		case 0xC0:	// CPY imm
 			operand = mMemory->ReadByte(mRegs.PC++);
 			UPDATE_NZC(mRegs.Y, operand, operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xC2:	// CLY
 			mRegs.Y = 0;
-			mRegs.F &= ~FLAG_T;
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
+			break;
+		case 0xC3:	// TDD dddd,ssss,llll
+			BLOCK_TRANSFER(-1, -1, 0, 0);	// destInc=-1, srcInc=-1, destAlt=0, srcAlt=0
 			break;
 		case 0xC4:	// CPY zp
 			operand = mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZC(mRegs.Y, operand, operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0xC6:	// DEC zp
 			addr = ZP_ADDR();
 			operand = mMemory->ReadByte(addr) - 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 6;
 			break;
 		case 0xC8:	// INY
 			mRegs.Y++;
 			UPDATE_NZ(mRegs.Y);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xCA:	// DEX
 			mRegs.X--;
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xCC:	// CPY abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZC(mRegs.Y, operand, operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
 		case 0xCE:	// DEC abs
@@ -711,13 +715,15 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.PC += 2;
 			operand = mMemory->ReadByte(addr) - 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
 
 		case 0xD0:	// BNE rel
 			COND_BRANCH((mRegs.F & HuC6280::FLAG_Z) == 0);
+			break;
+		case 0xD3:	// TIN dddd,ssss,llll
+			BLOCK_TRANSFER(0, 1, 0, 0);	// destInc=0, srcInc=1, destAlt=0, srcAlt=0
 			break;
 		case 0xD4:	// CSH
 			// ToDo: tell player that the CPU speed has changed
@@ -732,7 +738,6 @@ void HuC6280::Run(uint32_t maxCycles)
 			addr = ZPX_ADDR();
 			operand = mMemory->ReadByte(addr) - 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 6;
 			break;
@@ -749,7 +754,6 @@ void HuC6280::Run(uint32_t maxCycles)
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr) - 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
@@ -757,7 +761,6 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0xE0:	// CPX imm
 			operand = mMemory->ReadByte(mRegs.PC++);
 			UPDATE_NZC(mRegs.X, operand, operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xE1:	// SBC (zp,X)
@@ -766,10 +769,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			ADC(operand);
 			mCycles += 7;
 			break;
+		case 0xE3:	// TIA dddd,ssss,llll
+			BLOCK_TRANSFER(0, 1, 1, 0);	// destInc=0, srcInc=1, destAlt=1, srcAlt=0
+			break;
 		case 0xE4:	// CPX zp
 			operand = mMemory->ReadByte(ZP_ADDR());
 			UPDATE_NZC(mRegs.X, operand, operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0xE5:	// SBC zp
@@ -781,14 +786,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			addr = ZP_ADDR();
 			operand = mMemory->ReadByte(addr) + 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 6;
 			break;
 		case 0xE8:	// INX
 			mRegs.X++;
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xE9:	// SBC imm
@@ -800,7 +803,6 @@ void HuC6280::Run(uint32_t maxCycles)
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
 			UPDATE_NZC(mRegs.X, operand, operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
 		case 0xED:	// SBC abs
@@ -814,7 +816,6 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.PC += 2;
 			operand = mMemory->ReadByte(addr) + 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
@@ -834,6 +835,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			ADC(operand);
 			mCycles += 7;
 			break;
+		case 0xF3:	// TAI dddd,ssss,llll
+			BLOCK_TRANSFER(1, 0, 0, 1);	// destInc=1, srcInc=0, destAlt=0, srcAlt=1
+			break;
 		case 0xF4:	// SET
 			mRegs.F |= HuC6280::FLAG_T;
 			mCycles += 2;
@@ -847,7 +851,6 @@ void HuC6280::Run(uint32_t maxCycles)
 			addr = ZPX_ADDR();
 			operand = mMemory->ReadByte(addr) + 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 6;
 			break;
@@ -865,7 +868,6 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0xFA:	// PLX
 			PULLB(mRegs.X);
 			UPDATE_NZ(mRegs.X);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0xFD:	// SBC abs,X
@@ -878,7 +880,6 @@ void HuC6280::Run(uint32_t maxCycles)
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr) + 1;
 			UPDATE_NZ(operand);
-			mRegs.F &= ~HuC6280::FLAG_T;
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;

@@ -28,6 +28,7 @@
 #include "KssMapper.h"
 #include "SN76489.h"
 #include "YM2149.h"
+#include "YM2413.h"
 #include "KonamiScc.h"
 
 
@@ -81,6 +82,7 @@ private:
 	Z80 *mZ80;
 	KssMapper *mMemory;
 	YmChip *mAy;
+	YM2413 *mYM2413;
 	SnChip *mSN76489;
 	KonamiScc *mScc;
 	bool mSccEnabled;
