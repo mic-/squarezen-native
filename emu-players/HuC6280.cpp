@@ -356,6 +356,21 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 3;
 			break;
+		case 0x43:	// TMA
+			operand = mMemory->ReadByte(mRegs.PC++);
+			if (operand) {
+				for (int i = 0; i < 8; i++) {
+					if (operand & (1 << i)) {
+						mRegs.A = mMPR[i];
+						break;
+					}
+				}
+			} else {
+				mRegs.A = mMprLatch;
+			}
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 4;
+			break;
 		case 0x44:	// BSR rel
 			relAddr = mMemory->ReadByte(mRegs.PC++);
 			addr = mRegs.PC + relAddr;
@@ -398,7 +413,8 @@ void HuC6280::Run(uint32_t maxCycles)
 			operand = mMemory->ReadByte(mRegs.PC++);
 			for (int i = 0; i < 8; i++) {
 				if (operand & (1 << i)) {
-					MPR[i] = mRegs.A;
+					mMPR[i] = mRegs.A;
+					mMprLatch = mRegs.A;
 					mMemory->SetMpr(i, mRegs.A);
 				}
 			}
@@ -539,9 +555,20 @@ void HuC6280::Run(uint32_t maxCycles)
 			BIT(operand);
 			mCycles += 2;
 			break;
+		case 0x8A:	// TXA
+			mRegs.A = mRegs.X;
+			UPDATE_NZ(mRegs.A);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 2;
+			break;
 
 		case 0x90:	// BCC rel
 			COND_BRANCH((mRegs.F & HuC6280::FLAG_C) == 0);
+			break;
+		case 0x9A:	// TXS
+			mRegs.S = mRegs.X;
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 2;
 			break;
 
 		case 0xA0:	// LDY imm
@@ -612,6 +639,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			break;
 		case 0xB8:	// CLV
 			mRegs.F &= ~(HuC6280::FLAG_V | HuC6280::FLAG_T);
+			mCycles += 2;
+			break;
+		case 0xBA:	// TSX
+			mRegs.X = mRegs.S;
+			UPDATE_NZ(mRegs.X);
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
 		case 0xBC:	// LDY abs,X

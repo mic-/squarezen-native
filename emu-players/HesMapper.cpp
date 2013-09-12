@@ -23,14 +23,22 @@
 #include "HuC6280.h"
 
 
-HesMapper::HesMapper(uint32_t numRomBanks)
+HesMapper::HesMapper(uint32_t numRomPages)
+	: mNumRomPages(numRomPages)
 {
 	// ToDo: implement
+	mCart = new uint8_t[numRomPages * 0x2000];
+	mRam = new uint8_t[0x2000];
 }
 
 HesMapper::~HesMapper()
 {
 	// ToDo: implement
+	delete mCart;
+	delete mRam;
+
+	mCart = NULL;
+	mRam  = NULL;
 }
 
 void HesMapper::Reset()
@@ -45,9 +53,11 @@ uint8_t HesMapper::ReadByte(uint16_t addr)
 	uint32_t offset = addr & 0x1FFF;
 
 	if (mpr < 0x80) {
-		// ToDo: handle ROM reads
+		if (mpr < mNumRomPages) {
+			return mCart[mpr * 0x2000 + offset];
+		}
 	} else if (HuC6280Mapper::MPR_RAM_PAGE == mpr) {
-		// ToDo: handle RAM reads
+		return mRam[offset];
 	} else if (HuC6280Mapper::MPR_IO_PAGE == mpr) {
 		// ToDo: handle IO reads
 		if (HuC6280::R_TIMER_COUNT == offset) {
@@ -64,7 +74,7 @@ void HesMapper::WriteByte(uint16_t addr, uint8_t data)
 
 	switch (MPR[page]) {
 	case HuC6280Mapper::MPR_RAM_PAGE:
-		// ToDo: handle
+		mRam[offset] = data;
 		break;
 	case HuC6280Mapper::MPR_IO_PAGE:
 		if (offset >= HuC6280Psg::R_CHN_SELECT && offset <= HuC6280Psg::R_LFO_CTRL) {

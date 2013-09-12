@@ -29,7 +29,7 @@
 class HesMapper : public HuC6280Mapper
 {
 public:
-	HesMapper(uint32_t numRomBanks);
+	HesMapper(uint32_t numRomPages);
 	virtual ~HesMapper();
 
 	void SetPsg(HuC6280Psg *psg) { mPsg = psg; }
@@ -40,6 +40,9 @@ public:
 
 private:
 	HuC6280Psg *mPsg;
+	uint8_t *mCart;
+	uint8_t *mRam;
+	uint32_t mNumRomPages;
 };
 
 #endif	/* HESMAPPER_H_ */
