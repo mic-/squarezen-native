@@ -80,7 +80,11 @@ public:
 		MODE_RHYTHM,
 	};
 
+	YM2413EnvelopeGenerator mEG;
 	uint16_t mFNumber;
+	uint8_t mKeyScaling;
+	uint8_t mMultiplier;
+	uint8_t mSustain;
 	uint8_t mOctave;
 	uint8_t mInstrument;
 	uint8_t mVol;
@@ -152,7 +156,6 @@ public:
 	static const YM2413Instrument RHYTHM_PATCHES[3];
 
 	YM2413Channel mChannels[9];
-	YM2413EnvelopeGenerator mEG;
 };
 
 #endif	/* YM2413_H_ */

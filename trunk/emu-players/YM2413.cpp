@@ -67,11 +67,14 @@ void YM2413Channel::Reset()
 
 	mOctave = 1;
 	mFNumber = 0;
+
+	mEG.Reset();
 }
 
 void YM2413Channel::Step()
 {
 	// ToDo: implement
+	mEG.Step();
 }
 
 void YM2413Channel::LoadPatch(uint8_t patchNum)
@@ -103,12 +106,10 @@ void YM2413::Reset()
 	for (int i = 0; i < 9; i++) {
 		mChannels[i].Reset();
 	}
-	mEG.Reset();
 }
 
 void YM2413::Step()
 {
-	mEG.Step();
 	for (int i = 0; i < 9; i++) {
 		mChannels[i].Step();
 	}
