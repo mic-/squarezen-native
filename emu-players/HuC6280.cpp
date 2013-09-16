@@ -489,6 +489,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
+		case 0x64:	// STZ zp
+			addr = ZP_ADDR();
+			mMemory->WriteByte(addr, 0);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 4;
+			break;
 		case 0x65:	// ADC zp
 			operand = mMemory->ReadByte(ZP_ADDR());
 			ADC(operand);
@@ -530,6 +536,12 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0x73:	// TII dddd,ssss,llll
 			BLOCK_TRANSFER(1, 1, 0, 0);	// destInc=1, srcInc=1, destAlt=0, srcAlt=0
 			break;
+		case 0x74:	// STZ zp,X
+			addr = ZPX_ADDR();
+			mMemory->WriteByte(addr, 0);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 4;
+			break;
 		case 0x75:	// ADC zp,X
 			operand = mMemory->ReadByte(ZPX_ADDR());
 			ADC(operand);
@@ -558,12 +570,14 @@ void HuC6280::Run(uint32_t maxCycles)
 			mCycles += 5;
 			break;
 
+
 		case 0x80:	// BRA rel
 			COND_BRANCH(true);
 			break;
 		case 0x81:	// STA (zp,X)
 			INDX_ADDR(addr);
 			mMemory->WriteByte(addr, mRegs.A);
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 7;
 			break;
 		case 0x82:	// CLX
@@ -571,9 +585,22 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
+		case 0x84:	// STY zp
+			addr = ZP_ADDR();
+			mMemory->WriteByte(addr, mRegs.Y);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 4;
+			break;
 		case 0x85:	// STA zp
 			addr = ZP_ADDR();
 			mMemory->WriteByte(addr, mRegs.A);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 4;
+			break;
+		case 0x86:	// STX zp
+			addr = ZP_ADDR();
+			mMemory->WriteByte(addr, mRegs.X);
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0x88:	// DEY
@@ -591,13 +618,27 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.A);
 			mCycles += 2;
 			break;
+		case 0x8C:	// STY abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			mMemory->WriteByte(addr, mRegs.Y);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 5;
+			break;
 		case 0x8D:	// STA abs
 			addr = ABS_ADDR();
 			mRegs.PC += 2;
 			mMemory->WriteByte(addr, mRegs.A);
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
-
+		case 0x8E:	// STX abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			mMemory->WriteByte(addr, mRegs.X);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 5;
+			break;
 
 		case 0x90:	// BCC rel
 			COND_BRANCH((mRegs.F & HuC6280::FLAG_C) == 0);
@@ -607,14 +648,28 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, mRegs.A);
 			mCycles += 7;
 			break;
+		case 0x94:	// STY zp,X
+			addr = ZPX_ADDR();
+			mMemory->WriteByte(addr, mRegs.Y);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 4;
+			break;
 		case 0x95:	// STA zp,X
 			addr = ZPX_ADDR();
 			mMemory->WriteByte(addr, mRegs.A);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 4;
+			break;
+		case 0x96:	// STX zp,Y
+			addr = ZPY_ADDR();
+			mMemory->WriteByte(addr, mRegs.X);
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
 			break;
 		case 0x99:	// STA abs,Y
 			ABSY_ADDR(addr);
 			mMemory->WriteByte(addr, mRegs.A);
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
 		case 0x9A:	// TXS
@@ -622,12 +677,25 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
+		case 0x9C:	// STZ abs
+			addr = ABS_ADDR();
+			mRegs.PC += 2;
+			mMemory->WriteByte(addr, 0);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 5;
+			break;
 		case 0x9D:	// STA abs,X
 			ABSX_ADDR(addr);
 			mMemory->WriteByte(addr, mRegs.A);
+			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
-
+		case 0x9E:	// STZ abs,X
+			ABSX_ADDR(addr);
+			mMemory->WriteByte(addr, 0);
+			mRegs.F &= ~HuC6280::FLAG_T;
+			mCycles += 5;
+			break;
 
 		case 0xA0:	// LDY imm
 			mRegs.Y = mMemory->ReadByte(mRegs.PC++);
