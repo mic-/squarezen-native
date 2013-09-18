@@ -36,6 +36,9 @@ GbsPlayer::GbsPlayer()
 
 GbsPlayer::~GbsPlayer()
 {
+	delete [] cart;
+	cart = NULL;
+
 	delete mBlipBufRight;
 	delete [] mSynthRight;
 

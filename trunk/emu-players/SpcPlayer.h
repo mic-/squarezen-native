@@ -71,6 +71,8 @@ private:
 	SSmp *mSSmp;
 	SDsp *mSDsp;
 	SpcMapper *mMemory;
+	Blip_Buffer *mBlipBufRight;
+	Blip_Synth<blip_low_quality,4096> *mSynthRight;
 	uint8_t mDspRegisterInit[128];
 	SpcFileHeader mFileHeader;
 };

@@ -77,7 +77,8 @@ public:
 	void Step();
 
 	enum {
-		S_DSP_CLOCK = 1024000
+		S_DSP_CLOCK = 2048000,
+		S_DSP_CLOCK_DIVIDER = 1,	// Used for controlling the speed at which the S-DSP is emulated
 	};
 
 	// Registers

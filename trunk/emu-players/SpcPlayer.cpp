@@ -23,19 +23,35 @@
 
 
 SpcPlayer::SpcPlayer()
+	: mBlipBufRight(NULL), mSynthRight(NULL)
 {
 
 }
 
 SpcPlayer::~SpcPlayer()
 {
+	delete mBlipBufRight;
+	delete [] mSynthRight;
 
+	mBlipBufRight = NULL;
+	mSynthRight   = NULL;
 }
+
 
 int SpcPlayer::Reset()
 {
-	// ToDo: implement
 	NLOGV("SpcPlayer", "SpcPlayer::Reset");
+
+	delete mBlipBuf;
+	delete [] mSynth;
+	mBlipBuf = NULL;
+	mSynth   = NULL;
+
+	delete mBlipBufRight;
+	delete [] mSynthRight;
+	mBlipBufRight = NULL;
+	mSynthRight   = NULL;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
@@ -99,6 +115,37 @@ int SpcPlayer::Prepare(std::string fileName)
 	NLOGV("SpcPlayer", "File read done");
 	musicFile.close();
 
+	// Left output
+	{
+		mBlipBuf = new Blip_Buffer();
+		mSynth = new Blip_Synth<blip_low_quality,4096>[4];
+
+		if (mBlipBuf->set_sample_rate(44100)) {
+			NLOGE("SpcPlayer", "Failed to set blipbuffer sample rate");
+			return MusicPlayer::ERROR_UNKNOWN;
+		}
+		mBlipBuf->clock_rate(SDsp::S_DSP_CLOCK / SDsp::S_DSP_CLOCK_DIVIDER);
+
+		for (int i = 0; i < 4; i++) {
+			//mSynth[i].volume(0.22);
+			mSynth[i].output(mBlipBuf);
+		}
+	}
+	// Right output
+	{
+		mBlipBufRight = new Blip_Buffer();
+		mSynthRight = new Blip_Synth<blip_low_quality,4096>[4];
+
+		if (mBlipBufRight->set_sample_rate(44100)) {
+			return MusicPlayer::ERROR_UNKNOWN;
+		}
+		mBlipBufRight->clock_rate(SDsp::S_DSP_CLOCK / SDsp::S_DSP_CLOCK_DIVIDER);
+
+		for (int i = 0; i < 4; i++) {
+			mSynthRight[i].output(mBlipBufRight);
+		}
+	}
+
 	mMemory->Reset();
 	mSSmp->Reset();
 	//mSDsp->Reset();
@@ -122,5 +169,16 @@ int SpcPlayer::Prepare(std::string fileName)
 int SpcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
+	int k;
+	int blipLen = mBlipBuf->count_clocks(numSamples);
+	int16_t out, outL, outR;
+
+    if (MusicPlayer::STATE_PREPARED != GetState()) {
+    	return MusicPlayer::ERROR_BAD_STATE;
+    }
+
+	for (k = 0; k < blipLen; k++) {
+	}
+
 	return MusicPlayer::OK;
 }
