@@ -68,6 +68,8 @@ public:
 	} SpcFileHeader;
 
 private:
+	void ExecuteSSmp();
+
 	SSmp *mSSmp;
 	SDsp *mSDsp;
 	SpcMapper *mMemory;
@@ -75,6 +77,7 @@ private:
 	Blip_Synth<blip_low_quality,4096> *mSynthRight;
 	uint8_t mDspRegisterInit[128];
 	SpcFileHeader mFileHeader;
+	uint32_t mCycleCount, mScanlineCycles;
 };
 
 #endif /* SPCPLAYER_H_ */

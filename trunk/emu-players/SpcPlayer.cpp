@@ -150,6 +150,9 @@ int SpcPlayer::Prepare(std::string fileName)
 	mSSmp->Reset();
 	//mSDsp->Reset();
 
+	mScanlineCycles = SSmp::S_SMP_CLOCK / (60 * 262);
+	mCycleCount = 0;
+
 	mSSmp->mRegs.PC = mFileHeader.regPC;
 	mSSmp->mRegs.A = mFileHeader.regA;
 	mSSmp->mRegs.X = mFileHeader.regX;
@@ -166,11 +169,18 @@ int SpcPlayer::Prepare(std::string fileName)
 }
 
 
+void SpcPlayer::ExecuteSSmp()
+{
+	mSSmp->Run(mScanlineCycles);
+}
+
+
 int SpcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
 	int k;
 	int blipLen = mBlipBuf->count_clocks(numSamples);
+	int dspDivider = 0;
 	int16_t out, outL, outR;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
@@ -178,6 +188,21 @@ int SpcPlayer::Run(uint32_t numSamples, int16_t *buffer)
     }
 
 	for (k = 0; k < blipLen; k++) {
+		if (mCycleCount == 0) {
+			// ToDo: it would perhaps be nice with a lower granularity for the SMP/DSP emulation cycle ratio
+			ExecuteSSmp();
+		}
+
+		dspDivider++;
+		if (dspDivider == SDsp::S_DSP_CLOCK_DIVIDER) {
+			dspDivider = 0;
+			mSDsp->Step();
+		}
+
+		mCycleCount++;
+		if (mCycleCount == mScanlineCycles) {
+			mCycleCount = 0;
+		}
 	}
 
 	return MusicPlayer::OK;
