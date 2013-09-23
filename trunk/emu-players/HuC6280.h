@@ -35,6 +35,11 @@ public:
 
 	virtual void Reset();
 	virtual void Step();
+
+	/**
+	 * Write one byte to the given address. The address should
+	 * be in the range 0x800-0x809.
+	 */
 	virtual void Write(uint32_t addr, uint8_t data);
 
 	int16_t mOut;
@@ -51,8 +56,14 @@ public:
 	HuC6280Psg();
 	void Reset();
 	void Step();
+
+	/**
+	 * Write one byte to the given address. The address should
+	 * be in the range 0x800-0x809.
+	 */
 	void Write(uint32_t addr, uint8_t data);
 
+	// Register addresses
 	enum {
 		R_CHN_SELECT = 0x800,
 		R_BALANCE = 0x801,
@@ -87,14 +98,15 @@ public:
 	void Run(uint32_t maxCycles);
 	void SetMapper(HuC6280Mapper *mapper) { mMemory = mapper; }
 
+	// Status flags
 	enum {
-		FLAG_C = 0x01,
-		FLAG_Z = 0x02,
-		FLAG_I = 0x04,
-		FLAG_D = 0x08,
-		FLAG_T = 0x10,
-		FLAG_V = 0x40,
-		FLAG_N = 0x80,
+		FLAG_C = 0x01,	// Carry
+		FLAG_Z = 0x02,	// Zero
+		FLAG_I = 0x04,	// Interrupt
+		FLAG_D = 0x08,	// Decimal
+		FLAG_T = 0x10,	// "Accumulator override" (see e.g. ADC)
+		FLAG_V = 0x40,	// oVerflow
+		FLAG_N = 0x80,	// Negative (sign)
 	};
 
 	enum {
@@ -111,8 +123,10 @@ public:
 	uint8_t mSpeed;
 	uint8_t mMPR[8];
 	uint8_t mMprLatch;
+
 private:
 	HuC6280Mapper *mMemory;
+	uint16_t mBrkVector;
 };
 
 #endif

@@ -33,6 +33,7 @@ public:
 		MPR_RAM_PAGE = 0xF8,
 		MPR_IO_PAGE = 0xFF,
 	};
+
 	uint8_t MPR[8];
 };
 
