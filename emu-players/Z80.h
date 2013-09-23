@@ -34,15 +34,16 @@ public:
 
 	void Rst(uint8_t vector);
 
+	// Status flags
 	enum {
-		FLAG_C = 0x01,
-		FLAG_N = 0x02,
-		FLAG_P = 0x04,
+		FLAG_C = 0x01,	// Carry
+		FLAG_N = 0x02,	// Negative operation (SUB, CMP, DEC, etc)
+		FLAG_P = 0x04,	// Parity/overflow
 		FLAG_Y = 0x08,	// bit 3 of the result byte
-		FLAG_H = 0x10,
+		FLAG_H = 0x10,	// Half-carry
 		FLAG_X = 0x20,	// bit 5 of the result byte
-		FLAG_Z = 0x40,
-		FLAG_S = 0x80,
+		FLAG_Z = 0x40,	// Zero
+		FLAG_S = 0x80,	// Sign
 	};
 
 	struct  __attribute__ ((__packed__)) {

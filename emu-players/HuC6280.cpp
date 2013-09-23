@@ -234,7 +234,8 @@
 
 void HuC6280::Reset()
 {
-	// ToDo: implement
+	mBrkVector = 0xfffe;	// ToDo: is this the correct BRK vector for the 6280?
+	mRegs.F = 0;
 }
 
 
@@ -249,6 +250,16 @@ void HuC6280::Run(uint32_t maxCycles)
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
 
 		switch (opcode) {
+		case 0x00:	// BRK
+			mRegs.PC++;
+			PUSHW(mRegs.PC);
+			PUSHB(mRegs.F);
+			mRegs.F &= ~(HuC6280::FLAG_D | HuC6280::FLAG_T);
+			mRegs.F |= (HuC6280::FLAG_I);
+			mRegs.PC = mMemory->ReadByte(mBrkVector);
+			mRegs.PC |= (uint16_t)mMemory->ReadByte(mBrkVector+1) << 8;
+			mCycles += 8;
+			break;
 		case 0x01:	// ORA (zp,X)
 			INDX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
@@ -317,6 +328,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			break;
 		case 0x11:	// ORA (zp),Y
 			INDY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			ORA(operand);
+			mCycles += 7;
+			break;
+		case 0x12:	// ORA (zp)
+			IND_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
 			ORA(operand);
 			mCycles += 7;
@@ -456,6 +473,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			break;
 		case 0x31:	// AND (zp),Y
 			INDY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			AND(operand);
+			mCycles += 7;
+			break;
+		case 0x32:	// AND (zp)
+			IND_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
 			AND(operand);
 			mCycles += 7;
