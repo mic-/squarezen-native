@@ -172,6 +172,18 @@
     mRegs.F &= ~HuC6280::FLAG_T; \
     mCycles += 2
 
+#define BRANCH_ON_BIT(bit, val) \
+	operand = mMemory->ReadByte(mRegs.PC++); \
+	if ((operand & (1 << bit)) == (val << bit)) { relAddr = mMemory->ReadByte(mRegs.PC++); \
+	addr = mRegs.PC + relAddr; \
+    mCycles += 2; \
+    mRegs.PC = addr; \
+	} else { \
+	mRegs.PC++; \
+	} \
+    mRegs.F &= ~HuC6280::FLAG_T; \
+    mCycles += 6
+
 #define PUSHB(val) \
 	mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, val); \
 	mRegs.S--
@@ -296,7 +308,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x0F:	// BBR0 zp,rel
+			BRANCH_ON_BIT(0, 0);
+			break;
 
 		case 0x10:	// BPL rel
 			COND_BRANCH((mRegs.F & HuC6280::FLAG_N) == 0);
@@ -353,7 +367,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x1F:	// BBR1 zp,rel
+			BRANCH_ON_BIT(1, 0);
+			break;
 
 		case 0x20:	// JSR abs
 			 addr = mMemory->ReadByte(mRegs.PC++);
@@ -431,7 +447,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x2F:	// BBR2 zp,rel
+			BRANCH_ON_BIT(2, 0);
+			break;
 
 		case 0x30:	// BMI rel
 			COND_BRANCH(mRegs.F & HuC6280::FLAG_N);
@@ -478,7 +496,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x3F:	// BBR3 zp,rel
+			BRANCH_ON_BIT(3, 0);
+			break;
 
 		case 0x41:	// EOR (zp,X)
 			INDX_ADDR(addr);
@@ -555,7 +575,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x4F:	// BBR4 zp,rel
+			BRANCH_ON_BIT(4, 0);
+			break;
 
 		case 0x50:	// BVC rel
 			COND_BRANCH((mRegs.F & HuC6280::FLAG_V) == 0);
@@ -627,7 +649,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x5F:	// BBR5 zp,rel
+			BRANCH_ON_BIT(5, 0);
+			break;
 
 		case 0x61:	// ADC (zp,X)
 			INDX_ADDR(addr);
@@ -686,7 +710,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x6F:	// BBR6 zp,rel
+			BRANCH_ON_BIT(6, 0);
+			break;
 
 		case 0x70:	// BVS rel
 			COND_BRANCH(mRegs.F & HuC6280::FLAG_V);
@@ -753,7 +779,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
-
+		case 0x7F:	// BBR7 zp,rel
+			BRANCH_ON_BIT(7, 0);
+			break;
 
 		case 0x80:	// BRA rel
 			COND_BRANCH(true);
@@ -823,6 +851,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
+		case 0x8F:	// BBS0 zp,rel
+			BRANCH_ON_BIT(0, 1);
+			break;
 
 		case 0x90:	// BCC rel
 			COND_BRANCH((mRegs.F & HuC6280::FLAG_C) == 0);
@@ -880,6 +911,10 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 5;
 			break;
+		case 0x9F:	// BBS1 zp,rel
+			BRANCH_ON_BIT(1, 1);
+			break;
+
 
 		case 0xA0:	// LDY imm
 			mRegs.Y = mMemory->ReadByte(mRegs.PC++);
@@ -923,6 +958,10 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.X);
 			mCycles += 5;
 			break;
+		case 0xAF:	// BBS2 zp,rel
+			BRANCH_ON_BIT(2, 1);
+			break;
+
 
 		case 0xB0:	// BCS rel
 			COND_BRANCH(mRegs.F & HuC6280::FLAG_C);
@@ -958,6 +997,10 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.X);
 			mCycles += 5;
 			break;
+		case 0xBF:	// BBS3 zp,rel
+			BRANCH_ON_BIT(3, 1);
+			break;
+
 
 		case 0xC0:	// CPY imm
 			operand = mMemory->ReadByte(mRegs.PC++);
@@ -1008,6 +1051,10 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
+		case 0xCF:	// BBS4 zp,rel
+			BRANCH_ON_BIT(4, 1);
+			break;
+
 
 		case 0xD0:	// BNE rel
 			COND_BRANCH((mRegs.F & HuC6280::FLAG_Z) == 0);
@@ -1047,6 +1094,10 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
+		case 0xDF:	// BBS5 zp,rel
+			BRANCH_ON_BIT(5, 1);
+			break;
+
 
 		case 0xE0:	// CPX imm
 			operand = mMemory->ReadByte(mRegs.PC++);
@@ -1109,6 +1160,10 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
 			break;
+		case 0xEF:	// BBS6 zp,rel
+			BRANCH_ON_BIT(6, 1);
+			break;
+
 
 		case 0xF0:	// BEQ rel
 			COND_BRANCH(mRegs.F & HuC6280::FLAG_Z);
@@ -1172,6 +1227,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(operand);
 			mMemory->WriteByte(addr, operand);
 			mCycles += 7;
+			break;
+		case 0xFF:	// BBS7 zp,rel
+			BRANCH_ON_BIT(7, 1);
 			break;
 
 		default:
