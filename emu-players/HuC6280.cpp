@@ -318,6 +318,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			ASL(mRegs.A);
 			mCycles += 2;
 			break;
+		// 0x0B is unused
 		case 0x0C:	// TSB abs
 			addr = ABS_ADDR();
 			mRegs.PC += 2;
@@ -405,6 +406,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.X);
 			mCycles += 2;
 			break;
+		// 0x1B is unused
 		case 0x1C:	// TRB abs
 			addr = ABS_ADDR();
 			mRegs.PC += 2;
@@ -489,6 +491,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			ROL(mRegs.A);
 			mCycles += 2;
 			break;
+		// 0x2B is unused
 		case 0x2C:	// BIT abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -528,6 +531,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			AND(operand);
 			mCycles += 7;
 			break;
+		// 0x33 is unused
+		case 0x34:	// BIT zp,X
+			operand = mMemory->ReadByte(ZPX_ADDR());
+			BIT(operand);
+			mCycles += 4;
+			break;
 		case 0x35:	// AND zp,X
 			operand = mMemory->ReadByte(ZPX_ADDR());
 			AND(operand);
@@ -551,6 +560,8 @@ void HuC6280::Run(uint32_t maxCycles)
 			AND(operand);
 			mCycles += 5;
 			break;
+		// 0x3A is unused
+		// 0x3B is unused
 		case 0x3D:	// AND abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
@@ -568,6 +579,13 @@ void HuC6280::Run(uint32_t maxCycles)
 			BRANCH_ON_BIT(3, 0);
 			break;
 
+		case 0x40:	// RTI
+			PULLB(mRegs.F);
+			PULLB(mRegs.PC);
+			PULLB(addr);
+			mRegs.PC += (addr << 8);
+			mCycles += 7;
+			break;
 		case 0x41:	// EOR (zp,X)
 			INDX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
@@ -629,6 +647,18 @@ void HuC6280::Run(uint32_t maxCycles)
 			LSR(mRegs.A);
 			mCycles += 2;
 			break;
+		// 0x4B is unused
+		case 0x4C:	// JMP abs
+			temp16 = mRegs.PC - 1;
+			addr = mMemory->ReadByte(mRegs.PC++);
+			addr |= (uint16_t)mMemory->ReadByte(mRegs.PC) << 8;
+			mRegs.PC = addr;
+			if (addr == temp16) {
+				// Special case for HES files; exit early for infinite loops
+				return;
+			}
+			mCycles += 4;
+			break;
 		case 0x4D:	// EOR abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -652,6 +682,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			break;
 		case 0x51:	// EOR (zp),Y
 			INDY_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			EOR(operand);
+			mCycles += 7;
+			break;
+		case 0x52:	// EOR (zp)
+			IND_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
 			EOR(operand);
 			mCycles += 7;
@@ -704,6 +740,8 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 3;
 			break;
+		// 0x5B is unused
+		// 0x5C is unused
 		case 0x5D:	// EOR abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
@@ -721,6 +759,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			BRANCH_ON_BIT(5, 0);
 			break;
 
+		case 0x60:	// RTS
+			PULLB(mRegs.PC);
+			PULLB(addr);
+			mRegs.PC += (addr << 8) + 1;
+			mCycles += 7;
+			break;
 		case 0x61:	// ADC (zp,X)
 			INDX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
@@ -732,6 +776,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
+		// 0x63 is unused
 		case 0x64:	// STZ zp
 			addr = ZP_ADDR();
 			mMemory->WriteByte(addr, 0);
@@ -763,6 +808,13 @@ void HuC6280::Run(uint32_t maxCycles)
 		case 0x6A:	// ROR A
 			ROR(mRegs.A);
 			mCycles += 2;
+			break;
+		// 0x6B is unused
+		case 0x6C:	// JMP (abs)
+			addr = ABS_ADDR();
+			mRegs.PC = mMemory->ReadByte(addr);
+			mRegs.PC |= (uint16_t)mMemory->ReadByte((addr & 0xFF00) + ((addr+1) & 0xFF)) << 8;
+			mCycles += 7;
 			break;
 		case 0x6D:	// ADC abs
 			operand = mMemory->ReadByte(ABS_ADDR());
@@ -834,6 +886,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.Y);
 			mCycles += 4;
 			break;
+		// 0x7B is unused
 		case 0x7D:	// ADC abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
@@ -904,6 +957,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.A);
 			mCycles += 2;
 			break;
+		// 0x8B is unused
 		case 0x8C:	// STY abs
 			addr = ABS_ADDR();
 			mRegs.PC += 2;
@@ -961,6 +1015,11 @@ void HuC6280::Run(uint32_t maxCycles)
 			mMemory->WriteByte(addr, mRegs.X);
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 4;
+			break;
+		case 0x98:	// TYA
+			mRegs.A = mRegs.Y;
+			UPDATE_NZ(mRegs.A);
+			mCycles += 2;
 			break;
 		case 0x99:	// STA abs,Y
 			ABSY_ADDR(addr);
