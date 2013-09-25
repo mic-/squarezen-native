@@ -165,7 +165,6 @@
 
 // (zp)
 // Updates PC
-// ToDo: handle this addressing mode properly
 #define IND_ADDR(dest)  dest = ZP_ADDR(); \
 						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte((dest & 0xFF00)+((dest+1)&0xFF)) << 8))
 
@@ -413,6 +412,12 @@ const HuC6280::Instruction gDisassemblyTable[] =
 	{0x9D, "STA", HuC6280::OPERAND_ABSX},
 	{0x9E, "STZ", HuC6280::OPERAND_ABSX},
 	{0x9F, "BBS1", HuC6280::OPERAND_ZP_REL},
+	{0xA0, "LDY", HuC6280::OPERAND_IMM},
+	{0xA1, "LDA", HuC6280::OPERAND_INDX},
+	{0xA2, "LDX", HuC6280::OPERAND_IMM},
+	{0xA3, "TST", HuC6280::OPERAND_IMM_ZPX},
+	{0xA4, "LDY", HuC6280::OPERAND_ZP},
+	{0xA5, "LDA", HuC6280::OPERAND_ZP},
 
 };
 
@@ -756,6 +761,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			break;
 		// 0x3A is unused
 		// 0x3B is unused
+		case 0x3C:	// BIT abs,X
+			ABSX_ADDR(addr);
+			operand = mMemory->ReadByte(addr);
+			BIT(operand);
+			mCycles += 5;
+			break;
 		case 0x3D:	// AND abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
@@ -1093,6 +1104,12 @@ void HuC6280::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 		// 0x7B is unused
+		case 0x7C:	// JMP (abs,X)
+			ABSX_ADDR(addr);
+			mRegs.PC = mMemory->ReadByte(addr);
+			mRegs.PC |= (uint16_t)mMemory->ReadByte((addr & 0xFF00) + ((addr+1) & 0xFF)) << 8;
+			mCycles += 7;
+			break;
 		case 0x7D:	// ADC abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr);
