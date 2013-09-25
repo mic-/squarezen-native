@@ -165,6 +165,7 @@
 
 // (zp)
 // Updates PC
+// ToDo: handle this addressing mode properly
 #define IND_ADDR(dest)  dest = ZP_ADDR(); \
 						dest = (mMemory->ReadByte(dest) + ((uint16_t)mMemory->ReadByte((dest & 0xFF00)+((dest+1)&0xFF)) << 8))
 
@@ -360,9 +361,49 @@ const HuC6280::Instruction gDisassemblyTable[] =
 	{0x69, "ADC", HuC6280::OPERAND_IMM},
 	{0x6A, "ROR", HuC6280::OPERAND_ACCUM},
 	{0x6B, "Illegal", HuC6280::NO_OPERANDS},
-
+	{0x6C, "JMP", HuC6280::OPERAND_ABSIND},
+	{0x6D, "ADC", HuC6280::OPERAND_ABS},
+	{0x6E, "ROR", HuC6280::OPERAND_ABS},
+	{0x6F, "BBR6", HuC6280::OPERAND_ZP_REL},
+	{0x70, "BVS", HuC6280::OPERAND_REL},
+	{0x71, "ADC", HuC6280::OPERAND_INDY},
+	{0x72, "ADC", HuC6280::OPERAND_IND},
+	{0x73, "TII", HuC6280::OPERAND_ABS_ABS_ABS},
+	{0x74, "STZ", HuC6280::OPERAND_ZPX},
+	{0x75, "ADC", HuC6280::OPERAND_ZPX},
+	{0x76, "ROR", HuC6280::OPERAND_ZPX},
+	{0x77, "RMB7", HuC6280::OPERAND_ZP},
+	{0x78, "SEI", HuC6280::NO_OPERANDS},
+	{0x79, "ADC", HuC6280::OPERAND_ABSY},
+	{0x7A, "PLY", HuC6280::NO_OPERANDS},
+	{0x7B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x7C, "JMP", HuC6280::OPERAND_ABSXIND},
+	{0x7D, "ADC", HuC6280::OPERAND_ABSX},
+	{0x7E, "ROR", HuC6280::OPERAND_ABSX},
+	{0x7F, "BBR7", HuC6280::OPERAND_ZP_REL},
+	{0x80, "BRA", HuC6280::OPERAND_ABSX},
+	{0x81, "STA", HuC6280::OPERAND_ZPX},
+	{0x82, "CLX", HuC6280::NO_OPERANDS},
+	{0x83, "TST", HuC6280::OPERAND_IMM_ZP},
+	{0x84, "STY", HuC6280::OPERAND_ZP},
+	{0x85, "STA", HuC6280::OPERAND_ZP},
+	{0x86, "STX", HuC6280::OPERAND_ZP},
+	{0x87, "SMB0", HuC6280::OPERAND_ZP},
+	{0x88, "DEY", HuC6280::NO_OPERANDS},
+	{0x89, "BIT", HuC6280::OPERAND_IMM},
+	{0x8A, "TXA", HuC6280::NO_OPERANDS},
+	{0x8B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x8C, "STY", HuC6280::OPERAND_ABS},
+	{0x8D, "STA", HuC6280::OPERAND_ABS},
+	{0x8E, "STX", HuC6280::OPERAND_ABS},
+	{0x8F, "BBS0", HuC6280::OPERAND_ZP_REL},
+	{0x90, "BCC", HuC6280::OPERAND_REL},
+	{0x91, "STA", HuC6280::OPERAND_INDY},
+	{0x92, "STA", HuC6280::OPERAND_IND},
+	{0x93, "TST", HuC6280::OPERAND_IMM_ABS},
+	{0x94, "STY", HuC6280::OPERAND_ZPX},
+	{0x95, "STA", HuC6280::OPERAND_ZPX},
 };
-
 
 
 void HuC6280::Reset()
@@ -1145,6 +1186,11 @@ void HuC6280::Run(uint32_t maxCycles)
 			break;
 		case 0x91:	// STA (zp),Y
 			INDY_ADDR(addr);
+			mMemory->WriteByte(addr, mRegs.A);
+			mCycles += 7;
+			break;
+		case 0x92:	// STA (zp)
+			IND_ADDR(addr);
 			mMemory->WriteByte(addr, mRegs.A);
 			mCycles += 7;
 			break;
