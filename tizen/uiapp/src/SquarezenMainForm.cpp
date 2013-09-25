@@ -88,6 +88,7 @@ void ScanDirectory(String root, String relativePath)
 					s.EndsWith(".VGM") ||
 					s.EndsWith(".SID") ||
 					s.EndsWith(".NSF") ||
+					s.EndsWith(".HES") ||
 					s.EndsWith(".GBS")) {
 				//String *temp = new String(entry.GetName());
 				//mFileList->Add(temp);
@@ -159,6 +160,7 @@ SquarezenMainForm::OnInitializing(void)
 				s.EndsWith(".VGM") ||
 				s.EndsWith(".SID") ||
 				s.EndsWith(".NSF") ||
+				s.EndsWith(".HES") ||
 				s.EndsWith(".GBS")) {
 			String *temp = new String(entry.GetName());
 			mFileList->Add(temp);
