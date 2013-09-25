@@ -234,6 +234,120 @@
 
 // ====
 
+const HuC6280::Instruction gDisassemblyTable[] =
+{
+	{0x00, "BRK", HuC6280::NO_OPERANDS},
+	{0x01, "ORA", HuC6280::OPERAND_INDX},
+	{0x02, "SXY", HuC6280::NO_OPERANDS},
+	{0x03, "ST0", HuC6280::OPERAND_IMM},
+	{0x04, "TSB", HuC6280::OPERAND_ZP},
+	{0x05, "ORA", HuC6280::OPERAND_ZP},
+	{0x06, "ASL", HuC6280::OPERAND_ZP},
+	{0x07, "RMB0", HuC6280::OPERAND_ZP},
+	{0x08, "PHP", HuC6280::NO_OPERANDS},
+	{0x09, "ORA", HuC6280::OPERAND_IMM},
+	{0x0A, "ASL", HuC6280::OPERAND_ACCUM},
+	{0x0B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x0C, "TSB", HuC6280::OPERAND_ABS},
+	{0x0D, "ORA", HuC6280::OPERAND_ABS},
+	{0x0E, "ASL", HuC6280::OPERAND_ABS},
+	{0x0F, "BBR0", HuC6280::OPERAND_ZP_REL},
+	{0x10, "BPL", HuC6280::OPERAND_REL},
+	{0x11, "ORA", HuC6280::OPERAND_INDY},
+	{0x12, "ORA", HuC6280::OPERAND_IND},
+	{0x13, "ST1", HuC6280::OPERAND_IMM},
+	{0x14, "TRB", HuC6280::OPERAND_ZP},
+	{0x15, "ORA", HuC6280::OPERAND_ZPX},
+	{0x16, "ASL", HuC6280::OPERAND_ZPX},
+	{0x17, "RMB1", HuC6280::OPERAND_ZP},
+	{0x18, "CLC", HuC6280::NO_OPERANDS},
+	{0x19, "ORA", HuC6280::OPERAND_ABSY},
+	{0x1A, "INC", HuC6280::OPERAND_ACCUM},
+	{0x1B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x1C, "TRB", HuC6280::OPERAND_ABS},
+	{0x1D, "ORA", HuC6280::OPERAND_ABSX},
+	{0x1E, "ASL", HuC6280::OPERAND_ABSX},
+	{0x1F, "BBR1", HuC6280::OPERAND_ZP_REL},
+	{0x20, "JSR", HuC6280::OPERAND_ABS},
+	{0x21, "AND", HuC6280::OPERAND_INDX},
+	{0x22, "SAX", HuC6280::NO_OPERANDS},
+	{0x23, "ST2", HuC6280::OPERAND_IMM},
+	{0x24, "BIT", HuC6280::OPERAND_ZP},
+	{0x25, "AND", HuC6280::OPERAND_ZP},
+	{0x26, "ROL", HuC6280::OPERAND_ZP},
+	{0x27, "RMB2", HuC6280::OPERAND_ZP},
+	{0x28, "PLP", HuC6280::NO_OPERANDS},
+	{0x29, "AND", HuC6280::OPERAND_IMM},
+	{0x2A, "ROL", HuC6280::OPERAND_ACCUM},
+	{0x2B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x2C, "BIT", HuC6280::OPERAND_ABS},
+	{0x2D, "AND", HuC6280::OPERAND_ABS},
+	{0x2E, "ROL", HuC6280::OPERAND_ABS},
+	{0x2F, "BBR2", HuC6280::OPERAND_ZP_REL},
+	{0x30, "BMI", HuC6280::OPERAND_REL},
+	{0x31, "AND", HuC6280::OPERAND_INDY},
+	{0x32, "AND", HuC6280::OPERAND_IND},
+	{0x33, "Illegal", HuC6280::NO_OPERANDS},
+	{0x34, "BIT", HuC6280::OPERAND_ZPX},
+	{0x35, "AND", HuC6280::OPERAND_ZPX},
+	{0x36, "ROL", HuC6280::OPERAND_ZPX},
+	{0x37, "RMB3", HuC6280::OPERAND_ZP},
+	{0x38, "SEC", HuC6280::NO_OPERANDS},
+	{0x39, "AND", HuC6280::OPERAND_ABSY},
+	{0x3A, "Illegal", HuC6280::NO_OPERANDS},
+	{0x3B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x3C, "BIT", HuC6280::OPERAND_ABSX},
+	{0x3D, "AND", HuC6280::OPERAND_ABSX},
+	{0x3E, "ROL", HuC6280::OPERAND_ABSX},
+	{0x3F, "BBR3", HuC6280::OPERAND_ZP_REL},
+	{0x40, "RTI", HuC6280::NO_OPERANDS},
+	{0x41, "EOR", HuC6280::OPERAND_INDX},
+	{0x42, "SAY", HuC6280::NO_OPERANDS},
+	{0x43, "TMA", HuC6280::NO_OPERANDS},
+	{0x44, "BSR", HuC6280::OPERAND_REL},
+	{0x45, "EOR", HuC6280::OPERAND_ZP},
+	{0x46, "LSR", HuC6280::OPERAND_ZP},
+	{0x47, "RMB4", HuC6280::OPERAND_ZP},
+	{0x48, "PHA", HuC6280::NO_OPERANDS},
+	{0x49, "EOR", HuC6280::OPERAND_IMM},
+	{0x4A, "LSR", HuC6280::OPERAND_ACCUM},
+	{0x4B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x4C, "JMP", HuC6280::OPERAND_ABS},
+	{0x4D, "EOR", HuC6280::OPERAND_ABS},
+	{0x4E, "LSR", HuC6280::OPERAND_ZP},
+	{0x4F, "BBR4", HuC6280::OPERAND_ZP_REL},
+	{0x50, "BVC", HuC6280::OPERAND_REL},
+	{0x51, "EOR", HuC6280::OPERAND_INDY},
+	{0x52, "EOR", HuC6280::OPERAND_IND},
+	{0x53, "TAM", HuC6280::NO_OPERANDS},
+	{0x54, "CSL", HuC6280::NO_OPERANDS},
+	{0x55, "EOR", HuC6280::OPERAND_ZPX},
+	{0x56, "LSR", HuC6280::OPERAND_ZPX},
+	{0x57, "RMB5", HuC6280::OPERAND_ZP},
+	{0x58, "CLI", HuC6280::NO_OPERANDS},
+	{0x59, "EOR", HuC6280::OPERAND_ABSY},
+	{0x5A, "PHY", HuC6280::NO_OPERANDS},
+	{0x5B, "Illegal", HuC6280::NO_OPERANDS},
+	{0x5C, "Illegal", HuC6280::NO_OPERANDS},
+	{0x5D, "EOR", HuC6280::OPERAND_ABSX},
+	{0x5E, "LSR", HuC6280::OPERAND_ABSX},
+	{0x5F, "BBR5", HuC6280::OPERAND_ZP_REL},
+	{0x60, "RTS", HuC6280::NO_OPERANDS},
+	{0x61, "ADC", HuC6280::OPERAND_INDX},
+	{0x62, "CLA", HuC6280::NO_OPERANDS},
+	{0x63, "Illegal", HuC6280::NO_OPERANDS},
+	{0x64, "STZ", HuC6280::OPERAND_ZP},
+	{0x65, "ADC", HuC6280::OPERAND_ZP},
+	{0x66, "ROR", HuC6280::OPERAND_ZP},
+	{0x67, "RMB6", HuC6280::OPERAND_ZP},
+	{0x68, "PLA", HuC6280::NO_OPERANDS},
+	{0x69, "ADC", HuC6280::OPERAND_IMM},
+	{0x6A, "ROR", HuC6280::OPERAND_ACCUM},
+	{0x6B, "Illegal", HuC6280::NO_OPERANDS},
+
+};
+
+
 
 void HuC6280::Reset()
 {
@@ -1032,6 +1146,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 2;
 			break;
+		// 0x9B is unused
 		case 0x9C:	// STZ abs
 			addr = ABS_ADDR();
 			mRegs.PC += 2;
@@ -1092,6 +1207,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.X);
 			mCycles += 2;
 			break;
+		// 0xAB is unused
 		case 0xAC:	// LDY abs
 			mRegs.Y = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -1138,6 +1254,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.X);
 			mCycles += 2;
 			break;
+		// 0xBB is unused
 		case 0xBC:	// LDY abs,X
 			ABSX_ADDR(addr);
 			mRegs.Y = mMemory->ReadByte(addr);
@@ -1190,6 +1307,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.X);
 			mCycles += 2;
 			break;
+		// 0xCB is unused
 		case 0xCC:	// CPY abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -1240,6 +1358,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			mRegs.F &= ~HuC6280::FLAG_T;
 			mCycles += 3;
 			break;
+		// 0xDB is unused
 		case 0xDE:	// DEC abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr) - 1;
@@ -1293,6 +1412,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			ADC(operand);
 			mCycles += 2;
 			break;
+		// 0xEB is unused
 		case 0xEC:	// CPX abs
 			operand = mMemory->ReadByte(ABS_ADDR());
 			mRegs.PC += 2;
@@ -1368,6 +1488,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			UPDATE_NZ(mRegs.X);
 			mCycles += 4;
 			break;
+		// 0xFB is unused
 		case 0xFD:	// SBC abs,X
 			ABSX_ADDR(addr);
 			operand = mMemory->ReadByte(addr) ^ 0xFF;
