@@ -18,6 +18,7 @@
 #include <FText.h>
 #include "serviceapp.h"
 #include "../../../emu-players/GbsPlayer.h"
+#include "../../../emu-players/HesPlayer.h"
 #include "../../../emu-players/NsfPlayer.h"
 #include "../../../emu-players/SidPlayer.h"
 #include "../../../emu-players/VgmPlayer.h"
@@ -178,6 +179,8 @@ result serviceappApp::PlayFile(String &filePath) {
 		mPlayer = new SidPlayer;
 	} else if (filePath.EndsWith(".GBS") || filePath.EndsWith(".gbs")) {
 		mPlayer = new GbsPlayer;
+	} else if (filePath.EndsWith(".HES") || filePath.EndsWith(".hes")) {
+		mPlayer = new HesPlayer;
 	} else {
 		AppLog("Unrecognized file type: %S", filePath.GetPointer());
 		return E_FAILURE;
