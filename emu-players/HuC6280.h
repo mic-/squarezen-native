@@ -98,6 +98,8 @@ public:
 	void Reset();
 	void Run(uint32_t maxCycles);
 
+	void Disassemble(uint16_t address);
+
 	void SetMapper(HuC6280Mapper *mapper) { mMemory = mapper; }
 	void SetMpr(uint8_t mprNum, uint8_t val) { mMPR[mprNum & 7] = val; }
 
