@@ -54,6 +54,7 @@ public:
 private:
 	HesFileHeader mFileHeader;
 	HuC6280 *m6280;
+	HuC6280Psg *mPsg;
 	HesMapper *mMemory;
 };
 

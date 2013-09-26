@@ -24,6 +24,7 @@
 
 HesPlayer::HesPlayer()
 	: m6280(NULL)
+	, mPsg(NULL)
 	, mMemory(NULL)
 {
 }
@@ -31,8 +32,10 @@ HesPlayer::HesPlayer()
 HesPlayer::~HesPlayer()
 {
 	delete m6280;
+	delete mPsg;
 	delete mMemory;
-	m6280 = NULL;
+	m6280   = NULL;
+	mPsg    = NULL;
 	mMemory = NULL;
 }
 
@@ -40,6 +43,14 @@ int HesPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV("HesPlayer", "Reset");
+
+	delete m6280;
+	delete mPsg;
+	delete mMemory;
+	m6280   = NULL;
+	mPsg    = NULL;
+	mMemory = NULL;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
@@ -87,7 +98,20 @@ int HesPlayer::Prepare(std::string fileName)
 	musicFile.close();
 
 	m6280 = new HuC6280;
+	mPsg = new HuC6280Psg;
 	mMemory = new HesMapper(0);	// ToDo: set number of ROM banks
+
+	mMemory->SetPsg(mPsg);
+	m6280->SetMapper(mMemory);
+
+	mMemory->Reset();
+	m6280->Reset();
+	mPsg->Reset();
+
+	for (int i = 0; i < 8; i++) {
+		m6280->SetMpr(i, mFileHeader.MPR[i]);
+		mMemory->SetMpr(i, mFileHeader.MPR[i]);
+	}
 
 	NLOGD("HesPlayer", "Prepare finished");
 

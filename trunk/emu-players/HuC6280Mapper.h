@@ -27,14 +27,14 @@
 class HuC6280Mapper : public MemoryMapper
 {
 public:
-	virtual void SetMpr(uint8_t mprNum, uint8_t val) { MPR[mprNum & 7] = val; }
+	virtual void SetMpr(uint8_t mprNum, uint8_t val) { mMPR[mprNum & 7] = val; }
 
 	enum {
 		MPR_RAM_PAGE = 0xF8,
 		MPR_IO_PAGE = 0xFF,
 	};
 
-	uint8_t MPR[8];
+	uint8_t mMPR[8];
 };
 
 #endif	/* HUC6280MAPPER_H_ */
