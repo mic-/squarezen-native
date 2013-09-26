@@ -49,7 +49,7 @@ void HesMapper::Reset()
 uint8_t HesMapper::ReadByte(uint16_t addr)
 {
 	uint32_t page = (addr >> 13) & 7;
-	uint32_t mpr = MPR[page];
+	uint32_t mpr = mMPR[page];
 	uint32_t offset = addr & 0x1FFF;
 
 	if (mpr < 0x80) {
@@ -72,7 +72,7 @@ void HesMapper::WriteByte(uint16_t addr, uint8_t data)
 	uint32_t page = (addr >> 13) & 7;
 	uint32_t offset = addr & 0x1FFF;
 
-	switch (MPR[page]) {
+	switch (mMPR[page]) {
 	case HuC6280Mapper::MPR_RAM_PAGE:
 		mRam[offset] = data;
 		break;
