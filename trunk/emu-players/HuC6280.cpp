@@ -1849,6 +1849,113 @@ void HuC6280::Run(uint32_t maxCycles)
 }
 
 
+void HuC6280::Disassemble(uint16_t address)
+{
+	uint8_t opcode = mMemory->ReadByte(address);
+	uint8_t operand1, operand2;
+	std::string opcodeStr, machineCodeStr, eaStr;
+	char temp[16];
+	char operandStr[20];
+	operand1 = mMemory->ReadByte(address+1);
+	operand2 = mMemory->ReadByte(address+2);
+
+	snprintf(temp, 16, "%02x", opcode);
+	machineCodeStr = temp;
+
+	opcodeStr = gDisassemblyTable[opcode].mnemonic;
+
+	switch(gDisassemblyTable[opcode].operands) {
+	case OPERAND_ACCUM:
+		// ToDo: handle
+		break;
+	case OPERAND_IMM:
+		snprintf(operandStr, 16, " #$%02x", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+	case OPERAND_ZP:
+		snprintf(operandStr, 16, " $%02x", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+	case OPERAND_ZPX:
+		snprintf(operandStr, 16, " $%02x,X", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		snprintf(temp, 16, " [%#x]", (operand1 + mRegs.X) & 0xFF);
+		eaStr = temp;
+		break;
+	case OPERAND_ZPY:
+		snprintf(operandStr, 16, " $%02x,Y", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		snprintf(temp, 16, " [%#x]", (operand1 + mRegs.Y) & 0xFF);
+		eaStr = temp;
+		break;
+	case OPERAND_ABS:
+		// ToDo: handle
+		break;
+	case OPERAND_ABSX:
+		// ToDo: handle
+		break;
+	case OPERAND_ABSY:
+		// ToDo: handle
+		break;
+	case OPERAND_IND:
+		snprintf(operandStr, 16, " ($%02x)", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+	case OPERAND_INDX:
+		snprintf(operandStr, 16, " ($%02x,X)", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+	case OPERAND_INDY:
+		snprintf(operandStr, 16, " ($%02x),Y", operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+	case OPERAND_ABSIND:
+		// ToDo: handle
+		break;
+	case OPERAND_ABSXIND:
+		// ToDo: handle
+		break;
+	case OPERAND_REL:
+		snprintf(operandStr, 16, " <$%04x", address + 2 + (int8_t)operand1);
+		snprintf(temp, 8, " %02x", operand1);
+		machineCodeStr += temp;
+		break;
+	case OPERAND_ZP_REL:
+		// ToDo: handle
+		break;
+	case OPERAND_IMM_ABS:
+		// ToDo: handle
+		break;
+	case OPERAND_IMM_ABSX:
+		// ToDo: handle
+		break;
+	case OPERAND_IMM_ZP:
+		// ToDo: handle
+		break;
+	case OPERAND_IMM_ZPX:
+		// ToDo: handle
+		break;
+	case OPERAND_ABS_ABS_ABS:
+		// ToDo: handle
+		break;
+	case NO_OPERANDS:
+	default:
+		snprintf(operandStr, 16, "");
+		break;
+	}
+
+	NLOGD("HuC6280", "%#x: %s %s%s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x",
+			address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, eaStr.c_str(), mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
+}
+
+
 HuC6280PsgChannel::HuC6280PsgChannel()
 	: mVolL(0), mVolR(0)
 	, mEnable(HuC6280Psg::WRITE_WAVEFORM_RAM)
