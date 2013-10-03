@@ -113,20 +113,11 @@ int NsfPlayer::Prepare(std::string fileName)
     size_t fileSize;
     uint32_t numBanks;
 
-    if (MusicPlayer::STATE_CREATED != GetState()) {
-    	Reset();
+    int result;
+    std::ifstream musicFile;
+    if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
+    	return result;
     }
-
-    mState = MusicPlayer::STATE_PREPARING;
-
-    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
-    if (!musicFile) {
-    	NLOGE("NsfPlayer", "Failed to open file %S", fileName.c_str());
-    	return MusicPlayer::ERROR_FILE_IO;
-    }
-    musicFile.seekg(0, musicFile.end);
-    fileSize = musicFile.tellg();
-    musicFile.seekg(0, musicFile.beg);
 
     NLOGD("NsfPlayer", "Reading NSF header");
     musicFile.read((char*)&mFileHeader, sizeof(NsfFileHeader));
