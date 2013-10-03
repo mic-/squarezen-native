@@ -88,7 +88,7 @@ void SpcMapper::Reset()
 }
 
 
-uint8_t SpcMapper::ReadByte(uint16_t addr)
+uint8_t SpcMapper::ReadByte(uint32_t addr)
 {
 	if (addr >= 0xFFC0 && (mCtrl & 0x80)) {
 		return IPL_ROM[addr & 0x3F];
@@ -97,7 +97,7 @@ uint8_t SpcMapper::ReadByte(uint16_t addr)
 }
 
 
-void SpcMapper::WriteByte(uint16_t addr, uint8_t data)
+void SpcMapper::WriteByte(uint32_t addr, uint8_t data)
 {
 	if (addr < 0xFFC0 || (mCtrl & 0x80) == 0) {
 		mRam[addr] = data;

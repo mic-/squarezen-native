@@ -46,7 +46,7 @@ void HesMapper::Reset()
 	// ToDo: implement
 }
 
-uint8_t HesMapper::ReadByte(uint16_t addr)
+uint8_t HesMapper::ReadByte(uint32_t addr)
 {
 	uint32_t page = (addr >> 13) & 7;
 	uint32_t mpr = mMPR[page];
@@ -67,7 +67,7 @@ uint8_t HesMapper::ReadByte(uint16_t addr)
 	return 0;
 }
 
-void HesMapper::WriteByte(uint16_t addr, uint8_t data)
+void HesMapper::WriteByte(uint32_t addr, uint8_t data)
 {
 	uint32_t page = (addr >> 13) & 7;
 	uint32_t offset = addr & 0x1FFF;

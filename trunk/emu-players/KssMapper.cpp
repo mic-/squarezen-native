@@ -43,13 +43,13 @@ void KssMapper::Reset()
 	// ToDo: implement
 }
 
-uint8_t KssMapper::ReadByte(uint16_t addr)
+uint8_t KssMapper::ReadByte(uint32_t addr)
 {
 	// ToDo: implement
 	return 0;
 }
 
-void KssMapper::WriteByte(uint16_t addr, uint8_t data)
+void KssMapper::WriteByte(uint32_t addr, uint8_t data)
 {
 	// ToDo: implement
 	if (addr >= 0x9800 && addr <= 0x989F) {

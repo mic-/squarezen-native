@@ -56,7 +56,7 @@ SidMapper::~SidMapper()
 }
 
 
-uint8_t SidMapper::ReadByte(uint16_t addr)
+uint8_t SidMapper::ReadByte(uint32_t addr)
 {
 	uint8_t bankSelect = mRam[1] & 7;
 
@@ -97,7 +97,7 @@ uint8_t SidMapper::ReadByte(uint16_t addr)
 }
 
 
-void SidMapper::WriteByte(uint16_t addr, uint8_t data)
+void SidMapper::WriteByte(uint32_t addr, uint8_t data)
 {
 	NLOGV("SidMapper", "Write(%#x, %#x)", addr, data);
 
