@@ -78,4 +78,6 @@ private:
 	uint16_t mDriverPage;
 };
 
+MusicPlayer *SidPlayerFactory();
+
 #endif /* SIDPLAYER_H_ */

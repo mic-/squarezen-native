@@ -88,4 +88,6 @@ private:
 	bool mSccEnabled;
 };
 
+MusicPlayer *KssPlayerFactory();
+
 #endif	/* KSSPLAYER_H_ */

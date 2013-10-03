@@ -40,6 +40,11 @@ VgmPlayer::VgmPlayer()
 {
 }
 
+MusicPlayer *VgmPlayerFactory()
+{
+	return new VgmPlayer;
+}
+
 int VgmPlayer::Reset()
 {
 	NLOGV("VgmPlayer", "VgmPlayer::Reset");

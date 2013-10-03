@@ -43,6 +43,10 @@ NsfPlayer::NsfPlayer()
 	}
 }
 
+MusicPlayer *NsfPlayerFactory()
+{
+	return new NsfPlayer;
+}
 
 NsfPlayer::~NsfPlayer()
 {

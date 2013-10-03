@@ -82,5 +82,7 @@ private:
 	SgcMapper *mMemory;
 };
 
+MusicPlayer *SgcPlayerFactory();
+
 #endif	/* SGCPLAYER_H_ */
 

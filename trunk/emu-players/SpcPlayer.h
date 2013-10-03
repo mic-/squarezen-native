@@ -80,4 +80,6 @@ private:
 	uint32_t mCycleCount, mScanlineCycles;
 };
 
+MusicPlayer *SpcPlayerFactory();
+
 #endif /* SPCPLAYER_H_ */

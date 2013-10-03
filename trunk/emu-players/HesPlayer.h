@@ -58,4 +58,6 @@ private:
 	HesMapper *mMemory;
 };
 
+MusicPlayer *HesPlayerFactory();
+
 #endif	/* HESPLAYER_H_ */

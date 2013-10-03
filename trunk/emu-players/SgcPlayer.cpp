@@ -29,6 +29,11 @@ SgcPlayer::SgcPlayer()
 {
 }
 
+MusicPlayer *SgcPlayerFactory()
+{
+	return new SgcPlayer;
+}
+
 SgcPlayer::~SgcPlayer()
 {
 	delete mZ80;

@@ -28,6 +28,11 @@ SpcPlayer::SpcPlayer()
 
 }
 
+MusicPlayer *SpcPlayerFactory()
+{
+	return new SpcPlayer;
+}
+
 SpcPlayer::~SpcPlayer()
 {
 	delete mBlipBufRight;

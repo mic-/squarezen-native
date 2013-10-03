@@ -81,4 +81,6 @@ private:
 	char mAsciiTitle[256], mAsciiAuthor[256], mAsciiComment[256];
 };
 
+MusicPlayer *VgmPlayerFactory();
+
 #endif /* VGMPLAYER_H_ */
