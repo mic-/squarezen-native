@@ -29,5 +29,46 @@ void M68000::Reset()
 
 void M68000::Run(uint32_t maxCycles)
 {
+	uint8_t opcode, opcodeLo;
+	uint16_t opcode16;
+	uint32_t srcMode, dstMode;
+	uint32_t srcReg, dstReg;
+
 	// ToDo: implement
+
+	opcode = mMemory->ReadByte(mRegs.PC++);
+	opcodeLo = mMemory->ReadByte(mRegs.PC++);
+	opcode16 = ((uint16_t)opcode << 8) | opcodeLo;
+
+	switch (opcode & 0xF0) {
+	case 0x30:
+		dstMode = (opcode16 >> 6) & 7;
+		srcMode = (opcodeLo >> 3) & 7;
+		dstReg = (opcode >> 1) & 7;
+		if (dstMode == 1) {
+			// MOVEA
+			switch (srcMode) {
+			case 0x00:	// Dn
+				mRegs.A[dstReg] = mRegs.D[opcodeLo & 7];
+				// ToDo: update flags and cycles
+				break;
+			case 0x01:	// An
+				mRegs.A[dstReg] = mRegs.A[opcodeLo & 7];
+				// ToDo: update flags and cycles
+				break;
+			}
+		} else {
+			// MOVE
+		}
+		break;
+	case 0x70:
+		if (!(opcode & 1)) {
+			// MOVEQ #imm8,Dn
+			mRegs.D[(opcode >> 1) & 7] = (int8_t)opcodeLo;
+			// ToDo: update flags and cycles
+		}
+		break;
+	default:
+		break;
+	}
 }

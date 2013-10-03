@@ -1,7 +1,7 @@
 /*
- * MemoryMapper.h
+ * SndhMapper.h
  *
- *  Created on: Jun 2, 2013
+ *  Created on: Oct 3, 2013
  *
  * Copyright 2013 Mic
  *
@@ -18,23 +18,23 @@
  * limitations under the License.
  */
 
-#ifndef MEMORYMAPPER_H_
-#define MEMORYMAPPER_H_
+#ifndef SNDHMAPPER_H_
+#define SNDHMAPPER_H_
 
 #include <stdint.h>
+#include "MemoryMapper.h"
 
-class MemoryMapper
+
+class SndhMapper : public MemoryMapper
 {
 public:
-	virtual ~MemoryMapper() {}
+	SndhMapper(uint32_t numRomPages);
+	virtual ~SndhMapper();
 
-	virtual void Reset() = 0;
-	virtual uint8_t ReadByte(uint32_t addr) = 0;
-	virtual void WriteByte(uint32_t addr, uint8_t data) = 0;
-
-	virtual uint8_t ReadPort(uint16_t port) { return 0; }
-	virtual void WritePort(uint16_t port, uint8_t data) {}
+	virtual void Reset();
+	virtual uint8_t ReadByte(uint32_t addr);
+	virtual void WriteByte(uint32_t addr, uint8_t data);
 };
 
+#endif /* SNDHMAPPER_H_ */
 
-#endif /* MEMORYMAPPER_H_ */

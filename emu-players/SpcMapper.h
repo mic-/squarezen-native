@@ -34,8 +34,8 @@ public:
 	virtual ~SpcMapper();
 
 	virtual void Reset();
-	virtual uint8_t ReadByte(uint16_t addr);
-	virtual void WriteByte(uint16_t addr, uint8_t data);
+	virtual uint8_t ReadByte(uint32_t addr);
+	virtual void WriteByte(uint32_t addr, uint8_t data);
 
 	void SetCpu(SSmp *cpu) { mSSmp = cpu; }
 	void SetDsp(SDsp *dsp) { mSDsp = dsp; }

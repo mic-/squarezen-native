@@ -121,7 +121,7 @@ uint8_t SgcMapper::ReadByteCV(uint16_t addr)
 	return 0;
 }
 
-uint8_t SgcMapper::ReadByte(uint16_t addr)
+uint8_t SgcMapper::ReadByte(uint32_t addr)
 {
 	return (this->*mReadByteFunc)(addr);
 }
@@ -153,7 +153,7 @@ void SgcMapper::WriteByteCV(uint16_t addr, uint8_t data)
 	}
 }
 
-void SgcMapper::WriteByte(uint16_t addr, uint8_t data)
+void SgcMapper::WriteByte(uint32_t addr, uint8_t data)
 {
 	(this->*mWriteByteFunc)(addr, data);
 }

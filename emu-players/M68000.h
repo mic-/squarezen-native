@@ -46,6 +46,8 @@ public:
 	} mRegs;
 
 	uint32_t mCycles;
+private:
+	MemoryMapper *mMemory;
 };
 
 #endif

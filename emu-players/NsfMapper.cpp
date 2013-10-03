@@ -85,7 +85,7 @@ uint8_t NsfMapper::ReadByte_8000(uint16_t addr)
 }
 
 
-uint8_t NsfMapper::ReadByte(uint16_t addr)
+uint8_t NsfMapper::ReadByte(uint32_t addr)
 {
 	return (this->*mReadByteFunc[addr >> 12])(addr);
 }
@@ -170,7 +170,7 @@ void NsfMapper::WriteByte_8000(uint16_t addr, uint8_t data)
 }
 
 
-void NsfMapper::WriteByte(uint16_t addr, uint8_t data)
+void NsfMapper::WriteByte(uint32_t addr, uint8_t data)
 {
 	(this->*mWriteByteFunc[addr >> 12])(addr, data);
 }

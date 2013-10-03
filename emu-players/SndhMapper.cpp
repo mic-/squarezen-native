@@ -1,8 +1,4 @@
 /*
- * MemoryMapper.h
- *
- *  Created on: Jun 2, 2013
- *
  * Copyright 2013 Mic
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,23 +14,38 @@
  * limitations under the License.
  */
 
-#ifndef MEMORYMAPPER_H_
-#define MEMORYMAPPER_H_
+#define NLOG_LEVEL_VERBOSE 0
 
-#include <stdint.h>
+#include <string.h>
+#include <stddef.h>
+#include "NativeLogger.h"
+#include "SndhMapper.h"
 
-class MemoryMapper
+
+SndhMapper::SndhMapper(uint32_t numRomPages)
 {
-public:
-	virtual ~MemoryMapper() {}
+	// ToDo: implement
+}
 
-	virtual void Reset() = 0;
-	virtual uint8_t ReadByte(uint32_t addr) = 0;
-	virtual void WriteByte(uint32_t addr, uint8_t data) = 0;
+SndhMapper::~SndhMapper()
+{
 
-	virtual uint8_t ReadPort(uint16_t port) { return 0; }
-	virtual void WritePort(uint16_t port, uint8_t data) {}
-};
+}
 
 
-#endif /* MEMORYMAPPER_H_ */
+void SndhMapper::Reset()
+{
+	// ToDo: implement
+}
+
+
+uint8_t SndhMapper::ReadByte(uint32_t addr)
+{
+	// ToDo: implement
+	return 0;
+}
+
+void SndhMapper::WriteByte(uint32_t addr, uint8_t data)
+{
+	// ToDo: implement
+}
