@@ -33,6 +33,11 @@ KssPlayer::KssPlayer()
 {
 }
 
+MusicPlayer *KssPlayerFactory()
+{
+	return new KssPlayer;
+}
+
 KssPlayer::~KssPlayer()
 {
 	delete mZ80;

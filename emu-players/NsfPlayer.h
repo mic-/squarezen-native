@@ -95,5 +95,6 @@ private:
 	uint32_t mFrameCycles, mCycleCount, mPlayCounter;
 };
 
+MusicPlayer *NsfPlayerFactory();
 
 #endif /* NSFPLAYER_H_ */

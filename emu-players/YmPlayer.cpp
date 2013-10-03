@@ -42,6 +42,10 @@ YmPlayer::YmPlayer()
 {
 }
 
+MusicPlayer *YmPlayerFactory()
+{
+	return new YmPlayer;
+}
 
 int YmPlayer::Reset()
 {

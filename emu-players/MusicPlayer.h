@@ -21,10 +21,12 @@
 #ifndef MUSICPLAYER_H_
 #define MUSICPLAYER_H_
 
+#include <map>
 #include <string>
 #include <stdint.h>
 #include "Blip_Buffer.h"
 
+class MusicPlayer;
 
 class MetaData
 {
@@ -65,6 +67,9 @@ private:
 };
 
 
+typedef MusicPlayer* (*PlayerFactory)(void);
+
+
 class MusicPlayer
 {
 public:
@@ -76,6 +81,9 @@ public:
 		delete mBlipBuf; mBlipBuf = NULL;
 		delete [] mSynth; mSynth = NULL;
 	}
+
+	static bool IsSupportedFileType(std::string fileName);
+	static MusicPlayer *MusicPlayerFactory(std::string fileName);
 
 	/*
 	 * Prepare playback of the file specified by fileName
@@ -135,6 +143,7 @@ protected:
 	Blip_Synth<blip_low_quality,4096> *mSynth;
 	MetaData mMetaData;
 	int mState;
+	static std::map<std::string, PlayerFactory> mSupportedFormats;
 };
 
 

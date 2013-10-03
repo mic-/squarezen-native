@@ -76,6 +76,10 @@ SidPlayer::SidPlayer()
 	// TODO: fill out
 }
 
+MusicPlayer *SidPlayerFactory()
+{
+	return new SidPlayer;
+}
 
 SidPlayer::~SidPlayer()
 {

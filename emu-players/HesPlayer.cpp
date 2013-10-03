@@ -29,6 +29,11 @@ HesPlayer::HesPlayer()
 {
 }
 
+MusicPlayer *HesPlayerFactory()
+{
+	return new HesPlayer;
+}
+
 HesPlayer::~HesPlayer()
 {
 	delete m6280;

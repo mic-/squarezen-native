@@ -33,6 +33,11 @@ GbsPlayer::GbsPlayer()
 	cart = NULL;
 }
 
+MusicPlayer *GbsPlayerFactory()
+{
+	return new GbsPlayer;
+}
+
 
 GbsPlayer::~GbsPlayer()
 {

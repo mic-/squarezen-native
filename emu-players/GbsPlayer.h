@@ -70,4 +70,6 @@ private:
 	uint32_t mCycleCount, mFrameCycles;
 };
 
+MusicPlayer *GbsPlayerFactory();
+
 #endif /* GBSPLAYER_H_ */

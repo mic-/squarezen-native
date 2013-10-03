@@ -65,5 +65,6 @@ private:
 	int16_t *mTempBuffer;
 };
 
+MusicPlayer *YmPlayerFactory();
 
 #endif /* YMPLAYER_H_ */
