@@ -108,6 +108,7 @@ void KonamiVrc6::Write(uint32_t addr, uint8_t data)
 		mChannels[KonamiVrc6::CHN_SAW].Write(addr, data);
 		break;
 	default:
+		NLOGV("KonamiVrc6", "Unrecognized address: %#x", addr);
 		break;
 	}
 }

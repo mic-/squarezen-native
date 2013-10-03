@@ -16,7 +16,6 @@
 
 #define NLOG_LEVEL_DEBUG 0
 
-//#include <pair>
 #include "NativeLogger.h"
 #include "MusicPlayer.h"
 #include "GbsPlayer.h"
@@ -60,6 +59,7 @@ bool MusicPlayer::IsSupportedFileType(std::string fileName)
 	return false;
 }
 
+
 MusicPlayer *MusicPlayer::MusicPlayerFactory(std::string fileName)
 {
 	std::string lowerCaseName = fileName;
@@ -73,4 +73,27 @@ MusicPlayer *MusicPlayer::MusicPlayerFactory(std::string fileName)
 	}
 
 	return NULL;
+}
+
+
+int MusicPlayer::OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize)
+{
+	fileSize = 0;
+
+    if (MusicPlayer::STATE_CREATED != GetState()) {
+    	Reset();
+    }
+
+    mState = MusicPlayer::STATE_PREPARING;
+
+    musicFile.open(fileName.c_str(), std::ios::in | std::ios::binary);
+    if (!musicFile) {
+    	NLOGE("MusicPlayer", "Failed to open file %S", fileName.c_str());
+    	return MusicPlayer::ERROR_FILE_IO;
+    }
+    musicFile.seekg(0, musicFile.end);
+    fileSize = musicFile.tellg();
+    musicFile.seekg(0, musicFile.beg);
+
+    return MusicPlayer::OK;
 }

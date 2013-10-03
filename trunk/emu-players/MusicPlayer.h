@@ -21,6 +21,7 @@
 #ifndef MUSICPLAYER_H_
 #define MUSICPLAYER_H_
 
+#include <fstream>
 #include <map>
 #include <string>
 #include <stdint.h>
@@ -84,6 +85,8 @@ public:
 
 	static bool IsSupportedFileType(std::string fileName);
 	static MusicPlayer *MusicPlayerFactory(std::string fileName);
+
+	virtual int OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize);
 
 	/*
 	 * Prepare playback of the file specified by fileName

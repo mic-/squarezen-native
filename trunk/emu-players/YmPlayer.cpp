@@ -83,22 +83,15 @@ int YmPlayer::Prepare(std::string fileName)
 	uint32_t  i;
 	uint32_t sampleBytes;
     size_t fileSize;
-    uint16_t  numDigiDrums;
+    uint16_t numDigiDrums;
 
     NLOGV("YmPlayer", "Prepare(%s)", fileName.c_str());
 
-    if (MusicPlayer::STATE_CREATED != GetState()) {
-    	Reset();
+    int result;
+    std::ifstream musicFile;
+    if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
+    	return result;
     }
-
-    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
-    if (!musicFile) {
-    	NLOGE("YmPlayer", "Failed to open file %s", fileName.c_str());
-    	return MusicPlayer::ERROR_FILE_IO;
-    }
-    musicFile.seekg(0, musicFile.end);
-    fileSize = musicFile.tellg();
-    musicFile.seekg(0, musicFile.beg);
 
     if (fileSize < 7) {
     	musicFile.close();

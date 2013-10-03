@@ -119,20 +119,11 @@ int SidPlayer::Prepare(std::string fileName)
     size_t fileSize;
     uint16_t *p16;
 
-    if (MusicPlayer::STATE_CREATED != GetState()) {
-    	Reset();
+    int result;
+    std::ifstream musicFile;
+    if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
+    	return result;
     }
-
-    mState = MusicPlayer::STATE_PREPARING;
-
-    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
-    if (!musicFile) {
-    	NLOGE("SidPlayer", "Failed to open file %S", fileName.c_str());
-    	return MusicPlayer::ERROR_FILE_IO;
-    }
-    musicFile.seekg(0, musicFile.end);
-    fileSize = musicFile.tellg();
-    musicFile.seekg(0, musicFile.beg);
 
     NLOGD("SidPlayer", "Reading PSID v1 header");
     musicFile.read((char*)&mFileHeader, 0x76);

@@ -46,20 +46,11 @@ int AyPlayer::Prepare(std::string fileName)
 
 	NLOGV("AyPlayer", "Prepare(%s)", fileName.c_str());
 
-    if (MusicPlayer::STATE_CREATED != GetState()) {
-    	Reset();
+    int result;
+    std::ifstream musicFile;
+    if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
+    	return result;
     }
-
-    mState = MusicPlayer::STATE_PREPARING;
-
-    std::ifstream musicFile(fileName.c_str(), std::ios::in | std::ios::binary);
-    if (!musicFile) {
-    	NLOGE("AyPlayer", "Failed to open file %S", fileName.c_str());
-    	return MusicPlayer::ERROR_FILE_IO;
-    }
-    musicFile.seekg(0, musicFile.end);
-    fileSize = musicFile.tellg();
-    musicFile.seekg(0, musicFile.beg);
 
     // ToDo: finish
 
