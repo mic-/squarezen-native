@@ -21,6 +21,7 @@
 #include "../../../emu-players/HesPlayer.h"
 #include "../../../emu-players/NsfPlayer.h"
 #include "../../../emu-players/SidPlayer.h"
+#include "../../../emu-players/SpcPlayer.h"
 #include "../../../emu-players/VgmPlayer.h"
 #include "../../../emu-players/YmPlayer.h"
 #include <vector>
@@ -169,16 +170,11 @@ result serviceappApp::PlayFile(String &filePath) {
 		delete mPlayer;
 	}
 
-	if (filePath.EndsWith(".VGM") || filePath.EndsWith(".vgm")) {
-		mPlayer = new VgmPlayer;
-	} else if (filePath.EndsWith(".YM") || filePath.EndsWith(".ym")) {
-		mPlayer = new YmPlayer;
-	} else if (filePath.EndsWith(".NSF") || filePath.EndsWith(".nsf")) {
-		mPlayer = new NsfPlayer;
-	} else if (filePath.EndsWith(".SID") || filePath.EndsWith(".sid")) {
-		mPlayer = new SidPlayer;
-	} else if (filePath.EndsWith(".GBS") || filePath.EndsWith(".gbs")) {
-		mPlayer = new GbsPlayer;
+	std::wstring ws = std::wstring(filePath.GetPointer());
+	std::string s = std::string(ws.begin(), ws.end());
+
+	if (MusicPlayer::IsSupportedFileType(s)) {
+		mPlayer = MusicPlayer::MusicPlayerFactory(s);
 	} else if (filePath.EndsWith(".HES") || filePath.EndsWith(".hes")) {
 		mPlayer = new HesPlayer;
 	} else {
@@ -186,7 +182,6 @@ result serviceappApp::PlayFile(String &filePath) {
 		return E_FAILURE;
 	}
 
-	std::wstring ws = std::wstring(filePath.GetPointer());
 	if (IsFailed(mPlayer->Prepare(ws))) {
     	AppLog("Prepare failed");
     	return E_FAILURE;
