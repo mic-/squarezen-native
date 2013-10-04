@@ -33,9 +33,9 @@ public:
 	AyPlayer();
 	virtual ~AyPlayer();
 
-	virtual int Prepare(std::string fileName);
-	virtual int Run(uint32_t numSamples, int16_t *buffer);
-	virtual int Reset();
+	virtual MusicPlayer::Result Prepare(std::string fileName);
+	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
+	virtual MusicPlayer::Result Reset();
 
 private:
 	Z80 *mZ80;

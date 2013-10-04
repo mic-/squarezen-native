@@ -92,7 +92,7 @@ SidPlayer::~SidPlayer()
 }
 
 
-int SidPlayer::Reset()
+MusicPlayer::Result SidPlayer::Reset()
 {
 	NLOGV("SidPlayer", "Reset");
 
@@ -113,15 +113,15 @@ int SidPlayer::Reset()
 }
 
 
-int SidPlayer::Prepare(std::string fileName)
+MusicPlayer::Result SidPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
     uint16_t *p16;
 
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -321,7 +321,7 @@ void SidPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 }
 
 
-int SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
     int16_t out;

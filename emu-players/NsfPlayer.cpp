@@ -64,7 +64,7 @@ NsfPlayer::~NsfPlayer()
 }
 
 
-int NsfPlayer::Reset()
+MusicPlayer::Result NsfPlayer::Reset()
 {
 	NLOGV("NsfPlayer", "Reset");
 
@@ -107,15 +107,15 @@ void NsfPlayer::Execute6502(uint16_t address)
 }
 
 
-int NsfPlayer::Prepare(std::string fileName)
+MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
     uint32_t numBanks;
 
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -288,7 +288,7 @@ void NsfPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 }
 
 
-int NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t k;
     int16_t pulseOut, tndOut;

@@ -57,9 +57,9 @@ public:
 		// END of v2 header
 	} PsidFileHeader;
 
-	virtual int Prepare(std::string fileName);
-	virtual int Run(uint32_t numSamples, int16_t *buffer);
-	virtual int Reset();
+	virtual MusicPlayer::Result Prepare(std::string fileName);
+	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
+	virtual MusicPlayer::Result Reset();
 
 	void TimerIrq(uint8_t timerNum);
 

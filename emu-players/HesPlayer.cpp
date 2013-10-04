@@ -44,7 +44,7 @@ HesPlayer::~HesPlayer()
 	mMemory = NULL;
 }
 
-int HesPlayer::Reset()
+MusicPlayer::Result HesPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV("HesPlayer", "Reset");
@@ -61,14 +61,14 @@ int HesPlayer::Reset()
 }
 
 
-int HesPlayer::Prepare(std::string fileName)
+MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
 	NLOGV("HesPlayer", "Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -117,7 +117,7 @@ int HesPlayer::Prepare(std::string fileName)
 }
 
 
-int HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t k;
 

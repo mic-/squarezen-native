@@ -35,11 +35,22 @@ public:
 	SndhPlayer();
 	virtual ~SndhPlayer();
 
-	virtual int Prepare(std::string fileName);
-	virtual int Run(uint32_t numSamples, int16_t *buffer);
-	virtual int Reset();
+	virtual MusicPlayer::Result Prepare(std::string fileName);
+	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
+	virtual MusicPlayer::Result Reset();
+
+	typedef struct __attribute__ ((__packed__))
+	{
+		uint32_t initDriverInstruction;		// e.g. BRA.W init_music_driver  (big-endian)
+		uint32_t exitDriverInstruction;
+		uint32_t vblPlayInstruction;
+		char signature[4];					// "SNDH"
+	} SndhFileHeader;
 
 private:
+	MusicPlayer::Result ParseTrackHeader();
+
+	SndhFileHeader mFileHeader;
 	M68000 *m68k;
 	YmChip *mYm;
 	SndhMapper *mMemory;

@@ -44,7 +44,7 @@ SndhPlayer::~SndhPlayer()
 	mMemory = NULL;
 }
 
-int SndhPlayer::Reset()
+MusicPlayer::Result SndhPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV("SndhPlayer", "Reset");
@@ -52,18 +52,37 @@ int SndhPlayer::Reset()
 	return MusicPlayer::OK;
 }
 
+MusicPlayer::Result SndhPlayer::ParseTrackHeader()
+{
+	return MusicPlayer::OK;
+}
 
-int SndhPlayer::Prepare(std::string fileName)
+
+MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
 	NLOGV("SndhPlayer", "Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
+    }
+
+    NLOGV("SndhPlayer", "Reading header");
+    musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
+	if (!musicFile) {
+		NLOGE("SndhPlayer", "Reading SNDH header failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+    if (strncmp(mFileHeader.signature, "SNDH", 4)) {
+    	NLOGE("SndhPlayer", "Bad SNDH header signature");
+    	musicFile.close();
+    	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
     // ToDo: finish
@@ -75,7 +94,7 @@ int SndhPlayer::Prepare(std::string fileName)
 }
 
 
-int SndhPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result SndhPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
 	return MusicPlayer::OK;

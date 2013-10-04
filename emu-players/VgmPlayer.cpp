@@ -45,7 +45,7 @@ MusicPlayer *VgmPlayerFactory()
 	return new VgmPlayer;
 }
 
-int VgmPlayer::Reset()
+MusicPlayer::Result VgmPlayer::Reset()
 {
 	NLOGV("VgmPlayer", "VgmPlayer::Reset");
 
@@ -109,14 +109,14 @@ void VgmPlayer::ParseGd3(size_t fileSize)
 }
 
 
-int VgmPlayer::Prepare(std::string fileName)
+MusicPlayer::Result VgmPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
 
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -308,7 +308,7 @@ void VgmPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 }
 
 
-int VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
     int16_t out;

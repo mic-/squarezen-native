@@ -32,7 +32,7 @@ AyPlayer::~AyPlayer()
 
 }
 
-int AyPlayer::Reset()
+MusicPlayer::Result AyPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV("AyPlayer", "Reset");
@@ -40,14 +40,14 @@ int AyPlayer::Reset()
 	return MusicPlayer::OK;
 }
 
-int AyPlayer::Prepare(std::string fileName)
+MusicPlayer::Result AyPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
 	NLOGV("AyPlayer", "Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -65,7 +65,7 @@ int AyPlayer::Prepare(std::string fileName)
 }
 
 
-int AyPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result AyPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
 	return MusicPlayer::OK;

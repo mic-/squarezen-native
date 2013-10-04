@@ -52,7 +52,7 @@ GbsPlayer::~GbsPlayer()
 }
 
 
-int GbsPlayer::Reset()
+MusicPlayer::Result GbsPlayer::Reset()
 {
 	delete [] cart;
 	cart = NULL;
@@ -86,14 +86,14 @@ void GbsPlayer::ExecuteGbZ80(uint16_t address)
 }
 
 
-int GbsPlayer::Prepare(std::string fileName)
+MusicPlayer::Result GbsPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
     size_t fileSize;
 
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -217,7 +217,7 @@ void GbsPlayer::PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR)
 }
 
 
-int GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int k;
 	int blipLen = mBlipBuf->count_clocks(numSamples);

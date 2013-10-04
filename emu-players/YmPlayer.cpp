@@ -47,7 +47,7 @@ MusicPlayer *YmPlayerFactory()
 	return new YmPlayer;
 }
 
-int YmPlayer::Reset()
+MusicPlayer::Result YmPlayer::Reset()
 {
 	NLOGV("YmPlayer", "YmPlayer::Reset");
 
@@ -78,7 +78,7 @@ size_t lhDecodeCallback(void *buf, size_t buf_len, void *user_data)
 }
 
 
-int YmPlayer::Prepare(std::string fileName)
+MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 {
 	uint32_t  i;
 	uint32_t sampleBytes;
@@ -86,9 +86,9 @@ int YmPlayer::Prepare(std::string fileName)
     uint16_t numDigiDrums;
 
     NLOGV("YmPlayer", "Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -239,13 +239,13 @@ void YmPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 }
 
 
-int YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
     int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
-    	return -1;
+    	return MusicPlayer::ERROR_BAD_STATE;
     }
 
 	int blipLen = mBlipBuf->count_clocks(numSamples);
