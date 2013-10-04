@@ -119,6 +119,8 @@ int SidPlayer::Prepare(std::string fileName)
     size_t fileSize;
     uint16_t *p16;
 
+	mState = MusicPlayer::Prepare(fileName);
+
     int result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {

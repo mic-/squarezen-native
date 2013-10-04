@@ -19,32 +19,45 @@
 #include <iostream>
 #include <fstream>
 #include "NativeLogger.h"
-#include "AyPlayer.h"
+#include "SndhPlayer.h"
 
 
-AyPlayer::AyPlayer()
+SndhPlayer::SndhPlayer()
+	: m68k(NULL)
+	, mYm(NULL)
+	, mMemory(NULL)
 {
-
 }
 
-AyPlayer::~AyPlayer()
+MusicPlayer *SndhPlayerFactory()
 {
-
+	return new SndhPlayer;
 }
 
-int AyPlayer::Reset()
+SndhPlayer::~SndhPlayer()
+{
+	delete m68k;
+	delete mYm;
+	delete mMemory;
+	m68k = NULL;
+	mYm = NULL;
+	mMemory = NULL;
+}
+
+int SndhPlayer::Reset()
 {
 	// ToDo: implement
-	NLOGV("AyPlayer", "Reset");
+	NLOGV("SndhPlayer", "Reset");
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
 
-int AyPlayer::Prepare(std::string fileName)
+
+int SndhPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
-	NLOGV("AyPlayer", "Prepare(%s)", fileName.c_str());
+	NLOGV("SndhPlayer", "Prepare(%s)", fileName.c_str());
 	mState = MusicPlayer::Prepare(fileName);
 
     int result;
@@ -55,18 +68,16 @@ int AyPlayer::Prepare(std::string fileName)
 
     // ToDo: finish
 
-	NLOGV("AyPlayer", "File read done");
-	musicFile.close();
-
-	NLOGD("AyPlayer", "Prepare finished");
+	NLOGD("SndhPlayer", "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
 }
 
 
-int AyPlayer::Run(uint32_t numSamples, int16_t *buffer)
+int SndhPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
 	return MusicPlayer::OK;
 }
+

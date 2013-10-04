@@ -91,7 +91,7 @@ public:
 	/*
 	 * Prepare playback of the file specified by fileName
 	 */
-	virtual int Prepare(std::string fileName) = 0;
+	virtual int Prepare(std::string fileName);
 #ifdef __TIZEN__
 	virtual int Prepare(std::wstring fileName) { return Prepare(std::string(fileName.begin(), fileName.end())); }
 #endif

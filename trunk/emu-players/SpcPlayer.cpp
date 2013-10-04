@@ -66,6 +66,7 @@ int SpcPlayer::Prepare(std::string fileName)
 	size_t fileSize;
 
 	NLOGV("SpcPlayer", "SpcPlayer::Prepare(%s)", fileName.c_str());
+	mState = MusicPlayer::Prepare(fileName);
 
     int result;
     std::ifstream musicFile;
