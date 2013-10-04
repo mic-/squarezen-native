@@ -52,8 +52,58 @@ MusicPlayer::Result SndhPlayer::Reset()
 	return MusicPlayer::OK;
 }
 
-MusicPlayer::Result SndhPlayer::ParseTrackHeader()
+int SndhPlayer::ReadString(std::ifstream& sndhFile, char *buffer, size_t maxChars)
 {
+	char c;
+	int i = 0;
+
+	while (sndhFile.good()) {
+		c = sndhFile.get();
+		if (c == 0 || !(sndhFile.good())) {
+			break;
+		}
+		if (i < maxChars) {
+			buffer[i++] = c;
+		}
+	}
+	buffer[i] = 0;
+	return i;
+}
+
+MusicPlayer::Result SndhPlayer::ParseTags(std::ifstream& sndhFile)
+{
+	static char asciiBuffer[256];
+	char tag[4];
+	bool headerEnd = false;
+
+	while (!headerEnd) {
+		sndhFile.read(tag, 4);
+		if (!sndhFile) {
+			NLOGE("SndhPlayer", "Reading SNDH tag failed");
+			return MusicPlayer::ERROR_FILE_IO;
+		}
+		if (strncmp(tag, "HDNS", 4) == 0) {
+			headerEnd = true;
+		} else if (strncmp(tag, "TITL", 4) == 0) {
+			(void)ReadString(sndhFile, asciiBuffer, 255);
+			mMetaData.SetTitle(asciiBuffer);
+		} else if (strncmp(tag, "COMM", 4) == 0) {
+			(void)ReadString(sndhFile, asciiBuffer, 255);
+			mMetaData.SetAuthor(asciiBuffer);
+		} else if (strncmp(tag, "RIPP", 4) == 0) {
+			(void)ReadString(sndhFile, asciiBuffer, 255);
+			mMetaData.SetComment(asciiBuffer);
+		} else if (strncmp(tag, "CONV", 4) == 0) {
+			(void)ReadString(sndhFile, asciiBuffer, 255);
+
+		// ToDo: handle all other supported tags
+
+		} else {
+			NLOGE("SndhPlayer", "Unsupported tag found: %c%c%c%c", tag[0], tag[1], tag[2], tag[3]);
+			return MusicPlayer::ERROR_FILE_IO;
+		}
+	}
+
 	return MusicPlayer::OK;
 }
 
@@ -83,6 +133,11 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
     	NLOGE("SndhPlayer", "Bad SNDH header signature");
     	musicFile.close();
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+    }
+
+    if (MusicPlayer::OK != (result = ParseTags(musicFile))) {
+        musicFile.close();
+		return result;
     }
 
     // ToDo: finish
