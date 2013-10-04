@@ -48,7 +48,8 @@ public:
 	} SndhFileHeader;
 
 private:
-	MusicPlayer::Result ParseTrackHeader();
+	static int ReadString(std::ifstream& sndhFile, char *buffer, size_t maxChars);
+	MusicPlayer::Result ParseTags(std::ifstream& sndhFile);
 
 	SndhFileHeader mFileHeader;
 	M68000 *m68k;
