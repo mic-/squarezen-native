@@ -86,6 +86,7 @@ int YmPlayer::Prepare(std::string fileName)
     uint16_t numDigiDrums;
 
     NLOGV("YmPlayer", "Prepare(%s)", fileName.c_str());
+	mState = MusicPlayer::Prepare(fileName);
 
     int result;
     std::ifstream musicFile;

@@ -76,15 +76,20 @@ MusicPlayer *MusicPlayer::MusicPlayerFactory(std::string fileName)
 }
 
 
-int MusicPlayer::OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize)
+int MusicPlayer::Prepare(std::string fileName)
 {
-	fileSize = 0;
-
     if (MusicPlayer::STATE_CREATED != GetState()) {
     	Reset();
     }
 
     mState = MusicPlayer::STATE_PREPARING;
+    return mState;
+}
+
+
+int MusicPlayer::OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize)
+{
+	fileSize = 0;
 
     musicFile.open(fileName.c_str(), std::ios::in | std::ios::binary);
     if (!musicFile) {

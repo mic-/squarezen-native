@@ -113,6 +113,8 @@ int NsfPlayer::Prepare(std::string fileName)
     size_t fileSize;
     uint32_t numBanks;
 
+	mState = MusicPlayer::Prepare(fileName);
+
     int result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {

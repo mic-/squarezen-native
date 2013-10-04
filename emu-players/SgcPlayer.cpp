@@ -58,6 +58,7 @@ int SgcPlayer::Prepare(std::string fileName)
 	size_t fileSize;
 
 	NLOGV("SgcPlayer", "Prepare(%s)", fileName.c_str());
+	mState = MusicPlayer::Prepare(fileName);
 
     int result;
     std::ifstream musicFile;

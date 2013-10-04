@@ -114,6 +114,8 @@ int VgmPlayer::Prepare(std::string fileName)
 	uint32_t  i;
     size_t fileSize;
 
+	mState = MusicPlayer::Prepare(fileName);
+
     int result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
