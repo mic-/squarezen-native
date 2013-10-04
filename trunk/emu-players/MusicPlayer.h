@@ -29,6 +29,7 @@
 
 class MusicPlayer;
 
+
 class MetaData
 {
 public:
@@ -86,23 +87,42 @@ public:
 	static bool IsSupportedFileType(std::string fileName);
 	static MusicPlayer *MusicPlayerFactory(std::string fileName);
 
-	virtual int OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize);
+	enum State
+	{
+		STATE_CREATED,
+		STATE_PREPARING,
+		STATE_PREPARED,
+		STATE_PLAYING,
+	};
+
+	enum Result
+	{
+		OK = 0,
+		ERROR_UNKNOWN = -1,
+		ERROR_FILE_IO = -2,
+		ERROR_OUT_OF_MEMORY = -3,
+		ERROR_UNRECOGNIZED_FORMAT = -4,
+		ERROR_DECOMPRESSION = -5,
+		ERROR_BAD_STATE = -6,
+	};
+
+	virtual MusicPlayer::Result OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize);
 
 	/*
 	 * Prepare playback of the file specified by fileName
 	 */
-	virtual int Prepare(std::string fileName);
+	virtual MusicPlayer::Result Prepare(std::string fileName);
 #ifdef __TIZEN__
-	virtual int Prepare(std::wstring fileName) { return Prepare(std::string(fileName.begin(), fileName.end())); }
+	virtual MusicPlayer::Result Prepare(std::wstring fileName) { return Prepare(std::string(fileName.begin(), fileName.end())); }
 #endif
 
 	/*
 	 * Run the player for numSamples samples and store the output in buffer
 	 */
-	virtual int Run(uint32_t numSamples, int16_t *buffer) = 0;
-	virtual int Reset() = 0;
+	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer) = 0;
+	virtual MusicPlayer::Result Reset() = 0;
 
-	virtual int GetState() const { return mState; }
+	virtual MusicPlayer::State GetState() const { return mState; }
 
 	const std::string& GetTitle() const { return mMetaData.GetTitle(); }
 	const std::string& GetAuthor() const { return mMetaData.GetAuthor(); }
@@ -122,30 +142,11 @@ public:
 
 	virtual void SetSubSong(uint32_t subSong) {}
 
-	enum
-	{
-		STATE_CREATED,
-		STATE_PREPARING,
-		STATE_PREPARED,
-		STATE_PLAYING,
-	};
-
-	enum
-	{
-		OK = 0,
-		ERROR_UNKNOWN = -1,
-		ERROR_FILE_IO = -2,
-		ERROR_OUT_OF_MEMORY = -3,
-		ERROR_UNRECOGNIZED_FORMAT = -4,
-		ERROR_DECOMPRESSION = -5,
-		ERROR_BAD_STATE = -6,
-	};
-
 protected:
 	Blip_Buffer *mBlipBuf;
 	Blip_Synth<blip_low_quality,4096> *mSynth;
 	MetaData mMetaData;
-	int mState;
+	MusicPlayer::State mState;
 	static std::map<std::string, PlayerFactory> mSupportedFormats;
 };
 

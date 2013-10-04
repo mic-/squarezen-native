@@ -50,9 +50,9 @@ public:
 		char copyright[32];
 	}  GbsFileHeader;
 
-	virtual int Prepare(std::string fileName);
-	virtual int Run(uint32_t numSamples, int16_t *buffer);
-	virtual int Reset();
+	virtual MusicPlayer::Result Prepare(std::string fileName);
+	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
+	virtual MusicPlayer::Result Reset();
 
 	void SetMasterVolume(int left, int right);
 	uint16_t GetLoadAddress() const { return mFileHeader.loadAddress; }

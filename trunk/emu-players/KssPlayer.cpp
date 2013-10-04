@@ -61,7 +61,7 @@ void KssPlayer::SetSccEnabled(bool enabled)
 }
 
 
-int KssPlayer::Reset()
+MusicPlayer::Result KssPlayer::Reset()
 {
 	NLOGV("KssPlayer", "Reset");
 
@@ -89,14 +89,14 @@ int KssPlayer::Reset()
 }
 
 
-int KssPlayer::Prepare(std::string fileName)
+MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
 	NLOGV("KssPlayer", "Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -145,7 +145,7 @@ int KssPlayer::Prepare(std::string fileName)
 }
 
 
-int KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t k;
 

@@ -44,7 +44,7 @@ SgcPlayer::~SgcPlayer()
 	mMemory = NULL;
 }
 
-int SgcPlayer::Reset()
+MusicPlayer::Result SgcPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV("SgcPlayer", "SgcPlayer::Reset");
@@ -53,14 +53,14 @@ int SgcPlayer::Reset()
 }
 
 
-int SgcPlayer::Prepare(std::string fileName)
+MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
 	NLOGV("SgcPlayer", "Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -114,7 +114,7 @@ int SgcPlayer::Prepare(std::string fileName)
 }
 
 
-int SgcPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result SgcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
 	return MusicPlayer::OK;

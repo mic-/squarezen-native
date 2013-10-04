@@ -43,7 +43,7 @@ SpcPlayer::~SpcPlayer()
 }
 
 
-int SpcPlayer::Reset()
+MusicPlayer::Result SpcPlayer::Reset()
 {
 	NLOGV("SpcPlayer", "SpcPlayer::Reset");
 
@@ -61,14 +61,14 @@ int SpcPlayer::Reset()
 	return MusicPlayer::OK;
 }
 
-int SpcPlayer::Prepare(std::string fileName)
+MusicPlayer::Result SpcPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
 	NLOGV("SpcPlayer", "SpcPlayer::Prepare(%s)", fileName.c_str());
-	mState = MusicPlayer::Prepare(fileName);
+	(void)MusicPlayer::Prepare(fileName);
 
-    int result;
+	MusicPlayer::Result result;
     std::ifstream musicFile;
     if (MusicPlayer::OK != (result = OpenFile(musicFile, fileName, fileSize))) {
     	return result;
@@ -172,7 +172,7 @@ void SpcPlayer::ExecuteSSmp()
 }
 
 
-int SpcPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result SpcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
 	int k;
