@@ -39,6 +39,8 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	virtual void SetSubSong(uint32_t subSong);
+
 	enum {
 		SYSTEM_SMS = 0,
 		SYSTEM_GG = 1,
@@ -76,6 +78,9 @@ public:
 	} SgcFileHeader;
 
 private:
+	void PresentBuffer(int16_t *out, Blip_Buffer *in);
+	void ExecuteZ80(uint16_t address);
+
 	SgcFileHeader mFileHeader;
 	Z80 *mZ80;
 	SnChip *mSN76489;

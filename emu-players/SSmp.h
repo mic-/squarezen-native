@@ -32,6 +32,35 @@ public:
 	void Run(uint32_t maxCycles);
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
+	typedef struct {
+		uint8_t opcode;
+		const std::string mnemonic;
+		uint8_t operands;
+	} Instruction;
+
+	// Instruction operands
+	enum {
+		NO_OPERANDS,
+		OPERAND_ACCUM,
+		OPERAND_ACCUM_ZP,
+		OPERAND_IMM,
+		OPERAND_ZP,
+		OPERAND_ZPX,
+		OPERAND_ZPY,
+		OPERAND_ABS,
+		OPERAND_ABSX,
+		OPERAND_ABSY,
+		OPERAND_IND,
+		OPERAND_INDX,
+		OPERAND_INDY,
+		OPERAND_ABSIND,
+		OPERAND_ABSXIND,
+		OPERAND_REL,
+		OPERAND_ZP_REL,
+		OPERAND_ZPBIT,
+		OPERAND_ZPBIT_REL,
+	};
+
 	enum {
 		S_SMP_CLOCK = 2048000
 	};

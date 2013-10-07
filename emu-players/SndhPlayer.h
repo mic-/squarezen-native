@@ -39,6 +39,8 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	virtual void SetSubSong(uint32_t subSong);
+
 	typedef struct __attribute__ ((__packed__))
 	{
 		uint32_t initDriverInstruction;		// e.g. BRA.W init_music_driver  (big-endian)
@@ -48,8 +50,7 @@ public:
 	} SndhFileHeader;
 
 private:
-	static int ReadString(std::ifstream& sndhFile, char *buffer, size_t maxChars);
-	MusicPlayer::Result ParseTags(std::ifstream& sndhFile);
+	uint8_t *ParseTags(char *fileImage, size_t remainingBytes);
 
 	SndhFileHeader mFileHeader;
 	M68000 *m68k;

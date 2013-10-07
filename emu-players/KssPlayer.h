@@ -42,6 +42,10 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	/**
+	 * Tell the player that the Konami SCC chip has been enabled/disabled, i.e.
+	 * start/stop feeding SCC audio samples to the Blip synths.
+	 */
 	void SetSccEnabled(bool enable);
 
 	typedef struct __attribute__ ((__packed__))
