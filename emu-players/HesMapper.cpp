@@ -43,7 +43,6 @@ HesMapper::~HesMapper()
 
 void HesMapper::Reset()
 {
-	// ToDo: implement
 }
 
 uint8_t HesMapper::ReadByte(uint32_t addr)
@@ -61,6 +60,7 @@ uint8_t HesMapper::ReadByte(uint32_t addr)
 	} else if (HuC6280Mapper::MPR_IO_PAGE == mpr) {
 		// ToDo: handle IO reads
 		if (HuC6280::R_TIMER_COUNT == offset) {
+			return m6280->mTimer.mPos;
 		}
 	}
 
@@ -80,9 +80,9 @@ void HesMapper::WriteByte(uint32_t addr, uint8_t data)
 		if (offset >= HuC6280Psg::R_CHN_SELECT && offset <= HuC6280Psg::R_LFO_CTRL) {
 			mPsg->Write(offset, data);
 		} else if (HuC6280::R_TIMER_COUNT == offset) {
-
+			m6280->mTimer.mPos = data & 0x7F;
 		} else if (HuC6280::R_TIMER_CTRL == offset) {
-
+			m6280->mTimer.mCtrl = data;
 		}
 		break;
 	}

@@ -1956,6 +1956,28 @@ void HuC6280::Disassemble(uint16_t address)
 }
 
 
+void HuC6280Timer::Reset()
+{
+	mPos = mCtrl = 0;
+	mStep = 0;
+}
+
+
+void HuC6280Timer::Step()
+{
+	if (mCtrl && HuC6280Timer::CTRL_STARTED) {
+		mStep++;
+		if (mStep >= mPeriod) {
+			mStep = 0;
+			mPos = (mPos - 1) & 0x7F;
+			if (0x7F == mPos) {
+				// ToDo: generate interrupt
+			}
+		}
+	}
+}
+
+
 HuC6280PsgChannel::HuC6280PsgChannel()
 	: mVolL(0), mVolR(0)
 	, mEnable(HuC6280Psg::WRITE_WAVEFORM_RAM)

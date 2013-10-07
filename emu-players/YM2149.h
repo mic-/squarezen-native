@@ -117,6 +117,9 @@ public:
 class YmChip
 {
 public:
+	YmChip() {}
+	YmChip(int16_t envelopeSteps);
+
 	virtual ~YmChip() {}
 
 	virtual void Reset();

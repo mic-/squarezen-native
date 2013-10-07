@@ -167,10 +167,8 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 	}
 	if (mFileHeader.extraChips & NsfPlayer::USES_SUNSOFT_5B) {
 		NLOGD("NsfPlayer", "This song uses the Sunsoft-5B");
-		mSunsoft5B = new Sunsoft5B;
+		mSunsoft5B = new Sunsoft5B(32);
 		numSynths += 3;
-		mSunsoft5B->mEG.mEnvTable  = (uint16_t*)YmChip::YM2149_ENVE_TB;
-		mSunsoft5B->mEG.mMaxCycle = 31;
 	}
 
 	uint32_t offset = mFileHeader.loadAddress & 0x0fff;

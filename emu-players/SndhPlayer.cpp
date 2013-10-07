@@ -28,6 +28,8 @@ SndhPlayer::SndhPlayer()
 	: m68k(NULL)
 	, mYm(NULL)
 	, mMemory(NULL)
+	, mSongLength(NULL)
+	, mNumSongs(1)
 {
 }
 
@@ -41,17 +43,51 @@ SndhPlayer::~SndhPlayer()
 	delete m68k;
 	delete mYm;
 	delete mMemory;
-	m68k = NULL;
-	mYm = NULL;
+	delete [] mSongLength;
+
+	m68k    = NULL;
+	mYm     = NULL;
 	mMemory = NULL;
+	mSongLength = NULL;
 }
 
 MusicPlayer::Result SndhPlayer::Reset()
 {
 	// ToDo: implement
-	NLOGV("SndhPlayer", "Reset");
+	NLOGV(NLOG_TAG, "Reset");
+
+	delete m68k;
+	delete mYm;
+	delete mMemory;
+	delete [] mSongLength;
+
+	m68k    = NULL;
+	mYm     = NULL;
+	mMemory = NULL;
+	mSongLength = NULL;
+
+	mNumSongs = 1;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
+}
+
+char *SndhPlayer::ReadNumber(char *fileImage, int& num, size_t maxChars, int minVal, int maxVal)
+{
+	num = 0;
+	int i = 0;
+
+	while (i < maxChars && *fileImage) {
+		if (*fileImage >= '0' && *fileImage <= '9') {
+			num = (num * 10) + (*fileImage - '0');
+		}
+		fileImage++;
+		i++;
+	}
+	while (*fileImage++);
+	if (num < minVal) num = minVal;
+	if (num > maxVal) num = maxVal;
+	return fileImage;
 }
 
 
@@ -59,26 +95,80 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 {
 	bool headerEnd = false;
 	char *endPointer = fileImage + remainingBytes;
+	int n;
 
 	while ((fileImage < endPointer) && !headerEnd) {
 		if (strncmp(fileImage, "HDNS", 4) == 0) {
 			fileImage += 4;			// Skip past the tag
 			headerEnd = true;
+
 		} else if (strncmp(fileImage, "TITL", 4) == 0) {
 			fileImage += 4;
 			mMetaData.SetTitle(fileImage);
 			while (*fileImage++);
+
 		} else if (strncmp(fileImage, "COMM", 4) == 0) {
 			fileImage += 4;
 			mMetaData.SetAuthor(fileImage);
 			while (*fileImage++);
-		} else if (strncmp(fileImage, "RIPP", 4) == 0) {
+
+		} else if (strncmp(fileImage, "RIPP", 4) == 0) {	// Ripper name
 			fileImage += 4;
 			mMetaData.SetComment(fileImage);
 			while (*fileImage++);
-		} else if (strncmp(fileImage, "CONV", 4) == 0) {
+
+		} else if (strncmp(fileImage, "CONV", 4) == 0) {	// Converter name
 			fileImage += 4;
 			while (*fileImage++);	// Skip the string
+
+		} else if (strncmp(fileImage, "YEAR", 4) == 0) {
+			fileImage += 4;
+			while (*fileImage++);	// Skip the string
+
+		} else if (strncmp(fileImage, "TIME", 4) == 0) {
+			fileImage += 4;
+			if (!mSongLength) {
+				mSongLength = new uint16_t[mNumSongs];
+				memset(mSongLength, 0, mNumSongs * sizeof(uint16_t));
+			}
+			uint16_t *length = (uint16_t*)fileImage;
+			for (int i = 0; i < mNumSongs; i++) {
+				mSongLength[i] = *(length++);	// ToDo: byteswap
+			}
+			fileImage = (char*)length;
+
+		} else if (strncmp(fileImage, "##", 2) == 0) {
+			fileImage += 2;
+			fileImage = ReadNumber(fileImage, n, 2, 0, 99);
+			mNumSongs = n;
+			if (mSongLength) {
+				delete [] mSongLength;
+			}
+			mSongLength = new uint16_t[mNumSongs];
+			memset(mSongLength, 0, mNumSongs * sizeof(uint16_t));
+
+		} else if (strncmp(fileImage, "!V", 2) == 0) {
+			fileImage += 2;
+			fileImage = ReadNumber(fileImage, n, 2, 0, 99);
+			// Doesn't actually change the VBL frequency of the machine
+			mVblFrequency = n;
+
+		} else if (strncmp(fileImage, "TA", 2) == 0) {
+			fileImage += 2;
+			fileImage = ReadNumber(fileImage, n, 3, 0, 999);
+			mTimerFrequency[0] = n;
+		} else if (strncmp(fileImage, "TB", 2) == 0) {
+			fileImage += 2;
+			fileImage = ReadNumber(fileImage, n, 3, 0, 999);
+			mTimerFrequency[1] = n;
+		} else if (strncmp(fileImage, "TC", 2) == 0) {
+			fileImage += 2;
+			fileImage = ReadNumber(fileImage, n, 3, 0, 999);
+			mTimerFrequency[2] = n;
+		} else if (strncmp(fileImage, "TD", 2) == 0) {
+			fileImage += 2;
+			fileImage = ReadNumber(fileImage, n, 3, 0, 999);
+			mTimerFrequency[3] = n;
 
 		// ToDo: handle all other supported tags
 
@@ -88,7 +178,7 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 		}
 	}
 
-	return (uint8_t*)fileImage;
+	return (headerEnd ? (uint8_t*)fileImage : NULL);
 }
 
 
@@ -129,20 +219,26 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
+	mNumSongs = 1;
     if (NULL != ParseTags((char*)fileImage + sizeof(SndhFileHeader), fileSize - sizeof(SndhFileHeader))) {
+    	NLOGD(NLOG_TAG, "Malformed tag(s) found, or no HDNS tag found");
         musicFile.close();
 		return result;
     }
 
-    m68k = new M68000;
-    mYm = new YmChip;
-    if (!m68k || !mYm) {
-    	NLOGE(NLOG_TAG, "Failed to create emulator instance");
-    	return MusicPlayer::ERROR_OUT_OF_MEMORY;
+    if (!mSongLength) {
+    	mNumSongs = 1;
+    	mSongLength = new uint16_t[mNumSongs];
+    	mSongLength[0] = 0;
+    	NLOGD(NLOG_TAG, "No ##nn tag found; assuming a single sub-tune with infinite length");
     }
 
-	mYm->mEG.mEnvTable  = (uint16_t*)YmChip::YM2149_ENVE_TB;
-	mYm->mEG.mMaxCycle = 31;
+    m68k = new M68000;
+    mYm = new YmChip(32);
+    if (!m68k || !mYm) {
+    	NLOGE(NLOG_TAG, "Failed to create M68k or YM2149 emulators");
+    	return MusicPlayer::ERROR_OUT_OF_MEMORY;
+    }
 
 	m68k->Reset();
 	mYm->Reset();
