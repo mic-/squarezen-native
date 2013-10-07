@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "SgcPlayer"
 
 #include <cstring>
 #include <iostream>
@@ -48,7 +49,7 @@ SgcPlayer::~SgcPlayer()
 MusicPlayer::Result SgcPlayer::Reset()
 {
 	// ToDo: implement
-	NLOGV("SgcPlayer", "SgcPlayer::Reset");
+	NLOGV(NLOG_TAG, "Reset()");
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
@@ -58,7 +59,7 @@ MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
-	NLOGV("SgcPlayer", "Prepare(%s)", fileName.c_str());
+	NLOGV(NLOG_TAG, "Prepare(%s)", fileName.c_str());
 	(void)MusicPlayer::Prepare(fileName);
 
 	MusicPlayer::Result result;
@@ -67,16 +68,16 @@ MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
     	return result;
     }
 
-    NLOGV("SgcPlayer", "Reading header");
+    NLOGV(NLOG_TAG, "Reading header");
     musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
 	if (!musicFile) {
-		NLOGE("SgcPlayer", "Reading SGC header failed");
+		NLOGE(NLOG_TAG, "Reading SGC header failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
     if (strncmp(mFileHeader.signature, "SGC", 3)) {
-    	NLOGE("SgcPlayer", "Bad SGC header signature");
+    	NLOGE(NLOG_TAG, "Bad SGC header signature");
     	musicFile.close();
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
@@ -87,7 +88,7 @@ MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
 
 	// ToDo: finish
 
-	NLOGV("SgcPlayer", "File read done");
+	NLOGV(NLOG_TAG, "File read done");
 	musicFile.close();
 
 	mZ80 = new Z80;
@@ -108,16 +109,68 @@ MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
 		}
 	}
 
-	NLOGD("SgcPlayer", "Prepare finished");
+	NLOGD(NLOG_TAG, "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
 }
 
 
-MusicPlayer::Result SgcPlayer::Run(uint32_t numSamples, int16_t *buffer)
+void SgcPlayer::SetSubSong(uint32_t subSong)
+{
+	NLOGD(NLOG_TAG, "SetSubSong(%d)", subSong);
+	// ToDo: implement
+}
+
+
+void SgcPlayer::ExecuteZ80(uint16_t address)
 {
 	// ToDo: implement
+}
+
+
+void SgcPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
+{
+	int count = in->samples_avail();
+
+	in->read_samples(out, count, 1);
+
+	// Copy each left channel sample to the right channel
+	for (int i = 0; i < count*2; i += 2) {
+		out[i+1] = out[i];
+	}
+}
+
+
+MusicPlayer::Result SgcPlayer::Run(uint32_t numSamples, int16_t *buffer)
+{
+	int32_t i, k;
+    int16_t out;
+
+    if (MusicPlayer::STATE_PREPARED != GetState()) {
+    	return MusicPlayer::ERROR_BAD_STATE;
+    }
+
+	int blipLen = mBlipBuf->count_clocks(numSamples);
+
+	for (k = 0; k < blipLen; k++) {
+		// ToDo: run the Z80 at appropriate intervals
+
+		mSN76489->Step();
+
+		for (i = 0; i < 4; i++) {
+			out = (-mSN76489->mChannels[i].mPhase) & SnChip::SN76489_VOL_TB[mSN76489->mChannels[i].mVol & 0x0F];
+
+			if (out != mSN76489->mChannels[i].mOut) {
+				mSynth[i].update(k, out);
+				mSN76489->mChannels[i].mOut = out;
+			}
+		}
+	}
+
+	mBlipBuf->end_frame(blipLen);
+	PresentBuffer(buffer, mBlipBuf);
+
 	return MusicPlayer::OK;
 }
 

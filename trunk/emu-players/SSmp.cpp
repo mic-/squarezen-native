@@ -208,6 +208,17 @@
 
 // ====
 
+const SSmp::Instruction gDisassemblyTable[] =
+{
+	{0x00, "NOP",     SSmp::NO_OPERANDS},
+	// ToDo: handle 0x01
+	{0x02, "SET1",    SSmp::OPERAND_ZPBIT},
+	{0x03, "BBS",     SSmp::OPERAND_ZPBIT_REL},
+	{0x04, "OR",      SSmp::OPERAND_ACCUM_ZP},
+};
+
+// ====
+
 
 void SSmp::Reset()
 {
@@ -1177,7 +1188,7 @@ void SSmp::Run(uint32_t maxCycles)
 			break;
 
 		// == Wait/delay/control ==
-		case 0x00:
+		case 0x00:		// NOP
 			mCycles += 2;
 			break;
 

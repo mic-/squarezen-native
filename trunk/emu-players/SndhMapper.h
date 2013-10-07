@@ -28,12 +28,17 @@
 class SndhMapper : public MemoryMapper
 {
 public:
-	SndhMapper(uint32_t numRomPages);
+	SndhMapper(uint32_t fileSize);
 	virtual ~SndhMapper();
+
+	uint8_t *GetFileImagePointer() const { return mFileImage; }
 
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint32_t addr);
 	virtual void WriteByte(uint32_t addr, uint8_t data);
+
+private:
+	uint8_t *mFileImage;
 };
 
 #endif /* SNDHMAPPER_H_ */

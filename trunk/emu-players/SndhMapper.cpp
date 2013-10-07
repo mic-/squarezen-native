@@ -22,14 +22,16 @@
 #include "SndhMapper.h"
 
 
-SndhMapper::SndhMapper(uint32_t numRomPages)
+SndhMapper::SndhMapper(uint32_t fileSize)
 {
 	// ToDo: implement
+	mFileImage = new uint8_t[fileSize];
 }
 
 SndhMapper::~SndhMapper()
 {
-
+	delete [] mFileImage;
+	mFileImage = NULL;
 }
 
 
@@ -44,6 +46,7 @@ uint8_t SndhMapper::ReadByte(uint32_t addr)
 	// ToDo: implement
 	return 0;
 }
+
 
 void SndhMapper::WriteByte(uint32_t addr, uint8_t data)
 {

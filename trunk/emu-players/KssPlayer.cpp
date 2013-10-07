@@ -128,7 +128,7 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
     }
     if ((mFileHeader.extraChips & FMPAC_MASK) == USES_FMPAC) {
     	mYM2413 = new YM2413;
-    	numSynths += 3;		// pre-mixed from the YM2413's 9 channels
+    	//numSynths += 3;		// pre-mixed from the YM2413's 9 channels
     }
 
 	mBlipBuf = new Blip_Buffer();
@@ -161,6 +161,7 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		if (mSccEnabled) {
 			// ToDo: add SCC audio to blip synths
+			mScc->Step();
 		}
 
 		if (mYM2413) {

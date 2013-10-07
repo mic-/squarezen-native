@@ -117,6 +117,13 @@ public:
 		ERROR_BAD_STATE = -6,
 	};
 
+	/**
+	 * Open the file specified by fileName.
+	 * @param[out] musicFile An readable binary ifstream.
+	 * @param[in] fileName The name of the file to open.
+	 * @param[out] fileSize Size of the file in bytes.
+	 * @return A MusicPlayer::Result set to MusicPlayer::OK on success, or an error code on failure.
+	 */
 	virtual MusicPlayer::Result OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize);
 
 	/**
@@ -134,6 +141,10 @@ public:
 	 */
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer) = 0;
 
+	/**
+	 * Reset the player to an initialized state (typically destroys the associated CPU/APU/DSP
+	 * emulation objects).
+	 */
 	virtual MusicPlayer::Result Reset() = 0;
 
 	/**
