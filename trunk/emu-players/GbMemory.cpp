@@ -16,6 +16,7 @@
 
 #define NLOG_LEVEL_VERBOSE 0
 
+#include <cstring>
 #include "NativeLogger.h"
 #include "GbMemory.h"
 #include "GbZ80.h"

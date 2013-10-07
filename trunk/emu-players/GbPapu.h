@@ -24,6 +24,9 @@
 #include "Oscillator.h"
 #include "GbZ80.h"
 
+/* We're emulating the pAPU at 1/4th of its real speed, in order to save
+ * processing power.
+ */
 #define GBPAPU_EMULATION_CLOCK (DMG_CLOCK/4)
 
 class GbPapuChannel;
@@ -94,9 +97,14 @@ public:
 	void Step();
 	void Write(uint32_t addr, uint8_t val);
 
+	/**
+	 * @return -1 if the given channel (0-3) is enabled AND should be sent to the left/right
+	 *         output AND the channel's length counter is non-zero.
+	 */
 	int ChannelEnabledLeft(uint8_t index) const;
 	int ChannelEnabledRight(uint8_t index) const;
 
+	// Channel enumerators
 	enum
 	{
 		PULSE1 = 0,

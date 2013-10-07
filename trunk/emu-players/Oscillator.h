@@ -28,10 +28,30 @@ class Oscillator
 public:
 	virtual ~Oscillator() {}
 
+	/**
+	 * Reset the Oscillator to its initial state.
+	 */
 	virtual void Reset() = 0;
+
+	/**
+	 * Step the Oscillator one clock ahead.
+	 */
 	virtual void Step() = 0;
+
+	/**
+	 * Write val to addr in the Oscillator's memory space.
+	 */
 	virtual void Write(uint32_t addr, uint8_t val) {}
+
+	/**
+	 * Write val to the Oscillator (for Oscillators that only have a single register).
+	 */
 	virtual void Write(uint8_t val) {}
+
+	/**
+	 * Write an array of values to the Oscillator. It's up to the Oscillator implementation
+	 * to decide how many values to expect in the array.
+	 */
 	virtual void Write(uint8_t *regs) {}
 
 	uint32_t mPos;

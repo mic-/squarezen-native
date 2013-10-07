@@ -16,6 +16,7 @@
 
 #define NLOG_LEVEL_VERBOSE 0
 
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include "NativeLogger.h"
@@ -148,6 +149,7 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t k;
+	int16_t out;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return MusicPlayer::ERROR_BAD_STATE;
@@ -167,6 +169,16 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		if (mSN76489) {
 			// ToDo: add SN76489 audio to blip synths
+			mSN76489->Step();
+
+			for (int i = 0; i < 4; i++) {
+				out = (-mSN76489->mChannels[i].mPhase) & SnChip::SN76489_VOL_TB[mSN76489->mChannels[i].mVol & 0x0F];
+
+				if (out != mSN76489->mChannels[i].mOut) {
+					mSynth[5 + i].update(k, out);
+					mSN76489->mChannels[i].mOut = out;
+				}
+			}
 		}
 	}
 

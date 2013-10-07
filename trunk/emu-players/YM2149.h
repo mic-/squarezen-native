@@ -117,10 +117,12 @@ public:
 class YmChip
 {
 public:
-	void Reset();
-	void Step();
-	void Write(uint8_t *regs);
-	void Write(uint32_t addr, uint8_t data);
+	virtual ~YmChip() {}
+
+	virtual void Reset();
+	virtual void Step();
+	virtual void Write(uint8_t *regs);
+	virtual void Write(uint32_t addr, uint8_t data);
 
 	static const uint16_t YM2149_VOL_TB[16];
 	static const uint16_t YM2149_ENVE_TB[32];

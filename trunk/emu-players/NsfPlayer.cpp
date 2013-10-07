@@ -168,7 +168,9 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 	if (mFileHeader.extraChips & NsfPlayer::USES_SUNSOFT_5B) {
 		NLOGD("NsfPlayer", "This song uses the Sunsoft-5B");
 		mSunsoft5B = new Sunsoft5B;
-		//numSynths += 3;
+		numSynths += 3;
+		mSunsoft5B->mEG.mEnvTable  = (uint16_t*)YmChip::YM2149_ENVE_TB;
+		mSunsoft5B->mEG.mMaxCycle = 31;
 	}
 
 	uint32_t offset = mFileHeader.loadAddress & 0x0fff;
@@ -180,6 +182,9 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
     NLOGD("NsfPlayer", "Trying to allocate %d bytes (file size = %d)", (uint32_t)numBanks << 12, fileSize);
 	mMemory = new NsfMapper(numBanks);
 	mMemory->SetApu(m2A03);
+	mMemory->SetVrc6(mVrc6);
+	mMemory->SetN163(mN163);
+	mMemory->SetSunsoft5B(mSunsoft5B);
 
     NLOGD("NsfPlayer", "Loading to offset %#x (%#x..%#x)", offset, 0x8000+offset, 0x7fff+offset+fileSize-sizeof(NsfFileHeader));
 	musicFile.read((char*)(mMemory->GetRomPointer()) + offset,
@@ -225,7 +230,7 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 
 	float synthVolume = 0.95f / (float)numSynths;
     // Setup waves
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < numSynths; i++) {
 		mSynth[i].volume(synthVolume);
 		mSynth[i].output(mBlipBuf);
 	}
@@ -291,7 +296,7 @@ void NsfPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t k;
-    int16_t pulseOut, tndOut;
+    int16_t out, pulseOut, tndOut;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return MusicPlayer::ERROR_BAD_STATE;
@@ -346,6 +351,17 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		}
 		if (mSunsoft5B) {
 			// ToDo: output Sunsoft-5B channels to blip synths
+			mSunsoft5B->Step();
+			for (int i = 0; i < 3; i++) {
+				out = (mSunsoft5B->mChannels[i].mPhase | mSunsoft5B->mChannels[i].mToneOff) &
+					  (mSunsoft5B->mNoise.mOut         | mSunsoft5B->mChannels[i].mNoiseOff);
+				out = (-out) & *(mSunsoft5B->mChannels[i].mCurVol);
+
+				if (out != mSunsoft5B->mChannels[i].mOut) {
+					mSynth[2 + i].update(k, out);
+					mSunsoft5B->mChannels[i].mOut = out;
+				}
+			}
 		}
 
 		mCycleCount++;

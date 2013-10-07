@@ -16,6 +16,7 @@
 
 #define NLOG_LEVEL_DEBUG 0
 
+#include <algorithm>
 #include "NativeLogger.h"
 #include "MusicPlayer.h"
 #include "GbsPlayer.h"
@@ -36,6 +37,7 @@ std::map<std::string, PlayerFactory> CreateSupportedFormatsMap()
 	formatsMap.insert( std::make_pair(".nsf", &NsfPlayerFactory) );
 	formatsMap.insert( std::make_pair(".sid", &SidPlayerFactory) );
 	formatsMap.insert( std::make_pair(".vgm", &VgmPlayerFactory) );
+	formatsMap.insert( std::make_pair(".vgz", &VgmPlayerFactory) );
 	formatsMap.insert( std::make_pair(".ym",  &YmPlayerFactory)  );
 
 	return formatsMap;
