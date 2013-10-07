@@ -84,7 +84,18 @@ public:
 		delete [] mSynth; mSynth = NULL;
 	}
 
+	/**
+	 * Checks whether fileName contains the name of a supported file type (only
+	 * looks at the file extension).
+	 * @return true if the file is supported, false if it is not.
+	 */
 	static bool IsSupportedFileType(std::string fileName);
+
+	/**
+	 * Creates a new player object suitable for playing the file specified by
+	 * fileName.
+	 * @return A pointer to the player object, or NULL.
+	 */
 	static MusicPlayer *MusicPlayerFactory(std::string fileName);
 
 	enum State
@@ -108,38 +119,49 @@ public:
 
 	virtual MusicPlayer::Result OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize);
 
-	/*
+	/**
 	 * Prepare playback of the file specified by fileName
+	 * @return a MusicPlayer::Result containing MusicPlayer::OK on success, or an error code on failure.
 	 */
 	virtual MusicPlayer::Result Prepare(std::string fileName);
 #ifdef __TIZEN__
 	virtual MusicPlayer::Result Prepare(std::wstring fileName) { return Prepare(std::string(fileName.begin(), fileName.end())); }
 #endif
 
-	/*
-	 * Run the player for numSamples samples and store the output in buffer
+	/**
+	 * Run the player for numSamples samples and store the output in buffer.
+	 * @return a MusicPlayer::Result containing MusicPlayer::OK on success, or an error code on failure.
 	 */
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer) = 0;
+
 	virtual MusicPlayer::Result Reset() = 0;
 
+	/**
+	 * @return A MusicPlayer::State containing the current state of the player.
+	 */
 	virtual MusicPlayer::State GetState() const { return mState; }
 
 	const std::string& GetTitle() const { return mMetaData.GetTitle(); }
 	const std::string& GetAuthor() const { return mMetaData.GetAuthor(); }
 	const std::string& GetComment() const { return mMetaData.GetComment(); }
 
-	/*
-	 * Get the number of subsongs in the prepared file
+	/**
+	 * Get the number of sub-songs in the prepared file.
+	 * @return Number of sub-songs.
 	 */
 	uint32_t GetNumSubSongs() const { return mMetaData.GetNumSubSongs(); }
 
 	uint32_t GetDefaultSong() const { return mMetaData.GetDefaultSong(); }
 
-	/*
-	 * Get the length of the current (sub)song in milliseconds
+	/**
+	 * Get the length of the current (sub)song in milliseconds.
+	 * @return (Sub)song length in milliseconds.
 	 */
 	int GetLengthMs() const { return mMetaData.GetLengthMs(); }
 
+	/**
+	 * Set the sub-song to play.
+	 */
 	virtual void SetSubSong(uint32_t subSong) {}
 
 protected:

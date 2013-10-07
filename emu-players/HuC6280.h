@@ -21,6 +21,7 @@
 #ifndef HUC62802_H_
 #define HUC62802_H_
 
+#include <string>
 #include <stdint.h>
 #include "MemoryMapper.h"
 #include "Oscillator.h"

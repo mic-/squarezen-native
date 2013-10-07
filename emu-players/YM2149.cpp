@@ -52,6 +52,9 @@ void YmChannel::Reset()
 	mPhase = 0;
 	mOut = -1;
 	mCurVol = 0;
+
+	mMode = 0;
+	mCurVol = &mVol;
 }
 
 
