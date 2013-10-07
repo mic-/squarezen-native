@@ -29,6 +29,24 @@
 class HuC6280Mapper;
 
 
+class HuC6280Timer : public Oscillator
+{
+public:
+	HuC6280Timer() { mPeriod = 512; }
+	virtual ~HuC6280Timer() {}
+
+	virtual void Reset();
+	virtual void Step();
+
+	enum
+	{
+		CTRL_STARTED = 0x01,
+	};
+
+	uint8_t mCtrl;
+};
+
+
 class HuC6280PsgChannel : public Oscillator
 {
 public:
@@ -157,6 +175,7 @@ public:
 		uint16_t PC;
 	} mRegs;
 
+	HuC6280Timer mTimer;
 	uint32_t mCycles;
 	uint8_t mSpeed;
 	uint8_t mMPR[8];

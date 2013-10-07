@@ -32,6 +32,7 @@ public:
 	HesMapper(uint32_t numRomPages);
 	virtual ~HesMapper();
 
+	void SetCpu(HuC6280 *cpu) { m6280 = cpu; }
 	void SetPsg(HuC6280Psg *psg) { mPsg = psg; }
 
 	virtual void Reset();
@@ -39,6 +40,7 @@ public:
 	virtual void WriteByte(uint32_t addr, uint8_t data);
 
 private:
+	HuC6280 *m6280;
 	HuC6280Psg *mPsg;
 	uint8_t *mCart;
 	uint8_t *mRam;

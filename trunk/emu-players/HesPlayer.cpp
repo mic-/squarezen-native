@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "HesPlayer"
 
 #include <cstring>
 #include <iostream>
@@ -47,8 +48,7 @@ HesPlayer::~HesPlayer()
 
 MusicPlayer::Result HesPlayer::Reset()
 {
-	// ToDo: implement
-	NLOGV("HesPlayer", "Reset");
+	NLOGV(NLOG_TAG, "Reset");
 
 	delete m6280;
 	delete mPsg;
@@ -66,7 +66,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
-	NLOGV("HesPlayer", "Prepare(%s)", fileName.c_str());
+	NLOGV(NLOG_TAG, "Prepare(%s)", fileName.c_str());
 	(void)MusicPlayer::Prepare(fileName);
 
 	MusicPlayer::Result result;
@@ -75,24 +75,24 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
     	return result;
     }
 
-    NLOGV("HesPlayer", "Reading header");
+    NLOGV(NLOG_TAG, "Reading header");
     musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
 	if (!musicFile) {
-		NLOGE("HesPlayer", "Reading HES header failed");
+		NLOGE(NLOG_TAG, "Reading HES header failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
     if (strncmp(mFileHeader.ID, "HESM", 4) ||
     		strncmp(mFileHeader.subID, "DATA", 4)) {
-    	NLOGE("HesPlayer", "Bad HES header signature");
+    	NLOGE(NLOG_TAG, "Bad HES header signature");
     	musicFile.close();
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
 	// ToDo: finish
 
-	NLOGV("HesPlayer", "File read done");
+	NLOGV(NLOG_TAG, "File reading done");
 	musicFile.close();
 
 	m6280 = new HuC6280;
@@ -100,6 +100,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 	mMemory = new HesMapper(0);	// ToDo: set number of ROM banks
 
 	mMemory->SetPsg(mPsg);
+	mMemory->SetCpu(m6280);
 	m6280->SetMapper(mMemory);
 
 	mMemory->Reset();
@@ -111,7 +112,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 		mMemory->SetMpr(i, mFileHeader.MPR[i]);
 	}
 
-	NLOGD("HesPlayer", "Prepare finished");
+	NLOGD(NLOG_TAG, "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
@@ -129,7 +130,10 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
 	for (k = 0; k < blipLen; k++) {
+		m6280->mTimer.Step();
+		// ToDo: run the 6280 at appropriate intervals
 
+		mPsg->Step();
 	}
 
 	return MusicPlayer::OK;

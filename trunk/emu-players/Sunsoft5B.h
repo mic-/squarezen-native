@@ -27,6 +27,9 @@
 
 class Sunsoft5B : public YmChip
 {
+public:
+	Sunsoft5B() : YmChip() {}
+	Sunsoft5B(int16_t envelopeSteps) : YmChip(envelopeSteps) {}
 };
 
 

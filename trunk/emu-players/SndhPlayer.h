@@ -50,12 +50,17 @@ public:
 	} SndhFileHeader;
 
 private:
+	static char *ReadNumber(char *fileImage, int& num, size_t maxChars, int minVal, int maxVal);
 	uint8_t *ParseTags(char *fileImage, size_t remainingBytes);
 
 	SndhFileHeader mFileHeader;
 	M68000 *m68k;
 	YmChip *mYm;
 	SndhMapper *mMemory;
+	uint16_t *mSongLength;
+	uint16_t mVblFrequency;
+	uint16_t mTimerFrequency[4];			// Frequencies for timer A-D
+	size_t mNumSongs;
 };
 
 MusicPlayer *SndhPlayerFactory();

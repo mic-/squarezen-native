@@ -46,7 +46,6 @@ const uint32_t YmChip::TIMER_PRESCALER_TB[] = {
 };
 
 
-
 void YmChannel::Reset()
 {
 	mPhase = 0;
@@ -282,6 +281,16 @@ void YmSoundFX::Write(uint8_t *regs)
 			}
 		}
 	}
+}
+
+
+YmChip::YmChip(int16_t envelopeSteps)
+{
+	if (envelopeSteps != 16 && envelopeSteps != 32) {
+		envelopeSteps = 32;
+	}
+	mEG.mMaxCycle = envelopeSteps - 1;
+	mEG.mEnvTable = (envelopeSteps == 16 ? (uint16_t*)YM2149_VOL_TB : (uint16_t*)YM2149_ENVE_TB);
 }
 
 
