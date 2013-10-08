@@ -208,13 +208,19 @@
 
 // ====
 
+#define TWO_OPERANDS(op1, op2) (op1 | (op2 << 6))
+#define THREE_OPERANDS(op1, op2, op3) (op1 | (op2 << 6) | (op3 << 12))
+
 const SSmp::Instruction gDisassemblyTable[] =
 {
 	{0x00, "NOP",     SSmp::NO_OPERANDS},
 	// ToDo: handle 0x01
 	{0x02, "SET1",    SSmp::OPERAND_ZPBIT},
-	{0x03, "BBS",     SSmp::OPERAND_ZPBIT_REL},
-	{0x04, "OR",      SSmp::OPERAND_ACCUM_ZP},
+	{0x03, "BBS",     TWO_OPERANDS(SSmp::OPERAND_ZPBIT, SSmp::OPERAND_REL)},
+	{0x04, "OR",      TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_ZP)},
+	{0x05, "OR",      TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_ABS)},
+	{0x06, "OR",      TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_ATX)},
+	{0x07, "OR",      TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_INDX)},
 };
 
 // ====

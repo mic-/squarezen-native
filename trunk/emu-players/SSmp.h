@@ -35,30 +35,28 @@ public:
 	typedef struct {
 		uint8_t opcode;
 		const std::string mnemonic;
-		uint8_t operands;
+		uint32_t operands;
 	} Instruction;
 
 	// Instruction operands
 	enum {
 		NO_OPERANDS,
-		OPERAND_ACCUM,
-		OPERAND_ACCUM_ZP,
-		OPERAND_IMM,
-		OPERAND_ZP,
-		OPERAND_ZPX,
-		OPERAND_ZPY,
-		OPERAND_ABS,
-		OPERAND_ABSX,
-		OPERAND_ABSY,
+		OPERAND_ACCUM,		// A
+		OPERAND_IMM,		// #nn
+		OPERAND_ZP,			// aa
+		OPERAND_ZPX,		// aa+X
+		OPERAND_ZPY,		// aa+Y
+		OPERAND_ABS,		// !aaaa
+		OPERAND_ABSX,		// !aaaa+X
+		OPERAND_ABSY,		// !aaaa+Y
 		OPERAND_IND,
-		OPERAND_INDX,
-		OPERAND_INDY,
+		OPERAND_INDX,		// [aa+X]
+		OPERAND_INDY,		// [aa]+Y
 		OPERAND_ABSIND,
 		OPERAND_ABSXIND,
 		OPERAND_REL,
-		OPERAND_ZP_REL,
-		OPERAND_ZPBIT,
-		OPERAND_ZPBIT_REL,
+		OPERAND_ZPBIT,		// aa.b
+		OPERAND_ATX,		// (X)
 	};
 
 	enum {

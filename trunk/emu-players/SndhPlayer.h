@@ -53,7 +53,6 @@ private:
 	static char *ReadNumber(char *fileImage, int& num, size_t maxChars, int minVal, int maxVal);
 	uint8_t *ParseTags(char *fileImage, size_t remainingBytes);
 
-	SndhFileHeader mFileHeader;
 	M68000 *m68k;
 	YmChip *mYm;
 	SndhMapper *mMemory;
