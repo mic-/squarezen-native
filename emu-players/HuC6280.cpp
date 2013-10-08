@@ -515,6 +515,7 @@ void HuC6280::Reset()
 {
 	mBrkVector = 0xfffe;	// ToDo: is this the correct BRK vector for the 6280?
 	mRegs.F = 0;
+	mTimer.Reset();
 }
 
 
