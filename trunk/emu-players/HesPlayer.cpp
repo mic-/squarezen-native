@@ -124,6 +124,8 @@ void HesPlayer::Irq(uint8_t irqSource)
 {
 	if (HuC6280Mapper::TIMER_IRQ == irqSource) {
 		m6280->mCycles = 0;
+		m6280->mRegs.PC = mMemory->ReadByte(0xFFFA);
+		m6280->mRegs.PC |= (uint16_t)(mMemory->ReadByte(0xFFFB)) << 8;
 		m6280->Run(m6280->mTimer.mCycles);
 	}
 }
