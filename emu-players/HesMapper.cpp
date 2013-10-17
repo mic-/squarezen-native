@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include "NativeLogger.h"
 #include "HesMapper.h"
+#include "HesPlayer.h"
 #include "HuC6280.h"
 
 
@@ -45,6 +46,7 @@ void HesMapper::Reset()
 {
 }
 
+
 uint8_t HesMapper::ReadByte(uint32_t addr)
 {
 	uint32_t page = (addr >> 13) & 7;
@@ -61,6 +63,10 @@ uint8_t HesMapper::ReadByte(uint32_t addr)
 		// ToDo: handle IO reads
 		if (HuC6280::R_TIMER_COUNT == offset) {
 			return m6280->mTimer.mPos;
+		} else if (HuC6280::R_IRQ_DISABLE == offset) {
+			return m6280->mIrqDisable;
+		} else if (HuC6280::R_IRQ_STATUS == offset) {
+			return m6280->mIrqStatus;
 		}
 	}
 
@@ -83,8 +89,22 @@ void HesMapper::WriteByte(uint32_t addr, uint8_t data)
 			m6280->mTimer.mPos = data & 0x7F;
 		} else if (HuC6280::R_TIMER_CTRL == offset) {
 			m6280->mTimer.mCtrl = data;
+		} else if (HuC6280::R_IRQ_DISABLE == offset) {
+			m6280->mIrqDisable = data;
+		} else if (HuC6280::R_IRQ_STATUS == offset) {
+			m6280->mIrqStatus &= ~0x04;
 		}
 		break;
 	}
 }
 
+
+void HesMapper::Irq(uint8_t irqSource)
+{
+	if (HuC6280Mapper::TIMER_IRQ == irqSource) {
+		m6280->mIrqStatus |= 0x04;
+		if (!(m6280->mIrqDisable & 0x04)) {
+			mPlayer->Irq(irqSource);
+		}
+	}
+}

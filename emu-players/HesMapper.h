@@ -25,6 +25,8 @@
 #include "HuC6280Mapper.h"
 #include "HuC6280.h"
 
+class HesPlayer;
+
 
 class HesMapper : public HuC6280Mapper
 {
@@ -34,14 +36,19 @@ public:
 
 	void SetCpu(HuC6280 *cpu) { m6280 = cpu; }
 	void SetPsg(HuC6280Psg *psg) { mPsg = psg; }
+	void SetPlayer(HesPlayer *player) { mPlayer = player; }
 
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint32_t addr);
 	virtual void WriteByte(uint32_t addr, uint8_t data);
 
+	virtual void Irq(uint8_t irqSource);
+
 private:
 	HuC6280 *m6280;
 	HuC6280Psg *mPsg;
+	HesPlayer *mPlayer;
+
 	uint8_t *mCart;
 	uint8_t *mRam;
 	uint32_t mNumRomPages;
