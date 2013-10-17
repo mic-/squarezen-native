@@ -22,6 +22,7 @@
 #define SNDHPLAYER_H_
 
 #include <string>
+#include <vector>
 #include <stdint.h>
 #include "MusicPlayer.h"
 #include "M68000.h"
@@ -56,7 +57,8 @@ private:
 	M68000 *m68k;
 	YmChip *mYm;
 	SndhMapper *mMemory;
-	uint16_t *mSongLength;
+	std::vector<uint16_t> mSongLength;
+	std::vector<uint16_t> mSongNameOffset;
 	uint16_t mVblFrequency;
 	uint16_t mTimerFrequency[4];			// Frequencies for timer A-D
 	size_t mNumSongs;
