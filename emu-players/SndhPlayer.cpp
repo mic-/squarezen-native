@@ -20,6 +20,7 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <vector>
 #include "NativeLogger.h"
 #include "SndhPlayer.h"
 
@@ -28,7 +29,6 @@ SndhPlayer::SndhPlayer()
 	: m68k(NULL)
 	, mYm(NULL)
 	, mMemory(NULL)
-	, mSongLength(NULL)
 	, mNumSongs(1)
 {
 }
@@ -43,12 +43,10 @@ SndhPlayer::~SndhPlayer()
 	delete m68k;
 	delete mYm;
 	delete mMemory;
-	delete [] mSongLength;
 
 	m68k    = NULL;
 	mYm     = NULL;
 	mMemory = NULL;
-	mSongLength = NULL;
 }
 
 MusicPlayer::Result SndhPlayer::Reset()
@@ -59,12 +57,10 @@ MusicPlayer::Result SndhPlayer::Reset()
 	delete m68k;
 	delete mYm;
 	delete mMemory;
-	delete [] mSongLength;
 
 	m68k    = NULL;
 	mYm     = NULL;
 	mMemory = NULL;
-	mSongLength = NULL;
 
 	mNumSongs = 1;
 
@@ -99,7 +95,7 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 
 	while ((fileImage < endPointer) && !headerEnd) {
 		if (strncmp(fileImage, "HDNS", 4) == 0) {
-			fileImage += 4;			// Skip past the tag
+			fileImage += 5;			// Skip past the tag + null terminator
 			headerEnd = true;
 
 		} else if (strncmp(fileImage, "TITL", 4) == 0) {
@@ -125,27 +121,39 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 			fileImage += 4;
 			while (*fileImage++);	// Skip the string
 
+		// Song lengths (one 16-bit word per sub-tune, expressed in seconds)
 		} else if (strncmp(fileImage, "TIME", 4) == 0) {
 			fileImage += 4;
-			if (!mSongLength) {
-				mSongLength = new uint16_t[mNumSongs];
-				memset(mSongLength, 0, mNumSongs * sizeof(uint16_t));
-			}
 			uint16_t *length = (uint16_t*)fileImage;
+			mSongLength.clear();
 			for (int i = 0; i < mNumSongs; i++) {
-				mSongLength[i] = *(length++);	// ToDo: byteswap
+				mSongLength.push_back(*(length++));	// ToDo: byteswap
 			}
 			fileImage = (char*)length;
 
+		// Song name offsets (one 16-bit word per sub-tune, relative to the start of the !#SN tag)
+		} else if (strncmp(fileImage, "!#SN", 4) == 0) {
+			fileImage += 4;
+			uint16_t *offset = (uint16_t*)fileImage;
+			mSongNameOffset.clear();
+			for (int i = 0; i < mNumSongs; i++) {
+				mSongNameOffset.push_back(*(offset++));	// ToDo: byteswap and add offset of the !#SN tag
+			}
+			fileImage = (char*)offset;
+
+		// Number of sub-tunes (two digits, 1-99)
 		} else if (strncmp(fileImage, "##", 2) == 0) {
 			fileImage += 2;
 			fileImage = ReadNumber(fileImage, n, 2, 0, 99);
 			mNumSongs = n;
-			if (mSongLength) {
-				delete [] mSongLength;
-			}
-			mSongLength = new uint16_t[mNumSongs];
-			memset(mSongLength, 0, mNumSongs * sizeof(uint16_t));
+			mSongLength.clear();
+			mSongNameOffset.clear();
+
+		// The default song to play (two digits, 1-99)
+		} else if (strncmp(fileImage, "!#", 2) == 0) {
+			fileImage += 2;
+			fileImage = ReadNumber(fileImage, n, 2, 0, 99);
+			mMetaData.SetDefaultSong(n);
 
 		} else if (strncmp(fileImage, "!V", 2) == 0) {
 			fileImage += 2;
@@ -226,12 +234,15 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
 		return result;
     }
 
-    if (!mSongLength) {
+    if (mSongLength.empty()) {
     	mNumSongs = 1;
-    	mSongLength = new uint16_t[mNumSongs];
-    	mSongLength[0] = 0;
+    	mSongLength.push_back(0);
     	NLOGD(NLOG_TAG, "No ##nn tag found; assuming a single sub-tune with infinite length");
     }
+    if (mSongNameOffset.empty()) {
+    	// ToDo: initialize mSongNameOffset ?
+    }
+    mMetaData.SetNumSubSongs(mNumSongs);
 
     m68k = new M68000;
     mYm = new YmChip(32);
@@ -257,6 +268,7 @@ void SndhPlayer::SetSubSong(uint32_t subSong)
 {
 	NLOGD(NLOG_TAG, "SetSubSong(%d)", subSong);
 	// ToDo: implement
+	mMetaData.SetLengthMs(mSongLength[subSong] * 1000);
 }
 
 
