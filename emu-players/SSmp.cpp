@@ -221,6 +221,20 @@ const SSmp::Instruction gDisassemblyTable[] =
 	{0x05, "OR",      TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_ABS)},
 	{0x06, "OR",      TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_ATX)},
 	{0x07, "OR",      TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_INDX)},
+	// ToDo: handle 0x08
+	// ToDo: handle 0x09
+	// ToDo: handle 0x0A
+	{0x0B, "ASL", 	  SSmp::OPERAND_ZP},
+	{0x0C, "ASL", 	  SSmp::OPERAND_ABS},
+	{0x0D, "PUSH", 	  SSmp::OPERAND_PSW},
+	{0x0E, "TSET1",   SSmp::OPERAND_ABS},
+	// ToDo: handle 0x0F
+	{0x10, "BPL", 	  SSmp::OPERAND_REL},
+	// ToDo: handle 0x11
+	{0x12, "CLR1", 	  SSmp::OPERAND_ZPBIT},
+	{0x13, "BBC",  	  TWO_OPERANDS(SSmp::OPERAND_ZPBIT, SSmp::OPERAND_REL)},
+	{0x14, "OR", 	  TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_ZPX)},
+	{0x15, "OR", 	  TWO_OPERANDS(SSmp::OPERAND_ACCUM, SSmp::OPERAND_ABSX)},
 };
 
 // ====

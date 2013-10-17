@@ -42,6 +42,7 @@ public:
 	enum {
 		NO_OPERANDS,
 		OPERAND_ACCUM,		// A
+		OPERAND_PSW,		// PSW
 		OPERAND_IMM,		// #nn
 		OPERAND_ZP,			// aa
 		OPERAND_ZPX,		// aa+X
