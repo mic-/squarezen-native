@@ -27,7 +27,13 @@
 class HuC6280Mapper : public MemoryMapper
 {
 public:
+	virtual void Irq(uint8_t irqSource) {}
 	virtual void SetMpr(uint8_t mprNum, uint8_t val) { mMPR[mprNum & 7] = val; }
+
+	enum {
+		TIMER_IRQ,
+		VDC_IRQ,
+	};
 
 	enum {
 		MPR_RAM_PAGE = 0xF8,

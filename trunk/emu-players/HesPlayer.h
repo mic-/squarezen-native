@@ -38,6 +38,8 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	void Irq(uint8_t irqSource);
+
 	typedef struct __attribute__ ((__packed__))
 	{
 		char ID[4];

@@ -26,6 +26,7 @@
 #include "MemoryMapper.h"
 #include "Oscillator.h"
 
+class HuC6280;
 class HuC6280Mapper;
 
 
@@ -38,12 +39,16 @@ public:
 	virtual void Reset();
 	virtual void Step();
 
+	void SetCpu(HuC6280 *cpu) { m6280 = cpu; }
+
 	enum
 	{
 		CTRL_STARTED = 0x01,
 	};
 
+	HuC6280 *m6280;
 	uint8_t mCtrl;
+	uint32_t mCycles;
 };
 
 
@@ -168,6 +173,8 @@ public:
 	enum {
 		R_TIMER_COUNT = 0xC00,
 		R_TIMER_CTRL = 0xC01,
+		R_IRQ_DISABLE = 0x1402,
+		R_IRQ_STATUS = 0x1403,
 	};
 
 	struct {
@@ -178,10 +185,14 @@ public:
 	HuC6280Timer mTimer;
 	uint32_t mCycles;
 	uint8_t mSpeed;
+	uint8_t mIrqDisable;
+	uint8_t mIrqStatus;
 	uint8_t mMPR[8];
 	uint8_t mMprLatch;
 
 private:
+	friend class HuC6280Timer;
+
 	HuC6280Mapper *mMemory;
 	uint16_t mBrkVector;
 };

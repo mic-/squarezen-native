@@ -101,6 +101,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 
 	mMemory->SetPsg(mPsg);
 	mMemory->SetCpu(m6280);
+	mMemory->SetPlayer(this);
 	m6280->SetMapper(mMemory);
 
 	mMemory->Reset();
@@ -116,6 +117,15 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
+}
+
+
+void HesPlayer::Irq(uint8_t irqSource)
+{
+	if (HuC6280Mapper::TIMER_IRQ == irqSource) {
+		m6280->mCycles = 0;
+		m6280->Run(m6280->mTimer.mCycles);
+	}
 }
 
 

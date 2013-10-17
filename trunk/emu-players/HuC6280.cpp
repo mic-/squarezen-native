@@ -516,6 +516,7 @@ void HuC6280::Reset()
 	mBrkVector = 0xfffe;	// ToDo: is this the correct BRK vector for the 6280?
 	mRegs.F = 0;
 	mTimer.Reset();
+	mTimer.SetCpu(this);
 }
 
 
@@ -1961,6 +1962,7 @@ void HuC6280Timer::Reset()
 {
 	mPos = mCtrl = 0;
 	mStep = 0;
+	mCycles = 0;
 }
 
 
@@ -1970,9 +1972,12 @@ void HuC6280Timer::Step()
 		mStep++;
 		if (mStep >= mPeriod) {
 			mStep = 0;
+			mCycles += mPeriod;
 			mPos = (mPos - 1) & 0x7F;
 			if (0x7F == mPos) {
 				// ToDo: generate interrupt
+				m6280->mMemory->Irq(HuC6280Mapper::TIMER_IRQ);
+				mCycles = 0;
 			}
 		}
 	}
