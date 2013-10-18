@@ -23,6 +23,7 @@
 #include <vector>
 #include "NativeLogger.h"
 #include "SndhPlayer.h"
+#include "../unice/unice68.h"
 
 
 SndhPlayer::SndhPlayer()
@@ -223,8 +224,27 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
 
 	SndhFileHeader *header = (SndhFileHeader*)fileImage;
     if (strncmp(header->signature, "SNDH", 4)) {
-    	NLOGE(NLOG_TAG, "Bad SNDH header signature");
-    	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+    	if (strncmp(header->signature, "ICE!", 4) == 0) {
+    		int depackedSize = unice68_get_depacked_size(fileImage, NULL);
+    		if (depackedSize <= 0) {
+    			NLOGE(NLOG_TAG, "Malformed ICE header");
+    			return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+    		}
+    		NLOGD(NLOG_TAG, "Depacked size: %d bytes", depackedSize);
+    		SndhMapper *newMapper = new SndhMapper(depackedSize);
+    		if (unice68_depacker(newMapper->GetFileImagePointer(), fileImage) == 0) {
+    			NLOGE(NLOG_TAG, "ICE depacking failed");
+    			delete newMapper;
+    			return MusicPlayer::ERROR_DECOMPRESSION;
+    		}
+    		delete mMemory;
+    		mMemory = newMapper;
+    		newMapper = NULL;
+    		fileImage = mMemory->GetFileImagePointer();
+    	} else {
+			NLOGE(NLOG_TAG, "No SNDH or ICE! signature");
+			return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+    	}
     }
 
 	mNumSongs = 1;

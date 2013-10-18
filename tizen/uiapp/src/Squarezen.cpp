@@ -34,7 +34,9 @@ static const wchar_t* REMOTE_PORT_NAME = L"SQZSERVICE_PORT";
 
 
 SquarezenApp::SquarezenApp(void)
-	: mForm(NULL), mServiceProxy(NULL), mServiceReady(false)
+	: mForm(NULL)
+	, mServiceReady(false)
+	, mServiceProxy(NULL)
 {
 }
 
