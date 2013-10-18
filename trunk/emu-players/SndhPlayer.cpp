@@ -224,7 +224,7 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
 
 	SndhFileHeader *header = (SndhFileHeader*)fileImage;
     if (strncmp(header->signature, "SNDH", 4)) {
-    	if (strncmp(header->signature, "ICE!", 4) == 0) {
+    	if (strncmp((char*)fileImage, "ICE!", 4) == 0) {
     		int depackedSize = unice68_get_depacked_size(fileImage, NULL);
     		if (depackedSize <= 0) {
     			NLOGE(NLOG_TAG, "Malformed ICE header");
@@ -232,7 +232,7 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
     		}
     		NLOGD(NLOG_TAG, "Depacked size: %d bytes", depackedSize);
     		SndhMapper *newMapper = new SndhMapper(depackedSize);
-    		if (unice68_depacker(newMapper->GetFileImagePointer(), fileImage) == 0) {
+    		if (unice68_depacker(newMapper->GetFileImagePointer(), fileImage)) {
     			NLOGE(NLOG_TAG, "ICE depacking failed");
     			delete newMapper;
     			return MusicPlayer::ERROR_DECOMPRESSION;
