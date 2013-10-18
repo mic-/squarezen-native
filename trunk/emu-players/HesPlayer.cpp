@@ -123,10 +123,13 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 void HesPlayer::Irq(uint8_t irqSource)
 {
 	if (HuC6280Mapper::TIMER_IRQ == irqSource) {
+		m6280->Irq(0xFFFA);
 		m6280->mCycles = 0;
-		m6280->mRegs.PC = mMemory->ReadByte(0xFFFA);
-		m6280->mRegs.PC |= (uint16_t)(mMemory->ReadByte(0xFFFB)) << 8;
 		m6280->Run(m6280->mTimer.mCycles);
+	} else if (HuC6280Mapper::VDC_IRQ == irqSource) {
+		m6280->Irq(0xFFF8);
+		m6280->mCycles = 0;
+		m6280->Run(mFrameCycles);
 	}
 }
 
@@ -143,9 +146,14 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	for (k = 0; k < blipLen; k++) {
 		m6280->mTimer.Step();
-		// ToDo: run the 6280 at appropriate intervals
 
 		mPsg->Step();
+
+		mCycleCount++;
+		if (mCycleCount == mFrameCycles) {
+			mMemory->Irq(HuC6280Mapper::VDC_IRQ);
+			mCycleCount = 0;
+		}
 	}
 
 	return MusicPlayer::OK;
