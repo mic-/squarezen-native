@@ -25,6 +25,7 @@
 #include "NsfPlayer.h"
 #include "SgcPlayer.h"
 #include "SidPlayer.h"
+#include "SndhPlayer.h"
 #include "SpcPlayer.h"
 #include "VgmPlayer.h"
 #include "YmPlayer.h"
@@ -34,8 +35,12 @@ std::map<std::string, PlayerFactory> CreateSupportedFormatsMap()
 	std::map<std::string, PlayerFactory> formatsMap;
 
 	formatsMap.insert( std::make_pair(".gbs", &GbsPlayerFactory) );
+	formatsMap.insert( std::make_pair(".hes", &HesPlayerFactory) );
 	formatsMap.insert( std::make_pair(".nsf", &NsfPlayerFactory) );
+	formatsMap.insert( std::make_pair(".sgc", &SgcPlayerFactory) );
 	formatsMap.insert( std::make_pair(".sid", &SidPlayerFactory) );
+	formatsMap.insert( std::make_pair(".sndh", &SndhPlayerFactory) );
+	formatsMap.insert( std::make_pair(".spc", &SpcPlayerFactory) );
 	formatsMap.insert( std::make_pair(".vgm", &VgmPlayerFactory) );
 	formatsMap.insert( std::make_pair(".vgz", &VgmPlayerFactory) );
 	formatsMap.insert( std::make_pair(".ym",  &YmPlayerFactory)  );
