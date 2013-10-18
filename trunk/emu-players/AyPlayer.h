@@ -21,6 +21,7 @@
 #ifndef AYPLAYER_H_
 #define AYPLAYER_H_
 
+#include <vector>
 #include <stdint.h>
 #include <stddef.h>
 #include "YM2149.h"
@@ -37,9 +38,48 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	typedef struct __attribute__ ((__packed__))
+	{
+		char ID[4];					// "ZXAY"
+		char typeID[4];				// "EMUL"
+		uint8_t fileVersion;
+		uint8_t playerVersion;
+		uint16_t specialPlayer;		// only used by one song (can be ignored?)
+		uint16_t authorOffset;
+		uint16_t miscOffset;
+		uint8_t numSongs;
+		uint8_t firstSong;
+		uint16_t songsStructOffset;
+	} AyFileHeader;
+
+	typedef struct __attribute__ ((__packed__))
+	{
+		uint16_t songNameOffset;
+		uint16_t songDataOffset;
+	} AySongStruct;
+
+	typedef struct __attribute__ ((__packed__))
+	{
+		// Specifies which Paula channels will be used to play which YM channels
+		// when emulating on an Amiga.
+		uint8_t aChan;
+		uint8_t bChan;
+		uint8_t cChan;
+		uint8_t nChan;			// noise
+
+		uint16_t songLength;	// in 1/50 s
+		uint16_t fadeLength;	// in 1/50 s
+		uint8_t hiReg;
+		uint8_t loReg;
+		uint16_t pointsOffset;
+		uint16_t blocksOffset;
+	} AyEmulSongData;
+
 private:
 	Z80 *mZ80;
 	YmChip mAy;
+	AyFileHeader mFileHeader;
+	std::vector<AySongStruct*> mSongs;
 };
 
 
