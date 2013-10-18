@@ -111,7 +111,17 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-    if (strncmp(mFileHeader.ID, "KSCC", 4)) {
+	if (strncmp(mFileHeader.ID, "KSSX", 4) == 0) {
+		if (mFileHeader.reservedOrExtraHeader == 0x10) {
+		    musicFile.read((char*)&mKssxHeader, sizeof(mKssxHeader));
+			if (!musicFile) {
+				NLOGE("KssPlayer", "Reading KSSX header failed");
+		        musicFile.close();
+				return MusicPlayer::ERROR_FILE_IO;
+			}
+		}
+	} else if (strncmp(mFileHeader.ID, "KSCC", 4)) {
+		//ToDo: handle gzip-compressed KSSX files
     	NLOGE("KssPlayer", "Bad KSS header signature");
     	musicFile.close();
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
