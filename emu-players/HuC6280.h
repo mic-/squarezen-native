@@ -126,6 +126,7 @@ public:
 
 	void SetMapper(HuC6280Mapper *mapper) { mMemory = mapper; }
 	void SetMpr(uint8_t mprNum, uint8_t val) { mMPR[mprNum & 7] = val; }
+	void Irq(uint16_t vector);
 
 	typedef struct {
 		uint8_t opcode;

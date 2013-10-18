@@ -27,6 +27,7 @@
 SgcPlayer::SgcPlayer()
 	: mZ80(NULL)
 	, mSN76489(NULL)
+	, mYM2413(NULL)
 	, mMemory(NULL)
 {
 }
@@ -40,16 +41,27 @@ SgcPlayer::~SgcPlayer()
 {
 	delete mZ80;
 	delete mSN76489;
+	delete mYM2413;
 	delete mMemory;
 	mZ80 = NULL;
 	mSN76489 = NULL;
+	mYM2413 = NULL;
 	mMemory = NULL;
 }
 
 MusicPlayer::Result SgcPlayer::Reset()
 {
-	// ToDo: implement
 	NLOGV(NLOG_TAG, "Reset()");
+
+	delete mZ80;
+	delete mSN76489;
+	delete mYM2413;
+	delete mMemory;
+	mZ80 = NULL;
+	mSN76489 = NULL;
+	mYM2413 = NULL;
+	mMemory = NULL;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
@@ -103,11 +115,31 @@ MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
 	mZ80->Reset();
 	mSN76489->Reset();
 
+	mBlipBuf = new Blip_Buffer();
+	mSynth = new Blip_Synth<blip_low_quality,4096>[4];
+	if (mBlipBuf->set_sample_rate(44100)) {
+    	NLOGE(NLOG_TAG, "Failed to set blipbuffer sample rate");
+		return MusicPlayer::ERROR_UNKNOWN;
+	}
+	mBlipBuf->clock_rate(3579545);
+
+	mFrameCycles = 3579545 / ((mFileHeader.region == SgcPlayer::REGION_PAL) ? 50 : 60);
+	mCycleCount = 0;
+
+    // Setup waves
+	for (int i = 0; i < 4; i++) {
+		mSynth[i].volume(0.22);
+		mSynth[i].output(mBlipBuf);
+	}
+
 	if (mFileHeader.systemType <= SgcPlayer::SYSTEM_GG) {
 		for (int i = 0; i < 4; i++) {
 			mMemory->WriteByte(0xFFFC + i, mFileHeader.mapperInit[i]);
 		}
 	}
+
+	mZ80->mRegs.SP = mFileHeader.stackPointer;
+	SetSubSong(mFileHeader.firstSong - 1);
 
 	NLOGD(NLOG_TAG, "Prepare finished");
 
@@ -119,7 +151,10 @@ MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
 void SgcPlayer::SetSubSong(uint32_t subSong)
 {
 	NLOGD(NLOG_TAG, "SetSubSong(%d)", subSong);
-	// ToDo: implement
+
+	mZ80->mRegs.PC = mFileHeader.initAddress;
+	mZ80->mRegs.A = subSong;
+	mZ80->Run(mFrameCycles * 2);
 }
 
 
@@ -154,7 +189,10 @@ MusicPlayer::Result SgcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
 	for (k = 0; k < blipLen; k++) {
-		// ToDo: run the Z80 at appropriate intervals
+		if (0 == mCycleCount) {
+			mZ80->mRegs.PC = mFileHeader.playAddress;
+			mZ80->Run(mFrameCycles);
+		}
 
 		mSN76489->Step();
 
@@ -165,6 +203,11 @@ MusicPlayer::Result SgcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 				mSynth[i].update(k, out);
 				mSN76489->mChannels[i].mOut = out;
 			}
+		}
+
+		mCycleCount++;
+		if (mCycleCount == mFrameCycles) {
+			mCycleCount = 0;
 		}
 	}
 

@@ -106,5 +106,11 @@ void HesMapper::Irq(uint8_t irqSource)
 		if (!(m6280->mIrqDisable & 0x04)) {
 			mPlayer->Irq(irqSource);
 		}
+	} else if (HuC6280Mapper::VDC_IRQ == irqSource) {
+		m6280->mIrqStatus |= 0x02;
+		if (!(m6280->mIrqDisable & 0x02)) {
+			mPlayer->Irq(irqSource);
+		}
+		m6280->mIrqStatus &= ~0x02;
 	}
 }

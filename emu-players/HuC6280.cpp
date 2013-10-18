@@ -520,6 +520,15 @@ void HuC6280::Reset()
 }
 
 
+void HuC6280::Irq(uint16_t vector) {
+	PUSHW(mRegs.PC);
+	PUSHB(mRegs.F);
+	mRegs.F |= (HuC6280::FLAG_I);
+	mRegs.PC = mMemory->ReadByte(vector);
+	mRegs.PC |= (uint16_t)mMemory->ReadByte(vector+1) << 8;
+}
+
+
 void HuC6280::Run(uint32_t maxCycles)
 {
 	uint16_t addr, addr2, temp16;

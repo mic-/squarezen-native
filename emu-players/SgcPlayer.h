@@ -26,6 +26,7 @@
 #include "MusicPlayer.h"
 #include "Z80.h"
 #include "SN76489.h"
+#include "YM2413.h"
 #include "SgcMapper.h"
 
 
@@ -84,7 +85,9 @@ private:
 	SgcFileHeader mFileHeader;
 	Z80 *mZ80;
 	SnChip *mSN76489;
+	YM2413 *mYM2413;
 	SgcMapper *mMemory;
+	uint8_t mFrameCycles, mCycleCount;
 };
 
 MusicPlayer *SgcPlayerFactory();
