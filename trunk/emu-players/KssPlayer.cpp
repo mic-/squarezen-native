@@ -103,6 +103,8 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
     	return result;
     }
 
+    mIsKssx = false;
+
     NLOGV("KssPlayer", "Reading header");
     musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
 	if (!musicFile) {
@@ -119,6 +121,7 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 		        musicFile.close();
 				return MusicPlayer::ERROR_FILE_IO;
 			}
+			mIsKssx = true;
 		}
 	} else if (strncmp(mFileHeader.ID, "KSCC", 4)) {
 		//ToDo: handle gzip-compressed KSSX files
@@ -128,7 +131,7 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
     }
 
     mZ80 = new Z80;
-    mMemory = new KssMapper(0);	// ToDo: set number of ROM banks
+    mMemory = new KssMapper(mFileHeader.initDataSize + mFileHeader.loadAddress);
     mAy = new YmChip;
     mScc = new KonamiScc;
     int numSynths = 3+2;	// 3 for the AY, 2 for the SCC (pre-mixed from the SCC's 6 channels)
@@ -141,13 +144,25 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
     	//numSynths += 3;		// pre-mixed from the YM2413's 9 channels
     }
 
+    mFrameCycles = 3580000 / ((mIsKssx && ((mFileHeader.extraChips & KSSX_VSYNC_MASK) != USES_PAL_VSYNC)) ? 60 : 50);
+    mCycleCount = 0;
+
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,4096>[numSynths];
 
-	// ToDo: finish
-
+    musicFile.read((char*)(mMemory->GetKssDataPointer()) + mFileHeader.loadAddress, mFileHeader.initDataSize);
+	if (!musicFile) {
+		NLOGE("KssPlayer", "Reading KSS data failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
 	NLOGV("KssPlayer", "File read done");
 	musicFile.close();
+
+	// ToDo: finish
+
+	mZ80->mRegs.PC = mFileHeader.initAddress;
+	mZ80->Run(mFrameCycles * 2);
 
 	NLOGD("KssPlayer", "Prepare finished");
 
@@ -168,6 +183,10 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
 	for (k = 0; k < blipLen; k++) {
+		if (mCycleCount == 0) {
+			mZ80->mRegs.PC = mFileHeader.playAddress;
+			mZ80->Run(mFrameCycles);
+		}
 
 		if (mSccEnabled) {
 			// ToDo: add SCC audio to blip synths
@@ -190,6 +209,11 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 					mSN76489->mChannels[i].mOut = out;
 				}
 			}
+		}
+
+		mCycleCount++;
+		if (mCycleCount == mFrameCycles) {
+			mCycleCount = 0;
 		}
 	}
 

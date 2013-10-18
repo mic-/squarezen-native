@@ -23,19 +23,19 @@
 #include "KssPlayer.h"
 
 
-KssMapper::KssMapper(uint32_t numRomBanks)
+KssMapper::KssMapper(uint32_t numBytes)
 	: mAy(NULL)
 	, mScc(NULL)
 	, mSN76489(NULL)
 	, mKssPlayer(NULL)
 	, mSccEnabled(false)
 {
-	// ToDo: implement
+	mKssData = new uint8_t[numBytes];
 }
 
 KssMapper::~KssMapper()
 {
-	// ToDo: implement
+	delete [] mKssData;
 }
 
 void KssMapper::Reset()

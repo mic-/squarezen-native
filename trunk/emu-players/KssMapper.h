@@ -40,6 +40,8 @@ public:
 	virtual uint8_t ReadByte(uint32_t addr);
 	virtual void WriteByte(uint32_t addr, uint8_t data);
 
+	uint8_t *GetKssDataPointer() const { return mKssData; }
+
 	void SetAy(YmChip *ay) { mAy = ay; }
 	void SetScc(KonamiScc *scc) { mScc = scc; }
 	void SetSN76489(SnChip *sn76489) { mSN76489 = sn76489; }
@@ -65,6 +67,7 @@ private:
 	KonamiScc *mScc;
 	SnChip *mSN76489;
 	KssPlayer *mKssPlayer;
+	uint8_t *mKssData;
 	uint8_t mAyAddressLatch;
 	bool mSccEnabled;
 };
