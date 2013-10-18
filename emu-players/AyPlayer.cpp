@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "AyPlayer"
 
 #include <iostream>
 #include <fstream>
@@ -35,7 +36,7 @@ AyPlayer::~AyPlayer()
 MusicPlayer::Result AyPlayer::Reset()
 {
 	// ToDo: implement
-	NLOGV("AyPlayer", "Reset");
+	NLOGV(NLOG_TAG, "Reset");
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
@@ -44,7 +45,7 @@ MusicPlayer::Result AyPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
-	NLOGV("AyPlayer", "Prepare(%s)", fileName.c_str());
+	NLOGV(NLOG_TAG, "Prepare(%s)", fileName.c_str());
 	(void)MusicPlayer::Prepare(fileName);
 
 	MusicPlayer::Result result;
@@ -53,12 +54,33 @@ MusicPlayer::Result AyPlayer::Prepare(std::string fileName)
     	return result;
     }
 
+    NLOGV(NLOG_TAG, "Reading header");
+    musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
+	if (!musicFile) {
+		NLOGE(NLOG_TAG, "Reading AY file header failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
+
+    if (strncmp(mFileHeader.ID, "ZXAY", 4) || strncmp(mFileHeader.typeID, "EMUL", 4)) {
+    	NLOGE(NLOG_TAG, "Unknown AY header ID");
+    	musicFile.close();
+    	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+    }
+
+    // ToDo: byteswap offsets
+
+
+    for (int i = 0; i < mFileHeader.numSongs; i++) {
+    	// ToDo: read song structs
+    }
+
     // ToDo: finish
 
-	NLOGV("AyPlayer", "File read done");
+	NLOGV(NLOG_TAG, "File read done");
 	musicFile.close();
 
-	NLOGD("AyPlayer", "Prepare finished");
+	NLOGD(NLOG_TAG, "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
