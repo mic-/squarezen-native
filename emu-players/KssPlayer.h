@@ -104,6 +104,8 @@ private:
 	YM2413 *mYM2413;
 	SnChip *mSN76489;
 	KonamiScc *mScc;
+	uint32_t mFrameCycles, mCycleCount;
+	bool mIsKssx;
 	bool mSccEnabled;
 };
 
