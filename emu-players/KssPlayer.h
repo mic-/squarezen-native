@@ -57,9 +57,21 @@ public:
 		uint16_t playAddress;
 		uint8_t firstBank;
 		uint8_t extraBanks;
-		uint8_t reserved;
+		uint8_t reservedOrExtraHeader;
 		uint8_t extraChips;
 	} KssFileHeader;
+
+	typedef struct __attribute__ ((__packed__))
+	{
+		uint32_t eofOffset;
+		uint32_t reserved;
+		uint16_t firstSong;
+		uint16_t numSongs;
+		uint8_t psgVolume;	// 0x81 (min) ... 0x7F (max), in 0.375 dB steps
+		uint8_t sccVolume;
+		uint8_t fmUnitVolume;
+		uint8_t msxAudioVolume;
+	} KssxExtraHeader;
 
 	enum {
 		FMPAC_MASK     = 0x03,
@@ -69,6 +81,7 @@ public:
 		GG_STEREO_MASK = 0x06,
 		MSX_AUDIO_MASK = 0x0A,
 		RAM2_MASK      = 0x0A,
+		KSSX_VSYNC_MASK = 0x40,
 
 		USES_FMPAC     = 0x01,
 		USES_FMUNIT    = 0x03,
@@ -77,12 +90,14 @@ public:
 		USES_GG_STEREO = 0x06,
 		USES_MSX_AUDIO = 0x08,
 		USES_RAM2      = 0x0A,
+		USES_PAL_VSYNC = 0x40,
 	};
 
 private:
 	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 
 	KssFileHeader mFileHeader;
+	KssxExtraHeader mKssxHeader;
 	Z80 *mZ80;
 	KssMapper *mMemory;
 	YmChip *mAy;
