@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_DEBUG 0
+#define NLOG_TAG "Mos6581"
 
 #include "NativeLogger.h"
 #include "Mos6581.h"
@@ -45,7 +46,7 @@ void Mos6581EnvelopeGenerator::Step()
 				mOut++;
 				if (mOut >= 0xFF) {
 					mOut = 0xFF;
-					if (mChannel->mIndex==2) NLOGV("Mos6581", "Channel %d starting decay phase (time %d)", mChannel->mIndex, curCycle);
+					if (mChannel->mIndex==2) NLOGV(NLOG_TAG, "Channel %d starting decay phase (time %d)", mChannel->mIndex, curCycle);
 					mPhase = DECAY;
 					mPeriod = EG_PERIODS[mChannel->mChip->mRegs[Mos6581::R_VOICE1_AD + mChannel->mIndex * 7] & 0x0F];
 					mClockDivider = 1;
@@ -57,7 +58,7 @@ void Mos6581EnvelopeGenerator::Step()
 					mOut = mSustainLevel;
 					mClocked = false;
 					mPhase = SUSTAIN;
-					if (mChannel->mIndex==2) NLOGV("Mos6581", "Channel %d starting sustain phase at level %d (time %d)", mChannel->mIndex, mOut, curCycle);
+					if (mChannel->mIndex==2) NLOGV(NLOG_TAG, "Channel %d starting sustain phase at level %d (time %d)", mChannel->mIndex, mOut, curCycle);
 				} else {
 					if (mOut) mOut--;
 
@@ -78,11 +79,11 @@ void Mos6581EnvelopeGenerator::Step()
 				if (mOut) {
 					mOut--;
 					if (!mOut) {
-						NLOGV("Mos6581", "Channel %d reached zero envelope", mChannel->mIndex);
+						NLOGV(NLOG_TAG, "Channel %d reached zero envelope", mChannel->mIndex);
 						mClocked = false;
 					}
 				}
-				if (mOut == 93) { mClockDivider = 2; NLOGV("Mos6581", "Clock divider changing to 2 on channel %d (time %d)", mChannel->mIndex, curCycle); }
+				if (mOut == 93) { mClockDivider = 2; NLOGV(NLOG_TAG, "Clock divider changing to 2 on channel %d (time %d)", mChannel->mIndex, curCycle); }
 				else if (mOut == 54) mClockDivider = 4;
 				else if (mOut == 26) mClockDivider = 8;
 				else if (mOut == 14) mClockDivider = 16;
@@ -214,20 +215,20 @@ void Mos6581Channel::Write(uint32_t addr, uint8_t val)
 	case Mos6581::R_VOICE2_PW_LO:
 	case Mos6581::R_VOICE3_PW_LO:
 		mDuty = val | (((uint16_t)mChip->mRegs[Mos6581::R_VOICE1_PW_HI + mIndex * 7] & 0xF) << 8);
-		//if (mIndex==2) NLOGD("Mos6581", "PW = %#x", mDuty);
+		//if (mIndex==2) NLOGD(NLOG_TAG, "PW = %#x", mDuty);
 		break;
 
 	case Mos6581::R_VOICE1_PW_HI:
 	case Mos6581::R_VOICE2_PW_HI:
 	case Mos6581::R_VOICE3_PW_HI:
 		mDuty = ((uint16_t)(val & 0xF) << 8) | mChip->mRegs[Mos6581::R_VOICE1_PW_LO + mIndex * 7];
-		//if (mIndex==2) NLOGD("Mos6581", "PW = %#x", mDuty);
+		//if (mIndex==2) NLOGD(NLOG_TAG, "PW = %#x", mDuty);
 		break;
 
 	case Mos6581::R_VOICE1_AD:
 	case Mos6581::R_VOICE2_AD:
 	case Mos6581::R_VOICE3_AD:
-		//if (mIndex==2) NLOGD("Mos6581", "AD for channel %d = %#x", mIndex, val);
+		//if (mIndex==2) NLOGD(NLOG_TAG, "AD for channel %d = %#x", mIndex, val);
 		break;
 
 	case Mos6581::R_VOICE1_SR:
@@ -235,25 +236,25 @@ void Mos6581Channel::Write(uint32_t addr, uint8_t val)
 	case Mos6581::R_VOICE3_SR:
 		mEG.mSustainLevel = mChip->mRegs[Mos6581::R_VOICE1_SR + mIndex * 7] >> 4;
 		mEG.mSustainLevel |= mEG.mSustainLevel << 4;
-		//if (mIndex==2) NLOGD("Mos6581", "SR for channel %d = %#x", mIndex, val);
+		//if (mIndex==2) NLOGD(NLOG_TAG, "SR for channel %d = %#x", mIndex, val);
 		break;
 
 	case Mos6581::R_VOICE1_CTRL:
 	case Mos6581::R_VOICE2_CTRL:
 	case Mos6581::R_VOICE3_CTRL:
-		//if (mIndex==2) NLOGD("Mos6581", "VOICE%d_CTRL = %#x", mIndex, val);
+		//if (mIndex==2) NLOGD(NLOG_TAG, "VOICE%d_CTRL = %#x", mIndex, val);
 		if ((val ^ prevRegValue) & Mos6581::VOICE_CTRL_GATE) {
 			if (val & Mos6581::VOICE_CTRL_GATE) {
 				mEG.mPhase = Mos6581EnvelopeGenerator::ATTACK;
 				mEG.mClockDivider = 1;
 				mEG.mClocked = true;
 				mEG.mPeriod = EG_PERIODS[mChip->mRegs[Mos6581::R_VOICE1_AD + mIndex * 7] >> 4];
-				if (mIndex==2) NLOGV("Mos6581", "Attack phase on channel 0 at level %d (%d)", mEG.mOut, curCycle);
+				if (mIndex==2) NLOGV(NLOG_TAG, "Attack phase on channel 0 at level %d (%d)", mEG.mOut, curCycle);
 			} else {
 				mEG.mPhase = Mos6581EnvelopeGenerator::RELEASE;
 				mEG.mPeriod = EG_PERIODS[mChip->mRegs[Mos6581::R_VOICE1_SR + mIndex * 7] & 0x0F];
 				mEG.mClocked = true;
-				if (mIndex==2) NLOGV("Mos6581", "Channel %d starting release phase at output level %d, (period %d, divider %d, time %d)",
+				if (mIndex==2) NLOGV(NLOG_TAG, "Channel %d starting release phase at output level %d, (period %d, divider %d, time %d)",
 						mIndex, mEG.mOut, mEG.mPeriod, mEG.mClockDivider, curCycle);
 			}
 		}
@@ -271,7 +272,7 @@ void Mos6581Channel::Write(uint32_t addr, uint8_t val)
 
 void Mos6581::Reset()
 {
-	NLOGD("Mos6581", "Reset");
+	NLOGD(NLOG_TAG, "Reset");
 
 	for (int i = 0; i < 3; i++) {
 		mChannels[i].SetChip(this);
@@ -292,7 +293,7 @@ void Mos6581::Step()
 
 void Mos6581::Write(uint32_t addr, uint8_t data)
 {
-	//NLOGD("Mos6581", "Write(%#x, %#x)", addr, data);
+	//NLOGD(NLOG_TAG, "Write(%#x, %#x)", addr, data);
 
 	uint8_t reg = addr - Mos6581::REGISTER_BASE;
 

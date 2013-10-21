@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_DEBUG 0
+#define NLOG_TAG "Namco163"
 
 #include "NativeLogger.h"
 #include "Namco163.h"

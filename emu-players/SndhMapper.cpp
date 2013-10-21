@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "SndhMapper"
 
 #include <string.h>
 #include <stddef.h>
