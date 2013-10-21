@@ -139,7 +139,7 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 
     mAy = new YmChip(YmChip::AY_3_8910_ENVELOPE_STEPS);
     mScc = new KonamiScc;
-    int numSynths = 3+2;	// 3 for the AY, 2 for the SCC (pre-mixed from the SCC's 6 channels)
+    int numSynths = 3+2;	// 3 for the AY, 2 for the SCC (pre-mixed from the SCC's 5 channels)
     if ((mFileHeader.extraChips & SN76489_MASK) == USES_SN76489) {
     	mSN76489 = new SnChip;
     	numSynths += 4;
@@ -191,6 +191,7 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t k;
 	int16_t out;
+	static int16_t kssOut1 = -1, kssOut2 = -1;
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return MusicPlayer::ERROR_BAD_STATE;
@@ -217,8 +218,25 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		}
 
 		if (mSccEnabled) {
-			// ToDo: add SCC audio to blip synths
 			mScc->Step();
+			uint16_t out1 = (mScc->mChannels[0].mOut * mScc->mChannels[0].mVol)
+					      + (mScc->mChannels[1].mOut * mScc->mChannels[1].mVol)
+					      + (mScc->mChannels[2].mOut * mScc->mChannels[2].mVol);
+
+			uint16_t out2 = (mScc->mChannels[3].mOut * mScc->mChannels[3].mVol)
+					      + (mScc->mChannels[4].mOut * mScc->mChannels[4].mVol);
+
+			out1 = (out1 * 85) >> 8;	// out1 /= 3
+			out2 >>= 1;					// out2 /= 2
+
+			if (out1 != kssOut1) {
+				mSynth[3].update(k, out1);
+				kssOut1 = out1;
+			}
+			if (out2 != kssOut2) {
+				mSynth[4].update(k, out2);
+				kssOut2 = out2;
+			}
 		}
 
 		if (mYM2413) {

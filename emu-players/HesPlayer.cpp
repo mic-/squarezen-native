@@ -113,6 +113,35 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 		mMemory->SetMpr(i, mFileHeader.MPR[i]);
 	}
 
+	{
+		mBlipBuf = new Blip_Buffer();
+		mSynth = new Blip_Synth<blip_low_quality,4096>[3];	// Downmixed from the HuC6280's 6 channels
+
+		if (mBlipBuf->set_sample_rate(44100)) {
+			NLOGE(NLOG_TAG, "Failed to set blipbuffer sample rate");
+			return MusicPlayer::ERROR_UNKNOWN;
+		}
+		mBlipBuf->clock_rate(3580000);
+
+		for (int i = 0; i < 3; i++) {
+			mSynth[i].output(mBlipBuf);
+		}
+	}
+	{
+		mBlipBufRight = new Blip_Buffer();
+		mSynthRight = new Blip_Synth<blip_low_quality,4096>[3];
+
+		if (mBlipBufRight->set_sample_rate(44100)) {
+			//NativeLog("Failed to set blipbuffer sample rate");
+			return MusicPlayer::ERROR_UNKNOWN;
+		}
+		mBlipBufRight->clock_rate(3580000);
+
+		for (int i = 0; i < 3; i++) {
+			mSynthRight[i].output(mBlipBufRight);
+		}
+	}
+
 	NLOGD(NLOG_TAG, "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;

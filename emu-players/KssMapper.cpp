@@ -65,6 +65,9 @@ void KssMapper::WriteByte(uint32_t addr, uint8_t data)
 		}
 	} else {
 		switch (addr) {
+		case GG_STEREO_PORT:
+			// ToDo: handle GG stereo
+			break;
 		case FMPAC_ADDRESS_PORT:
 			if (mYM2413) {
 				mYM2413->Write(0, data);

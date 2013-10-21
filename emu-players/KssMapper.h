@@ -52,6 +52,7 @@ public:
 	void SetKssPlayer(KssPlayer *kssPlayer) { mKssPlayer = kssPlayer; }
 
 	enum {
+		GG_STEREO_PORT		   = 0x06,
 		FMPAC_ADDRESS_PORT     = 0x7C,
 		FMPAC_DATA_PORT        = 0x7D,
 		SN_PORT                = 0x7E,

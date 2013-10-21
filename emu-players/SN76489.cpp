@@ -37,7 +37,9 @@ void SnChannel::Step()
 	mPos++;
 	if (mIndex != SnChip::CHN_NOISE) {
 		// Tone
-		if (mPos >= mPeriod*16) {
+		if (mPeriod <= 1) {
+			mPhase = 1;
+		} else if (mPos >= mPeriod*16) {
 			mPos = 0;
 			mPhase ^= 1;
 		}
@@ -114,10 +116,15 @@ void SnChip::Step()
 
 void SnChip::Write(uint8_t addr, uint8_t val)
 {
-	if (val & CMD_LATCH_MASK) {
-		mChannels[(val >> 5) & 3].Write(addr, val);
-		mLatchedByte = val;
+	if (0x06 == addr) {
+		// ToDo: handle GG stereo
+
 	} else {
-		mChannels[(mLatchedByte >> 5) & 3].Write(addr, val);
+		if (val & CMD_LATCH_MASK) {
+			mChannels[(val >> 5) & 3].Write(addr, val);
+			mLatchedByte = val;
+		} else {
+			mChannels[(mLatchedByte >> 5) & 3].Write(addr, val);
+		}
 	}
 }
