@@ -26,6 +26,7 @@
 #include "MemoryMapper.h"
 #include "Oscillator.h"
 
+class HesPlayer;
 class HuC6280;
 class HuC6280Mapper;
 
@@ -88,18 +89,20 @@ public:
 	 */
 	void Write(uint32_t addr, uint8_t data);
 
+	void SetPlayer(HesPlayer *player) { mPlayer = player; }
+
 	// Register addresses
 	enum {
 		R_CHN_SELECT = 0x800,
-		R_BALANCE = 0x801,
-		R_FREQ_LO = 0x802,
-		R_FREQ_HI = 0x803,
-		R_ENABLE = 0x804,
+		R_BALANCE    = 0x801,
+		R_FREQ_LO    = 0x802,
+		R_FREQ_HI    = 0x803,
+		R_ENABLE     = 0x804,
 		R_CHN_BALANCE = 0x805,
-		R_WAVE_DATA = 0x806,
-		R_NOISE = 0x807,
-		R_LFO_FREQ = 0x808,
-		R_LFO_CTRL = 0x809,
+		R_WAVE_DATA  = 0x806,
+		R_NOISE      = 0x807,
+		R_LFO_FREQ   = 0x808,
+		R_LFO_CTRL   = 0x809,
 	};
 
 	// For R_ENABLE
@@ -110,7 +113,10 @@ public:
 		DDA_ENABLE = 0x40,
 	};
 
+	static const uint16_t HUC6280_VOL_TB[16];
+
 	HuC6280PsgChannel mChannels[6];
+	HesPlayer *mPlayer;
 	uint16_t mMasterVolL, mMasterVolR;
 	uint16_t mChannelSelect;
 };
