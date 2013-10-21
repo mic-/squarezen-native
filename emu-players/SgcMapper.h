@@ -25,6 +25,7 @@
 #include "MemoryMapper.h"
 #include "Z80.h"
 #include "SN76489.h"
+#include "YM2413.h"
 
 
 class SgcMapper : public MemoryMapper
@@ -34,6 +35,8 @@ public:
 	virtual ~SgcMapper();
 
 	void SetPsg(SnChip *psg) { mPsg = psg; }
+	void SetYM2413(YM2413 *fm) { mYM2413 = fm; }
+
 	void SetSystemType(uint8_t systemType);
 
 	virtual void Reset();
@@ -75,6 +78,7 @@ private:
 	WriteFunc mWritePortFunc;
 
 	SnChip *mPsg;
+	YM2413 *mYM2413;
 	uint8_t *mCart;
 	uint8_t *mRomTbl[3];
 	uint8_t *mRam;

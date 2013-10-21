@@ -117,10 +117,15 @@ void YM2413::Step()
 
 void YM2413::Write(uint32_t addr, uint8_t data)
 {
-	if (addr >= R_CHN0_FREQ_LO
-			&& addr <= R_CHN8_INSTR_VOL
-			&& (addr & 0x0F) < 9) {
-		mChannels[addr & 0x0F].Write(addr, data);
+	if (addr == 0) {
+		mAddressLatch = data;
+		return;
+	}
+
+	if (mAddressLatch >= R_CHN0_FREQ_LO
+			&& mAddressLatch <= R_CHN8_INSTR_VOL
+			&& (mAddressLatch & 0x0F) < 9) {
+		mChannels[mAddressLatch & 0x0F].Write(addr, data);
 	}
 }
 

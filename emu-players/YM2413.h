@@ -97,6 +97,11 @@ class YM2413
 public:
 	void Reset();
 	void Step();
+
+	/**
+	 * @param addr address to write to (0 = address port, 1 = data port)
+	 * @param data data to write to the port
+	 */
 	void Write(uint32_t addr, uint8_t data);
 
 	// Registers
@@ -156,6 +161,7 @@ public:
 	static const YM2413Instrument RHYTHM_PATCHES[3];
 
 	YM2413Channel mChannels[9];
+	uint8_t	mAddressLatch;
 };
 
 #endif	/* YM2413_H_ */

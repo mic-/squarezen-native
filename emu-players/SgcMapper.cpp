@@ -183,6 +183,8 @@ void SgcMapper::WritePortSMSGG(uint16_t addr, uint8_t data)
 	if (addr >= 0x40 && addr <= 0x7F) {
 		// SMS/GG uses ports 0x40-0x7F to write to the PSG
 		mPsg->Write(0x7F, data);
+	} else if (mSystemType == SgcPlayer::SYSTEM_SMS && (addr == 0x90 || addr == 0x91)) {
+		mYM2413->Write(addr - 0x90, data);
 	}
 }
 
