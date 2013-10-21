@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "SDsp"
 
 #include "NativeLogger.h"
 #include "SDsp.h"
@@ -114,7 +115,7 @@ void SDsp::Step()
 
 void SDsp::Write(uint32_t addr, uint8_t data)
 {
-	NLOGD("SDsp", "Write(%#x, %#x)", addr, data);
+	NLOGD(NLOG_TAG, "Write(%#x, %#x)", addr, data);
 
 	uint8_t group = addr & 0x0F;
 	uint8_t chn = (addr >> 4) & 7;

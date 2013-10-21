@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "SgcMapper"
 
 #include <string.h>
 #include <stddef.h>
@@ -50,21 +51,21 @@ SgcMapper::~SgcMapper()
 
 void SgcMapper::SetSystemType(uint8_t systemType)
 {
-	NLOGV("SgcMapper", "SetSystemType(%d)", systemType);
+	NLOGV(NLOG_TAG, "SetSystemType(%d)", systemType);
 
 	mSystemType = systemType;
 	if (systemType <= SgcPlayer::SYSTEM_GG) {
-		mReadByteFunc = &SgcMapper::ReadByteSMSGG;
-		mReadPortFunc = &SgcMapper::ReadPortSMSGG;
+		mReadByteFunc  = &SgcMapper::ReadByteSMSGG;
+		mReadPortFunc  = &SgcMapper::ReadPortSMSGG;
 		mWriteByteFunc = &SgcMapper::WriteByteSMSGG;
 		mWritePortFunc = &SgcMapper::WritePortSMSGG;
 	} else if (systemType == SgcPlayer::SYSTEM_CV) {
-		mReadByteFunc = &SgcMapper::ReadByteCV;
-		mReadPortFunc = &SgcMapper::ReadPortCV;
+		mReadByteFunc  = &SgcMapper::ReadByteCV;
+		mReadPortFunc  = &SgcMapper::ReadPortCV;
 		mWriteByteFunc = &SgcMapper::WriteByteCV;
 		mWritePortFunc = &SgcMapper::WritePortCV;
 	} else {
-		NLOGE("SgcMapper", "Invalid system type: %d", systemType);
+		NLOGE(NLOG_TAG, "Invalid system type: %d", systemType);
 	}
 }
 
@@ -179,10 +180,11 @@ uint8_t SgcMapper::ReadPort(uint16_t addr)
 
 void SgcMapper::WritePortSMSGG(uint16_t addr, uint8_t data)
 {
-	// ToDo: implement
 	if (addr >= 0x40 && addr <= 0x7F) {
 		// SMS/GG uses ports 0x40-0x7F to write to the PSG
 		mPsg->Write(0x7F, data);
+	} else if (mSystemType == SgcPlayer::SYSTEM_GG && addr == 0x06) {
+		// ToDo: handle GG stereo
 	} else if (mSystemType == SgcPlayer::SYSTEM_SMS && (addr == 0x90 || addr == 0x91)) {
 		mYM2413->Write(addr - 0x90, data);
 	}

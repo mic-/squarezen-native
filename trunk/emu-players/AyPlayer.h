@@ -76,8 +76,8 @@ public:
 	} AyEmulSongData;
 
 private:
-	Z80 *mZ80;
-	YmChip mAy;
+	Z80 		 *mZ80;
+	YmChip 		 mAy;
 	AyFileHeader mFileHeader;
 	std::vector<AySongStruct*> mSongs;
 };

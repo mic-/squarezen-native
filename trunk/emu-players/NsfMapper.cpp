@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "NsfMapper"
 
 #include <string.h>
 #include <stddef.h>
@@ -63,10 +64,10 @@ uint8_t NsfMapper::ReadByte_4000(uint16_t addr)
 		return mCallCode[addr - 0x4f80];
 
 	} else if (addr >= 0x5FF8 && addr <= 0x5FFF) {
-		NLOGD("NsfMapper", "Reading from bankswitch register (%#x)", addr);
+		NLOGD(NLOG_TAG, "Reading from bankswitch register (%#x)", addr);
 
 	} else if (addr <= 0x4017) {
-		NLOGD("NsfMapper", "APU read (%#x)", addr);
+		NLOGD(NLOG_TAG, "APU read (%#x)", addr);
 	}
 	return 0;
 }
@@ -102,7 +103,7 @@ void NsfMapper::WriteByte_0000(uint16_t addr, uint8_t data)
 void NsfMapper::WriteByte_4000(uint16_t addr, uint8_t data)
 {
 	if (addr <= 0x4017) {
-		//NLOGV("NsfMapper", "APU write (%#x, %#x)", addr, data);
+		//NLOGV(NLOG_TAG, "APU write (%#x, %#x)", addr, data);
 		mApu->Write(addr, data);
 	} else if (addr == 0x4800 && mN163) {	// Namco163 data port
 		mN163->Write(mNamco163AddressLatch & 0x7F, data);
@@ -120,10 +121,10 @@ void NsfMapper::WriteByte_5000(uint16_t addr, uint8_t data)
 	if (addr >= 0x5FF8 && addr <= 0x5FFF) {
 		if (data >= mNumRomBanks) {
 			mRomTbl[addr - 0x5FF8] = NULL;
-			NLOGV("NsfMapper", "Mapping nothing to #%x", 0x8000 + (addr - 0x5FF8) * 0x1000);
+			NLOGV(NLOG_TAG, "Mapping nothing to #%x", 0x8000 + (addr - 0x5FF8) * 0x1000);
 		} else {
 			mRomTbl[addr - 0x5FF8] = mCart + data * 0x1000;
-			NLOGV("NsfMapper", "Mapping bank %d to #%x", (data % mNumRomBanks), 0x8000 + (addr - 0x5FF8) * 0x1000);
+			NLOGV(NLOG_TAG, "Mapping bank %d to #%x", (data % mNumRomBanks), 0x8000 + (addr - 0x5FF8) * 0x1000);
 		}
 	}
 }
