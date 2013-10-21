@@ -21,6 +21,8 @@
 #include "NativeLogger.h"
 #include "HuC6280.h"
 #include "HesMapper.h"
+#include "HesPlayer.h"
+
 
 #define UPDATE_NZ(val) mRegs.F &= ~(HuC6280::FLAG_Z | HuC6280::FLAG_N | HuC6280::FLAG_T); \
 				       mRegs.F |= ((uint8_t)val == 0) ? HuC6280::FLAG_Z : 0; \
@@ -508,6 +510,11 @@ const HuC6280::Instruction gDisassemblyTable[256] =
 	{0xFD, "SBC",     HuC6280::OPERAND_ABSX},
 	{0xFE, "INC",     HuC6280::OPERAND_ABSX},
 	{0xFF, "BBS7",    HuC6280::OPERAND_ZP_REL},
+};
+
+const uint16_t HuC6280Psg::HUC6280_VOL_TB[] = {
+	// for (i : 0..15) YM_VOL_TB[i] = floor(power(10, (i-15)/6.67)*3840)
+	21, 30, 43, 60, 86, 121, 171, 242, 342, 483, 683, 965, 1363, 1925, 2718, 3840
 };
 
 
@@ -2084,6 +2091,7 @@ void HuC6280Psg::Write(uint32_t addr, uint8_t data)
 	case R_BALANCE:
 		mMasterVolR = data & 0x0F;
 		mMasterVolL = data >> 4;
+		mPlayer->SetMasterVolume(mMasterVolL, mMasterVolR);
 		break;
 	case R_FREQ_LO:
 	case R_FREQ_HI:

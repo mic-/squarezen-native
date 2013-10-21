@@ -142,10 +142,23 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 		}
 	}
 
+	SetMasterVolume(0, 0);
+
+	//m6280->mRegs.PC = mMemory->ReadByte(0xFFFE);
+	//m6280->mRegs.PC |= (uint16_t)mMemory->ReadByte(0xFFFF) << 8;
+
 	NLOGD(NLOG_TAG, "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
+}
+
+
+void HesPlayer::SetSubSong(uint32_t subSong)
+{
+	m6280->mRegs.PC = mFileHeader.initAddress;
+	m6280->mRegs.A = subSong;
+	m6280->Run(mFrameCycles * 2);
 }
 
 
@@ -163,9 +176,29 @@ void HesPlayer::Irq(uint8_t irqSource)
 }
 
 
+void HesPlayer::SetMasterVolume(int left, int right)
+{
+	for (int i = 0; i < 3; i++) {
+		mSynth[i].volume(pow(10.0, ((float)(left - 15)) / 6.67));
+		mSynthRight[i].volume(pow(10.0, ((float)(right - 15)) / 6.67));
+	}
+}
+
+
+void HesPlayer::PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR)
+{
+	int count = inL->samples_avail();
+
+	inL->read_samples(out, count, 1);
+	inR->read_samples(out+1, count, 1);
+}
+
+
 MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t k;
+	static int16_t outL[3] = {-1, -1, -1};
+	static int16_t outR[3] = {-1, -1, -1};
 
     if (MusicPlayer::STATE_PREPARED != GetState()) {
     	return MusicPlayer::ERROR_BAD_STATE;
@@ -178,12 +211,34 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		mPsg->Step();
 
+		for (int i = 0; i < 6; i += 2) {
+			int32_t left = mPsg->mChannels[i].mOut * HuC6280Psg::HUC6280_VOL_TB[mPsg->mChannels[i].mVolL];		// 5bit * 12bit = 17bit
+			left += mPsg->mChannels[i + 1].mOut * HuC6280Psg::HUC6280_VOL_TB[mPsg->mChannels[i + 1].mVolL];
+			left >>= 6;	// 18bit -> 12bit
+			if (left != outL[i >> 1]) {
+				mSynth[i].update(k, left);
+				outL[i >> 1] = left;
+			}
+
+			int32_t right = mPsg->mChannels[i].mOut * HuC6280Psg::HUC6280_VOL_TB[mPsg->mChannels[i].mVolR];		// 5bit * 12bit = 17bit
+			right += mPsg->mChannels[i + 1].mOut * HuC6280Psg::HUC6280_VOL_TB[mPsg->mChannels[i + 1].mVolR];
+			right >>= 6;	// 18bit -> 12bit
+			if (right != outR[i >> 1]) {
+				mSynth[i].update(k, right);
+				outR[i >> 1] = right;
+			}
+		}
+
 		mCycleCount++;
 		if (mCycleCount == mFrameCycles) {
 			mMemory->Irq(HuC6280Mapper::VDC_IRQ);
 			mCycleCount = 0;
 		}
 	}
+
+	mBlipBuf->end_frame(blipLen);
+	mBlipBufRight->end_frame(blipLen);
+	PresentBuffer(buffer, mBlipBuf, mBlipBufRight);
 
 	return MusicPlayer::OK;
 }

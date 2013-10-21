@@ -39,12 +39,14 @@ public:
 	virtual MusicPlayer::Result Reset();
 
 	void Irq(uint8_t irqSource);
+	void SetMasterVolume(int left, int right);
+	virtual void SetSubSong(uint32_t subSong);
 
 	typedef struct __attribute__ ((__packed__))
 	{
 		char ID[4];
 		uint8_t version;
-		uint8_t firstSong;
+		uint8_t firstSong;	// zero-based
 		uint16_t initAddress;
 		uint8_t MPR[8];
 		char subID[4];
@@ -54,6 +56,8 @@ public:
 	} HesFileHeader;
 
 private:
+	void PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR);
+
 	Blip_Buffer *mBlipBufRight;
 	Blip_Synth<blip_low_quality,4096> *mSynthRight;
 
