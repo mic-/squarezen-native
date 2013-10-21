@@ -26,6 +26,7 @@
 #include "KonamiScc.h"
 #include "SN76489.h"
 #include "YM2149.h"
+#include "YM2413.h"
 
 
 class KssPlayer;
@@ -45,6 +46,7 @@ public:
 	void SetAy(YmChip *ay) { mAy = ay; }
 	void SetScc(KonamiScc *scc) { mScc = scc; }
 	void SetSN76489(SnChip *sn76489) { mSN76489 = sn76489; }
+	void SetYM2413(YM2413 *fm) { mYM2413 = fm; }
 
 	void SetKssPlayer(KssPlayer *kssPlayer) { mKssPlayer = kssPlayer; }
 
@@ -63,13 +65,14 @@ public:
 	};
 
 private:
-	YmChip *mAy;
-	KonamiScc *mScc;
-	SnChip *mSN76489;
-	KssPlayer *mKssPlayer;
-	uint8_t *mKssData;
-	uint8_t mAyAddressLatch;
-	bool mSccEnabled;
+	YmChip 		*mAy;
+	KonamiScc 	*mScc;
+	SnChip 		*mSN76489;
+	YM2413 		*mYM2413;
+	KssPlayer 	*mKssPlayer;
+	uint8_t 	*mKssData;
+	uint8_t 	mAyAddressLatch;
+	bool 		mSccEnabled;
 };
 
 #endif	/* KSSMAPPER_H_ */

@@ -23,6 +23,7 @@
 
 #include <stdint.h>
 #include "MemoryMapper.h"
+#include "YM2149.h"
 
 
 class SndhMapper : public MemoryMapper
@@ -32,13 +33,37 @@ public:
 	virtual ~SndhMapper();
 
 	uint8_t *GetFileImagePointer() const { return mFileImage; }
+	void SetPsg(YmChip *ym) { mYm = ym; }
 
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint32_t addr);
 	virtual void WriteByte(uint32_t addr, uint8_t data);
 
+	enum
+	{
+		SUPERVISOR_RAM_END = 0x3FF,
+		OS_BSS_RAM_END = 0x7FF,
+	};
+
+	enum
+	{
+		YM_ADDRESS = 0xFFFF8800,
+		YM_DATA = 0xFFFF8802,
+	};
+
 private:
-	uint8_t *mFileImage;
+	void WriteByte_00(uint32_t addr, uint8_t data);
+	void WriteByte_FF(uint32_t addr, uint8_t data);
+
+	typedef uint8_t (SndhMapper::*ReadByteFunc)(uint32_t);
+	typedef void (SndhMapper::*WriteByteFunc)(uint32_t, uint8_t);
+	ReadByteFunc mReadByteFunc[0x100];
+	WriteByteFunc mWriteByteFunc[0x100];
+
+	YmChip		*mYm;
+	uint8_t 	*mFileImage;
+	uint8_t		*mRam;
+	uint8_t		mYmAddressLatch;
 };
 
 #endif /* SNDHMAPPER_H_ */

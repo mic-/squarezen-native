@@ -27,6 +27,7 @@ KssMapper::KssMapper(uint32_t numBytes)
 	: mAy(NULL)
 	, mScc(NULL)
 	, mSN76489(NULL)
+	, mYM2413(NULL)
 	, mKssPlayer(NULL)
 	, mSccEnabled(false)
 {
@@ -58,6 +59,16 @@ void KssMapper::WriteByte(uint32_t addr, uint8_t data)
 		}
 	} else {
 		switch (addr) {
+		case FMPAC_ADDRESS_PORT:
+			if (mYM2413) {
+				mYM2413->Write(0, data);
+			}
+			break;
+		case FMPAC_DATA_PORT:
+			if (mYM2413) {
+				mYM2413->Write(1, data);
+			}
+			break;
 		case SCC_ENABLE:
 			mSccEnabled = ((data & 0x3F) == 0x3F);
 			mKssPlayer->SetSccEnabled(mSccEnabled);
