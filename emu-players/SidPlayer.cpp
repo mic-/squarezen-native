@@ -135,19 +135,22 @@ MusicPlayer::Result SidPlayer::Prepare(std::string fileName)
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-	BYTESWAP(mFileHeader.version);
-	BYTESWAP(mFileHeader.dataOffset);
-	BYTESWAP(mFileHeader.loadAddress);
-	BYTESWAP(mFileHeader.initAddress);
-	BYTESWAP(mFileHeader.playAddress);
-	BYTESWAP(mFileHeader.numSongs);
-	BYTESWAP(mFileHeader.firstSong);
+	uint32_t littleEndian = 1;
+	if (*(uint8_t*)&littleEndian == 1) {
+		BYTESWAP(mFileHeader.version);
+		BYTESWAP(mFileHeader.dataOffset);
+		BYTESWAP(mFileHeader.loadAddress);
+		BYTESWAP(mFileHeader.initAddress);
+		BYTESWAP(mFileHeader.playAddress);
+		BYTESWAP(mFileHeader.numSongs);
+		BYTESWAP(mFileHeader.firstSong);
 
-	p16 = (uint16_t*)&mFileHeader.speed;
-	BYTESWAP(*p16);
-	p16++;
-	BYTESWAP(*p16);
-	WORDSWAP(mFileHeader.speed);
+		p16 = (uint16_t*)&mFileHeader.speed;
+		BYTESWAP(*p16);
+		p16++;
+		BYTESWAP(*p16);
+		WORDSWAP(mFileHeader.speed);
+	}
 
 	mDriverPage = 0x9F00;
 

@@ -42,6 +42,8 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	void SetSubSong(uint32_t subSong);
+
 	/**
 	 * Tell the player that the Konami SCC chip has been enabled/disabled, i.e.
 	 * start/stop feeding SCC audio samples to the Blip synths.
@@ -74,6 +76,10 @@ public:
 	} KssxExtraHeader;
 
 	enum {
+		EXTRA_BANKS_8K_MODE = 0x80,
+	};
+
+	enum {
 		FMPAC_MASK     = 0x03,
 		FMUNIT_MASK    = 0x03,
 		SN76489_MASK   = 0x03,
@@ -94,6 +100,8 @@ public:
 	};
 
 private:
+	friend class KssMapper;
+
 	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 
 	KssFileHeader mFileHeader;

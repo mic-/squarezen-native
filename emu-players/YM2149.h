@@ -142,6 +142,12 @@ public:
 		R_ENVE_SHAPE = 13,
 	};
 
+	enum
+	{
+		AY_3_8910_ENVELOPE_STEPS = 16,
+		YM2149_ENVELOPE_STEPS = 32,
+	};
+
 	YmChannel mChannels[3];
 	YmNoise mNoise;
 	YmEnvelopeGenerator mEG;

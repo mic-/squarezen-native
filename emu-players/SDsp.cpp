@@ -105,17 +105,59 @@ void SDspVoice::Write(uint32_t addr, uint8_t val)
 	}
 }
 
+void SDsp::StepFirFilter()
+{
+	static uint32_t i = 0;
+
+	uint16_t addr = (mEchoBufferAddress + mFirIndex*4);
+	int32_t sum;
+
+	/*buf[(i-0) AND 7] = EchoRAM[addr] SAR 1            ;-input 15bit from Echo RAM
+	sum =       buf[(i-7) AND 7]*FIR0 SAR 6  ;oldest  ;\
+	sum = sum + buf[(i-6) AND 7]*FIR1 SAR 6           ; calculate 16bit sum of
+	sum = sum + buf[(i-5) AND 7]*FIR2 SAR 6           ; oldest 7 values, these
+	sum = sum + buf[(i-4) AND 7]*FIR3 SAR 6           ; additions are done
+	sum = sum + buf[(i-3) AND 7]*FIR4 SAR 6           ; without overflow
+	sum = sum + buf[(i-2) AND 7]*FIR5 SAR 6           ; handling
+	sum = sum + buf[(i-1) AND 7]*FIR6 SAR 6           ;/
+	sum = sum + buf[(i-0) AND 7]*FIR7 SAR 6  ;newest  ;-with overflow handling*/
+
+	  if (sum < -0x8000) {
+		  sum = -0x8000;
+	  } else if (sum > 0x7FFF) {
+		  sum = 0x7FFF;
+	  }
+	  //audio_output=NormalVoices+((sum*EVOLx) SAR 7)     ;-output to speakers
+	  //echo_input=EchoVoices+((sum*EFB) SAR 7)           ;-feedback to echo RAM
+	  //echo_input=echo_input AND FFFEh                   ;-isolate 15bit/bit0=0
+	  if (!(mRegs[R_FLG] & SDsp::FLG_ECHO_BUF_WRITES_DISABLE)) {
+		  // EchoRAM[addr]=echo_input
+	  }
+	  i++;
+	  mFirIndex++;
+	  //decrease remain, if remain=0, reload remain from EDL and set ram_index=0
+}
+
+
 void SDsp::Step()
 {
 	for (int i = 0; i < 8; i++) {
 		mVoices[i].Step();
 	}
+	StepFirFilter();
 }
 
 
 void SDsp::Write(uint32_t addr, uint8_t data)
 {
 	NLOGD(NLOG_TAG, "Write(%#x, %#x)", addr, data);
+
+	if (addr > 0x7F) {
+		NLOGE(NLOG_TAG, "Invalid address: %#x", addr);
+		return;
+	}
+
+	mRegs[addr] = data;
 
 	uint8_t group = addr & 0x0F;
 	uint8_t chn = (addr >> 4) & 7;
@@ -128,6 +170,29 @@ void SDsp::Write(uint32_t addr, uint8_t data)
 	case R_VxADSR2:
 	case R_VxGAIN:
 		mVoices[chn].Write(addr, data);
+		break;
+
+	case R_FIRx:
+		mFirCoefficients[chn] = data;
+		break;
+
+	case R_KON:
+		// ToDo: key-on voices
+		break;
+	case R_KOFF:
+		// ToDo: key-off voices
+		break;
+
+	case R_DIR:
+		mSampleDirectory = (uint16_t)data << 8;
+		break;
+
+	case R_FLG:
+		// ToDo: handle flags
+		break;
+
+	case R_ESA:
+		mEchoBufferAddress = (uint16_t)data << 8;
 		break;
 	}
 }

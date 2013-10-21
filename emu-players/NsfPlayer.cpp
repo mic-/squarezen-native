@@ -167,7 +167,7 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 	}
 	if (mFileHeader.extraChips & NsfPlayer::USES_SUNSOFT_5B) {
 		NLOGD("NsfPlayer", "This song uses the Sunsoft-5B");
-		mSunsoft5B = new Sunsoft5B(32);
+		mSunsoft5B = new Sunsoft5B(YmChip::YM2149_ENVELOPE_STEPS);
 		numSynths += 3;
 	}
 
