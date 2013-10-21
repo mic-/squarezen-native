@@ -147,6 +147,10 @@ MusicPlayer::Result SpcPlayer::Prepare(std::string fileName)
 	mSSmp->Reset();
 	//mSDsp->Reset();
 
+	for (int i = 0; i < 128; i++) {
+		mSDsp->Write(i, mDspRegisterInit[i]);
+	}
+
 	mScanlineCycles = SSmp::S_SMP_CLOCK / (60 * 262);
 	mCycleCount = 0;
 

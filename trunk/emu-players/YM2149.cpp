@@ -286,11 +286,12 @@ void YmSoundFX::Write(uint8_t *regs)
 
 YmChip::YmChip(int16_t envelopeSteps)
 {
-	if (envelopeSteps != 16 && envelopeSteps != 32) {
-		envelopeSteps = 32;
+	if (envelopeSteps != AY_3_8910_ENVELOPE_STEPS
+			&& envelopeSteps != YM2149_ENVELOPE_STEPS) {
+		envelopeSteps = YM2149_ENVELOPE_STEPS;
 	}
 	mEG.mMaxCycle = envelopeSteps - 1;
-	mEG.mEnvTable = (envelopeSteps == 16 ? (uint16_t*)YM2149_VOL_TB : (uint16_t*)YM2149_ENVE_TB);
+	mEG.mEnvTable = ((envelopeSteps == AY_3_8910_ENVELOPE_STEPS) ? (uint16_t*)YM2149_VOL_TB : (uint16_t*)YM2149_ENVE_TB);
 }
 
 

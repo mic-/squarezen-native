@@ -164,8 +164,23 @@ public:
 		R_EDL = 0x7D, 	// Echo delay (d0..3: size in 2kB (==16ms) steps)
 	};
 
+	enum
+	{
+		FLG_NOISE_FREQ_MASK = 0x1F,
+		FLG_ECHO_BUF_WRITES_DISABLE = 0x20,
+		FLG_MUTE_AMPLIFIER = 0x40,
+		FLG_SOFT_RESET = 0x80,
+	};
+
 private:
+	void StepFirFilter();
+
 	SDspVoice mVoices[8];
+	uint8_t mRegs[128];
+	int8_t mFirCoefficients[8];
+	uint16_t mSampleDirectory;
+	uint16_t mEchoBufferAddress;
+	uint16_t mFirIndex;
 };
 
 #endif /* SDSP_H_ */

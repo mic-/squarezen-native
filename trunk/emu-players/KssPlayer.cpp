@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "KssPlayer"
 
 #include <cstring>
 #include <iostream>
@@ -64,7 +65,7 @@ void KssPlayer::SetSccEnabled(bool enabled)
 
 MusicPlayer::Result KssPlayer::Reset()
 {
-	NLOGV("KssPlayer", "Reset");
+	NLOGV(NLOG_TAG, "Reset");
 
 	delete mBlipBuf;
 	delete [] mSynth;
@@ -94,7 +95,7 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
-	NLOGV("KssPlayer", "Prepare(%s)", fileName.c_str());
+	NLOGV(NLOG_TAG, "Prepare(%s)", fileName.c_str());
 	(void)MusicPlayer::Prepare(fileName);
 
 	MusicPlayer::Result result;
@@ -105,10 +106,10 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 
     mIsKssx = false;
 
-    NLOGV("KssPlayer", "Reading header");
+    NLOGV(NLOG_TAG, "Reading header");
     musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
 	if (!musicFile) {
-		NLOGE("KssPlayer", "Reading KSS header failed");
+		NLOGE(NLOG_TAG, "Reading KSS header failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
@@ -117,7 +118,7 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 		if (mFileHeader.reservedOrExtraHeader == 0x10) {
 		    musicFile.read((char*)&mKssxHeader, sizeof(mKssxHeader));
 			if (!musicFile) {
-				NLOGE("KssPlayer", "Reading KSSX header failed");
+				NLOGE(NLOG_TAG, "Reading KSSX header failed");
 		        musicFile.close();
 				return MusicPlayer::ERROR_FILE_IO;
 			}
@@ -125,14 +126,18 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 		}
 	} else if (strncmp(mFileHeader.ID, "KSCC", 4)) {
 		//ToDo: handle gzip-compressed KSSX files
-    	NLOGE("KssPlayer", "Bad KSS header signature");
+    	NLOGE(NLOG_TAG, "Bad KSS header signature");
     	musicFile.close();
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
     mZ80 = new Z80;
+
     mMemory = new KssMapper(mFileHeader.initDataSize + mFileHeader.loadAddress);
-    mAy = new YmChip;
+    memset(mMemory->GetRamPointer(), 0, 64*1024);
+    memset(mMemory->GetRamPointer(), 0xC9, 0x4000);	// Fill the first 16kB with opcode C9 (RET)
+
+    mAy = new YmChip(YmChip::AY_3_8910_ENVELOPE_STEPS);
     mScc = new KonamiScc;
     int numSynths = 3+2;	// 3 for the AY, 2 for the SCC (pre-mixed from the SCC's 6 channels)
     if ((mFileHeader.extraChips & SN76489_MASK) == USES_SN76489) {
@@ -150,24 +155,35 @@ MusicPlayer::Result KssPlayer::Prepare(std::string fileName)
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,4096>[numSynths];
 
+	// ToDo: read straight into RAM?
     musicFile.read((char*)(mMemory->GetKssDataPointer()) + mFileHeader.loadAddress, mFileHeader.initDataSize);
 	if (!musicFile) {
-		NLOGE("KssPlayer", "Reading KSS data failed");
+		NLOGE(NLOG_TAG, "Reading KSS data failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
-	NLOGV("KssPlayer", "File read done");
+	NLOGV(NLOG_TAG, "File read done");
 	musicFile.close();
 
 	// ToDo: finish
 
-	mZ80->mRegs.PC = mFileHeader.initAddress;
-	mZ80->Run(mFrameCycles * 2);
+	SetSubSong(mIsKssx ? (mKssxHeader.firstSong - 1) : 0);
 
-	NLOGD("KssPlayer", "Prepare finished");
+	NLOGD(NLOG_TAG, "Prepare finished");
 
 	mState = MusicPlayer::STATE_PREPARED;
 	return MusicPlayer::OK;
+}
+
+
+void KssPlayer::SetSubSong(uint32_t subSong)
+{
+	NLOGD(NLOG_TAG, "Setting subsong %d", subSong);
+
+	mZ80->mRegs.SP = 0xF380;
+	mZ80->mRegs.A = subSong;
+	mZ80->mRegs.PC = mFileHeader.initAddress;
+	mZ80->Run(mFrameCycles * 2);
 }
 
 
@@ -188,6 +204,18 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 			mZ80->Run(mFrameCycles);
 		}
 
+		mAy->Step();
+		for (int i = 0; i < 3; i++) {
+			out = (mAy->mChannels[i].mPhase | mAy->mChannels[i].mToneOff) &
+				  (mAy->mNoise.mOut         | mAy->mChannels[i].mNoiseOff);
+			out = (-out) & *(mAy->mChannels[i].mCurVol);
+
+			if (out != mAy->mChannels[i].mOut) {
+				mSynth[i].update(k, out);
+				mAy->mChannels[i].mOut = out;
+			}
+		}
+
 		if (mSccEnabled) {
 			// ToDo: add SCC audio to blip synths
 			mScc->Step();
@@ -195,10 +223,10 @@ MusicPlayer::Result KssPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		if (mYM2413) {
 			// ToDo: add YM2413 audio to blip synths
+			// mYM2413->Step();
 		}
 
 		if (mSN76489) {
-			// ToDo: add SN76489 audio to blip synths
 			mSN76489->Step();
 
 			for (int i = 0; i < 4; i++) {

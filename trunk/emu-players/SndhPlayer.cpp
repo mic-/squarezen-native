@@ -25,6 +25,7 @@
 #include "SndhPlayer.h"
 #include "../unice/unice68.h"
 
+#define BYTESWAP(w) w = (((w) & 0xFF00) >> 8) | (((w) & 0x00FF) << 8)
 
 SndhPlayer::SndhPlayer()
 	: m68k(NULL)
@@ -93,6 +94,7 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 {
 	bool headerEnd = false;
 	char *endPointer = fileImage + remainingBytes;
+	char * const initialPointer = fileImage;
 	int n;
 
 	while ((fileImage < endPointer) && !headerEnd) {
@@ -132,7 +134,9 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 			uint16_t *length = (uint16_t*)fileImage;
 			mSongLength.clear();
 			for (int i = 0; i < mNumSongs; i++) {
-				mSongLength.push_back(*(length++));	// ToDo: byteswap
+				uint16_t len = *length++;
+				BYTESWAP(len);
+				mSongLength.push_back(len);
 			}
 			fileImage = (char*)length;
 
@@ -142,7 +146,9 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 			uint16_t *offset = (uint16_t*)fileImage;
 			mSongNameOffset.clear();
 			for (int i = 0; i < mNumSongs; i++) {
-				mSongNameOffset.push_back(*(offset++));	// ToDo: byteswap and add offset of the !#SN tag
+				uint16_t offs = *offset++;
+				BYTESWAP(offs);
+				mSongNameOffset.push_back(offs);	// ToDo: add offset of the !#SN tag
 			}
 			fileImage = (char*)offset;
 

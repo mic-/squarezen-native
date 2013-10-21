@@ -32,11 +32,13 @@ KssMapper::KssMapper(uint32_t numBytes)
 	, mSccEnabled(false)
 {
 	mKssData = new uint8_t[numBytes];
+	mRam = new uint8_t[64 * 1024];
 }
 
 KssMapper::~KssMapper()
 {
 	delete [] mKssData;
+	delete [] mRam;
 }
 
 void KssMapper::Reset()
@@ -47,13 +49,17 @@ void KssMapper::Reset()
 uint8_t KssMapper::ReadByte(uint32_t addr)
 {
 	// ToDo: implement
+	if (addr < 0x8000) {
+		return mRam[addr];
+	}
 	return 0;
 }
 
 void KssMapper::WriteByte(uint32_t addr, uint8_t data)
 {
-	// ToDo: implement
-	if (addr >= 0x9800 && addr <= 0x989F) {
+	if (addr < 0x8000) {
+		mRam[addr] = data;
+	} else if (addr >= 0x9800 && addr <= 0x989F) {
 		if (mSccEnabled && mScc) {
 			mScc->Write(addr, data);
 		}

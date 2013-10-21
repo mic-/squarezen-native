@@ -34,7 +34,7 @@ class KssPlayer;
 class KssMapper : public MemoryMapper
 {
 public:
-	KssMapper(uint32_t numRomBanks);
+	KssMapper(uint32_t numBytes);
 	virtual ~KssMapper();
 
 	virtual void Reset();
@@ -42,6 +42,7 @@ public:
 	virtual void WriteByte(uint32_t addr, uint8_t data);
 
 	uint8_t *GetKssDataPointer() const { return mKssData; }
+	uint8_t *GetRamPointer() const { return mRam; }
 
 	void SetAy(YmChip *ay) { mAy = ay; }
 	void SetScc(KonamiScc *scc) { mScc = scc; }
@@ -71,6 +72,7 @@ private:
 	YM2413 		*mYM2413;
 	KssPlayer 	*mKssPlayer;
 	uint8_t 	*mKssData;
+	uint8_t		*mRam;
 	uint8_t 	mAyAddressLatch;
 	bool 		mSccEnabled;
 };
