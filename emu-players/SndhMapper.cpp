@@ -26,6 +26,7 @@ SndhMapper::SndhMapper(uint32_t fileSize)
 {
 	// ToDo: implement
 	mFileImage = new uint8_t[fileSize];
+	mRam = new uint8_t[0x80000];		// emulate a 512 kB RAM system
 }
 
 SndhMapper::~SndhMapper()
@@ -38,6 +39,8 @@ SndhMapper::~SndhMapper()
 void SndhMapper::Reset()
 {
 	// ToDo: implement
+	mWriteByteFunc[0x00] = &SndhMapper::WriteByte_00;
+	mWriteByteFunc[0xFF] = &SndhMapper::WriteByte_FF;
 }
 
 
@@ -47,8 +50,34 @@ uint8_t SndhMapper::ReadByte(uint32_t addr)
 	return 0;
 }
 
+/* 0x00000000 - 0x00FFFFFF */
+void SndhMapper::WriteByte_00(uint32_t addr, uint8_t data)
+{
+	if (addr <= SndhMapper::SUPERVISOR_RAM_END) {
+		// ToDo: handle
+	} else if (addr <= OS_BSS_RAM_END) {
+		// ToDo: handle
+	} else if (addr <= 0x7FFFF) {
+		mRam[addr] = data;
+	}
+}
+
+
+/* 0xFF000000 - 0xFFFFFFFF */
+void SndhMapper::WriteByte_FF(uint32_t addr, uint8_t data)
+{
+	switch (addr) {
+	case YM_ADDRESS:
+		mYmAddressLatch = data;
+		break;
+	case YM_DATA:
+		mYm->Write(mYmAddressLatch, data);
+		break;
+	}
+}
+
 
 void SndhMapper::WriteByte(uint32_t addr, uint8_t data)
 {
-	// ToDo: implement
+	(this->*mWriteByteFunc[addr >> 12])(addr, data);
 }
