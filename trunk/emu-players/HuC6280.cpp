@@ -1984,7 +1984,6 @@ void HuC6280Timer::Step()
 			mCycles += mPeriod;
 			mPos = (mPos - 1) & 0x7F;
 			if (0x7F == mPos) {
-				// ToDo: generate interrupt
 				m6280->mMemory->Irq(HuC6280Mapper::TIMER_IRQ);
 				mCycles = 0;
 			}

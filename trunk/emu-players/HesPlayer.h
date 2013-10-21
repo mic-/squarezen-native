@@ -54,6 +54,9 @@ public:
 	} HesFileHeader;
 
 private:
+	Blip_Buffer *mBlipBufRight;
+	Blip_Synth<blip_low_quality,4096> *mSynthRight;
+
 	HesFileHeader mFileHeader;
 	HuC6280 *m6280;
 	HuC6280Psg *mPsg;
