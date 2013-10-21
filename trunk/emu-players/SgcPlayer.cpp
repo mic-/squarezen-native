@@ -106,9 +106,12 @@ MusicPlayer::Result SgcPlayer::Prepare(std::string fileName)
 	mZ80 = new Z80;
 	mSN76489 = new SnChip;
 	mMemory = new SgcMapper(0);	// ToDo: set number of ROM banks
-
+	if (mFileHeader.systemType == SgcPlayer::SYSTEM_SMS) {
+		mYM2413 = new YM2413;
+	}
 	mZ80->SetMapper(mMemory);
 	mMemory->SetPsg(mSN76489);
+	mMemory->SetYM2413(mYM2413);
 	mMemory->SetSystemType(mFileHeader.systemType);
 
 	mMemory->Reset();
