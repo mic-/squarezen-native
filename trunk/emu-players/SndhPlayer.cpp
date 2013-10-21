@@ -82,6 +82,7 @@ char *SndhPlayer::ReadNumber(char *fileImage, int& num, size_t maxChars, int min
 		i++;
 	}
 	while (*fileImage++);
+	while (!(*fileImage)) fileImage++;
 	if (num < minVal) num = minVal;
 	if (num > maxVal) num = maxVal;
 	return fileImage;
@@ -95,6 +96,9 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 	int n;
 
 	while ((fileImage < endPointer) && !headerEnd) {
+		NLOGV(NLOG_TAG, "ParseTags: fileImage = %p, tag = %c%c%c%c", fileImage,
+				fileImage[0], fileImage[1], fileImage[2], fileImage[3]);
+
 		if (strncmp(fileImage, "HDNS", 4) == 0) {
 			fileImage += 5;			// Skip past the tag + null terminator
 			headerEnd = true;
@@ -182,7 +186,7 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 		// ToDo: handle all other supported tags
 
 		} else {
-			NLOGE(NLOG_TAG, "Unsupported tag found: %c%c%c%c", fileImage[0], fileImage[1], fileImage[2], fileImage[3]);
+			NLOGE(NLOG_TAG, "Unsupported tag found: %x%x%x%x", fileImage[0], fileImage[1], fileImage[2], fileImage[3]);
 			return NULL;
 		}
 	}
@@ -223,28 +227,32 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
 	musicFile.close();
 
 	SndhFileHeader *header = (SndhFileHeader*)fileImage;
-    if (strncmp(header->signature, "SNDH", 4)) {
-    	if (strncmp((char*)fileImage, "ICE!", 4) == 0) {
-    		int depackedSize = unice68_get_depacked_size(fileImage, NULL);
-    		if (depackedSize <= 0) {
-    			NLOGE(NLOG_TAG, "Malformed ICE header");
-    			return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
-    		}
-    		NLOGD(NLOG_TAG, "Depacked size: %d bytes", depackedSize);
-    		SndhMapper *newMapper = new SndhMapper(depackedSize);
-    		if (unice68_depacker(newMapper->GetFileImagePointer(), fileImage)) {
-    			NLOGE(NLOG_TAG, "ICE depacking failed");
-    			delete newMapper;
-    			return MusicPlayer::ERROR_DECOMPRESSION;
-    		}
-    		delete mMemory;
-    		mMemory = newMapper;
-    		newMapper = NULL;
-    		fileImage = mMemory->GetFileImagePointer();
-    	} else {
-			NLOGE(NLOG_TAG, "No SNDH or ICE! signature");
+
+	// First check if this is a compressed file
+	if (strncmp((char*)fileImage, "ICE!", 4) == 0) {
+		int depackedSize = unice68_get_depacked_size(fileImage, NULL);
+		if (depackedSize <= 0) {
+			NLOGE(NLOG_TAG, "Malformed ICE header");
 			return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
-    	}
+		}
+		NLOGD(NLOG_TAG, "Depacked size: %d bytes", depackedSize);
+		SndhMapper *newMapper = new SndhMapper(depackedSize);
+		if (unice68_depacker(newMapper->GetFileImagePointer(), fileImage)) {
+			NLOGE(NLOG_TAG, "ICE depacking failed");
+			delete newMapper;
+			return MusicPlayer::ERROR_DECOMPRESSION;
+		}
+		delete mMemory;			// delete the old mapper
+		mMemory = newMapper;	// make the new mapper the current one
+		newMapper = NULL;
+		fileImage = mMemory->GetFileImagePointer();
+		header = (SndhFileHeader*)fileImage;
+		fileSize = depackedSize;
+	}
+
+    if (strncmp(header->signature, "SNDH", 4)) {
+		NLOGE(NLOG_TAG, "No SNDH or ICE! signature");
+		return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
 	mNumSongs = 1;
