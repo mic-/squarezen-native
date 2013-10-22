@@ -91,14 +91,22 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }
 
-	// ToDo: finish
+	uint32_t romBanks = (mFileHeader.dataSize + mFileHeader.loadAddress + 0x1FFF) / 0x2000;
+	mMemory = new HesMapper(romBanks);
+
+	NLOGD(NLOG_TAG, "Loading %d bytes at %#x (romBanks = %d)", mFileHeader.dataSize, mFileHeader.loadAddress, romBanks);
+	musicFile.read((char*)(mMemory->GetRomPointer()) + mFileHeader.loadAddress, mFileHeader.dataSize);
+	if (!musicFile) {
+		NLOGE(NLOG_TAG, "Read failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
 
 	NLOGV(NLOG_TAG, "File reading done");
 	musicFile.close();
 
 	m6280 = new HuC6280;
 	mPsg = new HuC6280Psg;
-	mMemory = new HesMapper(0);	// ToDo: set number of ROM banks
 
 	mMemory->SetPsg(mPsg);
 	mMemory->SetCpu(m6280);
@@ -109,6 +117,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 	m6280->Reset();
 	mPsg->Reset();
 
+	// Set up memory paging registers
 	for (int i = 0; i < 8; i++) {
 		m6280->SetMpr(i, mFileHeader.MPR[i]);
 		mMemory->SetMpr(i, mFileHeader.MPR[i]);
@@ -143,7 +152,26 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 		}
 	}
 
+	mFrameCycles = 3580000 / 60;
+	mCycleCount = 0;
+
 	SetMasterVolume(0, 0);
+	SetSubSong(0);
+
+
+	/*if (mFileHeader.loadAddress >= 0x20) {
+		NLOGD(NLOG_TAG, "Running CPU for %d cycles", mFrameCycles*2);
+		uint8_t *driver = mMemory->GetRomPointer();
+		driver[0] = 0x4c;
+		driver[1] = mFileHeader.initAddress & 0xff;
+		driver[2] = mFileHeader.initAddress >> 8;
+		// -: JMP -
+		driver[3] = 0x4c;
+		driver[4] = 0x03;
+		driver[5] = 0x00;
+		m6280->mRegs.PC = 0;
+		m6280->Run(mFrameCycles * 2);
+	}*/
 
 	//m6280->mRegs.PC = mMemory->ReadByte(0xFFFE);
 	//m6280->mRegs.PC |= (uint16_t)mMemory->ReadByte(0xFFFF) << 8;
@@ -159,6 +187,7 @@ void HesPlayer::SetSubSong(uint32_t subSong)
 {
 	m6280->mRegs.PC = mFileHeader.initAddress;
 	m6280->mRegs.A = subSong;
+	m6280->mCycles = 0;
 	m6280->Run(mFrameCycles * 2);
 }
 
