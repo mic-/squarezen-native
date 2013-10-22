@@ -21,7 +21,7 @@
 #ifndef SSMP_H_
 #define SSMP_H_
 
-
+#include <string>
 #include <stdint.h>
 #include "MemoryMapper.h"
 
