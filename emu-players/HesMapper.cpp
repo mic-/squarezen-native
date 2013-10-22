@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "HesMapper"
 
 #include <string.h>
 #include <stddef.h>
@@ -27,7 +28,6 @@
 HesMapper::HesMapper(uint32_t numRomPages)
 	: mNumRomPages(numRomPages)
 {
-	// ToDo: implement
 	mCart = new uint8_t[numRomPages * 0x2000];
 	mRam = new uint8_t[0x2000];
 }
@@ -52,6 +52,8 @@ uint8_t HesMapper::ReadByte(uint32_t addr)
 	uint32_t page = (addr >> 13) & 7;
 	uint32_t mpr = mMPR[page];
 	uint32_t offset = addr & 0x1FFF;
+
+	NLOGD(NLOG_TAG, "ReadByte(%#x): mpr = %#x, numRomPages = %d", mpr, mNumRomPages);
 
 	if (mpr < 0x80) {
 		if (mpr < mNumRomPages) {

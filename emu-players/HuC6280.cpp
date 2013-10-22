@@ -542,7 +542,11 @@ void HuC6280::Run(uint32_t maxCycles)
 	uint8_t operand, temp8;
     int8_t relAddr;
 
+    NLOGD("HuC6280", "Run(%d)", maxCycles);
+
 	while (mCycles < maxCycles) {
+
+		//Disassemble(mRegs.PC);
 
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
 
@@ -1884,7 +1888,7 @@ void HuC6280::Disassemble(uint16_t address)
 
 	switch(gDisassemblyTable[opcode].operands) {
 	case OPERAND_ACCUM:
-		// ToDo: handle
+		snprintf(operandStr, 16, " A");
 		break;
 	case OPERAND_IMM:
 		snprintf(operandStr, 16, " #$%02x", operand1);
@@ -1911,13 +1915,19 @@ void HuC6280::Disassemble(uint16_t address)
 		eaStr = temp;
 		break;
 	case OPERAND_ABS:
-		// ToDo: handle
+		snprintf(operandStr, 16, " $%02x%02x", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
 		break;
 	case OPERAND_ABSX:
-		// ToDo: handle
+		snprintf(operandStr, 16, " $%02x%02x,X", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
 		break;
 	case OPERAND_ABSY:
-		// ToDo: handle
+		snprintf(operandStr, 16, " $%02x%02x,Y", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
 		break;
 	case OPERAND_IND:
 		snprintf(operandStr, 16, " ($%02x)", operand1);
@@ -1969,8 +1979,8 @@ void HuC6280::Disassemble(uint16_t address)
 		break;
 	}
 
-	NLOGD("HuC6280", "%#x: %s %s%s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x",
-			address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, eaStr.c_str(), mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S);
+	NLOGD("HuC6280", "0x%04x: %s %s%s%s | A=%#x, X=%#x, Y=%#x, F=%#x, SP=%#x (cyc=%d)",
+			address, machineCodeStr.c_str(), opcodeStr.c_str(), operandStr, eaStr.c_str(), mRegs.A, mRegs.X, mRegs.Y, mRegs.F, mRegs.S, mCycles);
 }
 
 

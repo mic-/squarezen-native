@@ -34,6 +34,8 @@ public:
 	HesMapper(uint32_t numRomPages);
 	virtual ~HesMapper();
 
+	uint8_t *GetRomPointer() const { return mCart; }
+
 	void SetCpu(HuC6280 *cpu) { m6280 = cpu; }
 	void SetPsg(HuC6280Psg *psg) { mPsg = psg; }
 	void SetPlayer(HesPlayer *player) { mPlayer = player; }

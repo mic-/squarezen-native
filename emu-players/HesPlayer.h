@@ -49,6 +49,7 @@ public:
 		uint8_t firstSong;	// zero-based
 		uint16_t initAddress;
 		uint8_t MPR[8];
+		//
 		char subID[4];
 		uint32_t dataSize;
 		uint32_t loadAddress;
