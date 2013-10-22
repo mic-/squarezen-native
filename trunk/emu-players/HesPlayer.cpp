@@ -20,6 +20,7 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <math.h>
 #include "NativeLogger.h"
 #include "HesPlayer.h"
 
