@@ -35,6 +35,7 @@ class MetaData
 public:
 	MetaData() :
 		mTitle("Unknown"),
+		mSubTitle(""),
 		mAuthor("Unknown"),
 		mComment("Unknown"),
 		mLengthMs(MetaData::SONG_LENGTH_INFINITE),
@@ -47,6 +48,7 @@ public:
 	};
 
 	const std::string& GetTitle() const { return mTitle; }
+	const std::string& GetSubTitle() const { return mSubTitle; }
 	const std::string& GetAuthor() const { return mAuthor; }
 	const std::string& GetComment() const { return mComment; }
 	uint32_t GetNumSubSongs() const { return mSubSongs; }
@@ -55,6 +57,7 @@ public:
 	int GetLengthMs() const { return mLengthMs; }
 
 	void SetTitle(char *str) { mTitle = str; }
+	void SetSubTitle(char *str) { mSubTitle = str; }
 	void SetAuthor(char *str) { mAuthor = str; }
 	void SetComment(char *str) { mComment = str; }
 	void SetNumSubSongs(uint32_t subSongs) { mSubSongs = subSongs; }
@@ -62,7 +65,7 @@ public:
 	void SetLengthMs(int lengthMs) { mLengthMs = lengthMs; }
 
 private:
-	std::string mTitle, mAuthor, mComment;
+	std::string mTitle, mSubTitle, mAuthor, mComment;
 	int mLengthMs;
 	uint32_t mSubSongs;
 	uint32_t mDefaultSong;
@@ -153,6 +156,7 @@ public:
 	virtual MusicPlayer::State GetState() const { return mState; }
 
 	const std::string& GetTitle() const { return mMetaData.GetTitle(); }
+	const std::string& GetSubTtitle() const { return mMetaData.GetSubTitle(); }
 	const std::string& GetAuthor() const { return mMetaData.GetAuthor(); }
 	const std::string& GetComment() const { return mMetaData.GetComment(); }
 

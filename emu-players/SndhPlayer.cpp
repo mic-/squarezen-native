@@ -142,13 +142,14 @@ uint8_t *SndhPlayer::ParseTags(char *fileImage, size_t remainingBytes)
 
 		// Song name offsets (one 16-bit word per sub-tune, relative to the start of the !#SN tag)
 		} else if (strncmp(fileImage, "!#SN", 4) == 0) {
+			uint16_t tagOffset = (uint16_t)(fileImage - initialPointer);
 			fileImage += 4;
 			uint16_t *offset = (uint16_t*)fileImage;
 			mSongNameOffset.clear();
 			for (int i = 0; i < mNumSongs; i++) {
 				uint16_t offs = *offset++;
 				BYTESWAP(offs);
-				mSongNameOffset.push_back(offs);	// ToDo: add offset of the !#SN tag
+				mSongNameOffset.push_back(offs + tagOffset);
 			}
 			fileImage = (char*)offset;
 
@@ -279,7 +280,7 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
     mMetaData.SetNumSubSongs(mNumSongs);
 
     m68k = new M68000;
-    mYm = new YmChip(32);
+    mYm = new YmChip(YmChip::YM2149_ENVELOPE_STEPS);
     if (!m68k || !mYm) {
     	NLOGE(NLOG_TAG, "Failed to create M68k or YM2149 emulators");
     	return MusicPlayer::ERROR_OUT_OF_MEMORY;
@@ -303,6 +304,7 @@ void SndhPlayer::SetSubSong(uint32_t subSong)
 	NLOGD(NLOG_TAG, "SetSubSong(%d)", subSong);
 	// ToDo: implement
 	mMetaData.SetLengthMs(mSongLength[subSong] * 1000);
+	mMetaData.SetSubTitle((char*)(mMemory->GetFileImagePointer()) + mSongNameOffset[subSong]);
 }
 
 
