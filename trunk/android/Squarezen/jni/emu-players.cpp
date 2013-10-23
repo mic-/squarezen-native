@@ -43,6 +43,8 @@ JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Close(JNIEnv *i
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Exit(JNIEnv *ioEnv, jobject ioThis);
 //JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetState(JNIEnv *ioEnv, jobject ioThis, jbyteArray state);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEnv *ioEnv, jobject ioThis, jobject byteBuffer);
+JNIEXPORT jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetTitle(JNIEnv *ioEnv, jobject ioThis);
+JNIEXPORT jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetArtist(JNIEnv *ioEnv, jobject ioThis);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Run(JNIEnv *ioEnv, jobject ioThis, jint numSamples, jobject byteBuffer);
 };
 
@@ -112,8 +114,10 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     	player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[bufferToFill]);
     	gettimeofday(&t2, NULL);
 #ifdef HAVE_NEON
-    	sprintf(temp, "Player::Run took %d us for %d samples", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4);
-    	//__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
+    	SLAndroidSimpleBufferQueueState st;
+   	    SLresult res = (*bqPlayerBufferQueue)->GetState(bqPlayerBufferQueue, &st);
+    	sprintf(temp, "Player::Run took %d us for %d samples, index = %d", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4, st.count);
+    	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
 #endif
     }
 
@@ -357,6 +361,23 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 }
 
 
+jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetTitle(JNIEnv *ioEnv, jobject ioThis)
+{
+	if (player) {
+		return ioEnv->NewStringUTF(player->GetTitle().c_str());
+	}
+	return ioEnv->NewStringUTF("");
+}
+
+jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetArtist(JNIEnv *ioEnv, jobject ioThis)
+{
+	if (player) {
+		return ioEnv->NewStringUTF(player->GetAuthor().c_str());
+	}
+	return ioEnv->NewStringUTF("");
+}
+
+
 void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEnv *ioEnv, jobject ioThis, jobject byteBuffer)
 {
     int16_t *buffer;
@@ -368,10 +389,12 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEnv *ioEnv, 
     	return;
     }
 
-    if (bufferToEnqueue == -1) {
+    if (bufferToEnqueue == -1 || !playing) {
     	memset(buffer, 0, BUFFER_SIZE_BYTES);
     } else {
-    	memcpy(buffer, pcmBuffer[bufferToEnqueue], BUFFER_SIZE_BYTES);
+    	int idx = bufferToEnqueue - 3;
+    	if (idx < 0) idx += NUM_BUFFERS;
+    	memcpy(buffer, pcmBuffer[idx], BUFFER_SIZE_BYTES);
     }
 }
 

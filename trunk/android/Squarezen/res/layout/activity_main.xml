@@ -11,7 +11,7 @@
             android:id="@+id/BBB"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="180dp"
+            android:layout_marginBottom="240dp"
             android:orientation="vertical" >
 
           <LinearLayout
@@ -29,11 +29,11 @@
        </LinearLayout>
 		       
         <ListView
-            android:id="@+id/listView1"         
+            android:id="@+id/listView1"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:background="#50000000"
             android:layout_marginTop="18dp"
+            android:background="#50000000"
             android:clickable="true"
             android:divider="#a444"
             android:dividerHeight="1dp"
@@ -67,4 +67,26 @@
         android:layout_marginBottom="32dp"
         android:text="@string/str_quit" />
 </LinearLayout>
+
+   <TextView
+       android:id="@+id/textView1"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_above="@+id/bottom_layout"
+       android:layout_alignParentLeft="true"
+       android:layout_marginBottom="26dp"
+       android:textAppearance="?android:attr/textAppearanceMedium"
+       android:textColor="#FFA"
+       android:textSize="12dp" />
+
+   <TextView
+       android:id="@+id/textView2"
+       android:layout_width="wrap_content"
+       android:layout_height="wrap_content"
+       android:layout_above="@+id/bottom_layout"
+       android:layout_alignParentLeft="true"
+       android:textAppearance="?android:attr/textAppearanceMedium"
+       android:textColor="#FFA"
+       android:textSize="12dp" />
+
 </RelativeLayout>

@@ -193,6 +193,12 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
 
     	Prepare(Environment.getExternalStorageDirectory().getPath() + "/YM/" + songName);
     	playing = true;
+    	
+    	TextView titleText = (TextView)findViewById(R.id.textView1);
+    	titleText.setText(GetTitle());
+    	TextView authorText = (TextView)findViewById(R.id.textView2);
+    	authorText.setText(GetArtist());
+    	
         /*Run(minBufferSize>>2, pcmFromNative[0]);
         bufferToPlay = 0;
         
@@ -233,8 +239,15 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     }
 
     @Override
+    public void onStop() {
+    	stopSong();
+    	super.onStop();
+    }
+    
+    @Override
     public void onDestroy() {
-    	stopAudioRunner = true;
+    	//stopAudioRunner = true;
+    	stopSong();
         activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     	//while (stopAudioRunner) {}
     	//audioTrack.stop();
@@ -259,6 +272,8 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     public native void Close();
     public native void Exit();
     public native void GetBuffer(ByteBuffer byteBuffer);
+    public native String GetTitle();
+    public native String GetArtist();
     public native void Run(int numSamples, ByteBuffer byteBuffer);
     //public native void GetState(byte[] state);    
 }
