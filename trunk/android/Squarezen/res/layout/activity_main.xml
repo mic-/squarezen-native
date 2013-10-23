@@ -24,7 +24,7 @@
            android:layout_height="wrap_content"
            android:textColor="#ffff"
            android:background="#7000"
-           android:text="Files:"
+           android:text="@string/str_files"
        />
        </LinearLayout>
 		       
@@ -44,8 +44,7 @@
 	    </ListView>
 
     </RelativeLayout>
-
-   
+  
    <LinearLayout
       android:id="@+id/bottom_layout"
       android:layout_alignParentBottom="true"
@@ -64,10 +63,8 @@
         android:id="@+id/button1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignLeft="@+id/listView1"
         android:background="@android:drawable/btn_default"
-        android:layout_alignParentBottom="true"
         android:layout_marginBottom="32dp"
-        android:text="Quit" />
+        android:text="@string/str_quit" />
 </LinearLayout>
 </RelativeLayout>

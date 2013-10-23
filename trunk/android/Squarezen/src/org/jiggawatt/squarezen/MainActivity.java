@@ -258,6 +258,7 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     public native void Prepare(String filePath);
     public native void Close();
     public native void Exit();
+    public native void GetBuffer(ByteBuffer byteBuffer);
     public native void Run(int numSamples, ByteBuffer byteBuffer);
     //public native void GetState(byte[] state);    
 }

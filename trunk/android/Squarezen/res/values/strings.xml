@@ -4,5 +4,7 @@
     <string name="app_name">Squarezen</string>
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
-
+    <string name="str_files">Files:</string>
+    <string name="str_quit">Quit</string>
+    
 </resources>

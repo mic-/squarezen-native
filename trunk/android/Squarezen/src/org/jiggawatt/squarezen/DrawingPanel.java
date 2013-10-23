@@ -18,14 +18,17 @@ import android.view.SurfaceView;
 class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 	private PanelThread _thread;
 	private Paint paint;
-	public ByteBuffer playingBuffer = null;
+	public ByteBuffer[] playingBuffer = null;
+	public
 	float lastY = 0;
 	static byte[] ymState = null;
 	byte[] prevLevel = {0,0,0};
 	LinearGradient grad;
 	MainActivity mainActivity = null;
-	int bufferPos = 0;
-	Float bufferX = 0.0f;
+	int bufferPos = 2048;
+	int bufferToReadFrom = 0;
+	Float bufferX = 2048.0f;
+	long prevDrawTime;
 	
 	class PanelThread extends Thread {
         private SurfaceHolder _surfaceHolder;
@@ -57,8 +60,6 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 
                      //Insert methods to modify positions of items in onDraw()
                      _panel.postInvalidate();
-
-
                     }
                 } finally {
                     if (c != null) {
@@ -100,7 +101,7 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
     
     public void setPlayingBuffer(ByteBuffer buffer) {
     	synchronized (bufferX) {
-	        playingBuffer = buffer;
+	        //playingBuffer = buffer;
 	        bufferX = 0.0f;
 	 	}
     }
@@ -121,20 +122,35 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
     	
 		int width = canvas.getWidth();
 
-		if (ymState != null) {
+		if (playingBuffer == null) {
+			playingBuffer = new ByteBuffer[2];
+			playingBuffer[0] = ByteBuffer.allocateDirect(2048*4);	// Must match the size used in emu-players.cpp
+			playingBuffer[1] = ByteBuffer.allocateDirect(2048*4);
+			prevDrawTime = System.nanoTime();
+		}
+		
+		if (true) { //ymState != null) {
 			//mainActivity.GetState(ymState);
-			
-			//Log.e("YmPlay", "Panel width = " + width);
-			float dx = ((7526*2)/(width*15));
+
+			long currDrawTime = System.nanoTime();
+			long timeDiffMillis = (currDrawTime - prevDrawTime)/1000000;		
+			float dx = (44100*timeDiffMillis/1000) / (width/2); //((7526*2)/(width*15));
+
 			float y,lastX = (width/2)+1;
 			
 			paint.setAntiAlias(true);
 	
 			if (playingBuffer != null) {
 				synchronized (bufferX) {
-					playingBuffer.order(ByteOrder.LITTLE_ENDIAN);
+					playingBuffer[bufferToReadFrom].order(ByteOrder.LITTLE_ENDIAN);
 					for (int i = (width/2)+1; i < width; i += 2) {
-						short smp = playingBuffer.getShort(bufferX.intValue()*4);
+						if (bufferX.intValue() >= 2048) {
+							mainActivity.GetBuffer(playingBuffer[1-bufferToReadFrom]);
+							bufferToReadFrom = 1-bufferToReadFrom;
+							playingBuffer[bufferToReadFrom].order(ByteOrder.LITTLE_ENDIAN);
+							bufferX = 0.0f;
+						}
+						short smp = playingBuffer[bufferToReadFrom].getShort(bufferX.intValue()*4);
 						y = (smp+32768)*0.0012f;
 						canvas.drawLine(lastX, lastY+28, (float)i, y+28, paint);
 						lastX = (float)i;
@@ -142,6 +158,7 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 						bufferX += dx;
 					}
 				}
+				prevDrawTime = currDrawTime;
 			} else {
 				for (int i = 0; i < 3; i++) {
 					ymState[i] = 1;
@@ -184,7 +201,7 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 			
 			paint.setAntiAlias(false);
 		
-			for (int i = 0; i < 3; i++) {
+			/*for (int i = 0; i < 3; i++) {
 	    		paint.setColor(android.graphics.Color.argb(0xff, 0, 80, 0));
 	    		if (ymState[i] == 0)
 	        		paint.setColor(android.graphics.Color.GREEN);	
@@ -204,7 +221,7 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 	    		paint.setShader(grad);
 	  			canvas.drawRect(i*15+VOL_BAR_X, 100-(ymState[i+9]), i*15+VOL_BAR_X+14, 100, paint);
 	  			paint.setShader(null);
-			}
+			}*/
 		}
 		
 		paint.setColor(android.graphics.Color.GRAY);		
