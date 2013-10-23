@@ -206,18 +206,18 @@
     mCycles += 6
 
 #define PUSHB(val) \
-	mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, val); \
+	mMemory->WriteByte(0x2100 + (uint16_t)mRegs.S, val); \
 	mRegs.S--
 
 #define PUSHW(val) \
-	mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, ((uint16_t)val >> 8)); \
+	mMemory->WriteByte(0x2100 + (uint16_t)mRegs.S, ((uint16_t)val >> 8)); \
 	mRegs.S--; \
-	mMemory->WriteByte(0x100 + (uint16_t)mRegs.S, (uint8_t)val); \
+	mMemory->WriteByte(0x2100 + (uint16_t)mRegs.S, (uint8_t)val); \
 	mRegs.S--
 
 #define PULLB(dest) \
 	mRegs.S++; \
-	dest = mMemory->ReadByte(0x100 + (uint16_t)mRegs.S)
+	dest = mMemory->ReadByte(0x2100 + (uint16_t)mRegs.S)
 
 #define BLOCK_TRANSFER(destInc, srcInc, destAlt, srcAlt) \
 	temp8 = 0; \
@@ -528,11 +528,14 @@ void HuC6280::Reset()
 
 
 void HuC6280::Irq(uint16_t vector) {
-	PUSHW(mRegs.PC);
-	PUSHB(mRegs.F);
-	mRegs.F |= (HuC6280::FLAG_I);
-	mRegs.PC = mMemory->ReadByte(vector);
-	mRegs.PC |= (uint16_t)mMemory->ReadByte(vector+1) << 8;
+	if (!mRegs.F & HuC6280::FLAG_I) {
+		PUSHW(mRegs.PC);
+		PUSHB(mRegs.F);
+		mRegs.F |= (HuC6280::FLAG_I);
+		mRegs.PC = mMemory->ReadByte(vector);
+		mRegs.PC |= (uint16_t)mMemory->ReadByte(vector+1) << 8;
+		NLOGD(NLOG_TAG, "Irq(%#x) -> %#x", vector, mRegs.PC);
+	}
 }
 
 
@@ -1868,6 +1871,7 @@ void HuC6280::Run(uint32_t maxCycles)
 			break;
 		}
 	}
+	NLOGD(NLOG_TAG, "Done, mCycles = %d", mCycles);
 }
 
 
@@ -1971,7 +1975,10 @@ void HuC6280::Disassemble(uint16_t address)
 		// ToDo: handle
 		break;
 	case OPERAND_ABS_ABS_ABS:
-		// ToDo: handle
+		snprintf(operandStr, 16, " $%02x%02x", operand2, operand1);
+		snprintf(temp, 16, " %02x %02x", operand1, operand2);
+		machineCodeStr += temp;
+		// ToDo: handle all 3 operands
 		break;
 	case NO_OPERANDS:
 	default:
@@ -2092,6 +2099,8 @@ void HuC6280Psg::Step()
 
 void HuC6280Psg::Write(uint32_t addr, uint8_t data)
 {
+	NLOGD(NLOG_TAG, "Write(%#x, %#x)", addr, data);
+
 	switch (addr) {
 	case R_CHN_SELECT:
 		if (data < 6) {
