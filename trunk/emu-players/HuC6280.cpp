@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "HuC6280"
 
 #include <string>
 #include <stdio.h>
