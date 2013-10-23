@@ -27,7 +27,7 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 	MainActivity mainActivity = null;
 	int bufferPos = 2048;
 	int bufferToReadFrom = 0;
-	Float bufferX = 2048.0f;
+	Float lastBufferX = 2048.0f, bufferX = 2048.0f;
 	long prevDrawTime;
 	
 	class PanelThread extends Thread {
@@ -134,8 +134,8 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 
 			long currDrawTime = System.nanoTime();
 			long timeDiffMillis = (currDrawTime - prevDrawTime)/1000000;		
-			float dx = (44100*timeDiffMillis/1000) / (width/2); //((7526*2)/(width*15));
-
+			float dx = 735/(width/4); //(44100*timeDiffMillis/1000) / (width/2);   //((7526*2)/(width*15));
+			bufferX = lastBufferX + 735.0f*(float)(44100*timeDiffMillis/1000);
 			float y,lastX = (width/2)+1;
 			
 			paint.setAntiAlias(true);
