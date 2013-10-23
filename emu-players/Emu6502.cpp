@@ -1604,7 +1604,7 @@ void Emu6502::Disassemble(uint16_t address)
 		break;
 
 	default:
-		snprintf(operandStr, 16, "");
+		snprintf(operandStr, 16, "\0");
 		break;
 	}
 
