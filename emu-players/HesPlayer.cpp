@@ -45,6 +45,9 @@ HesPlayer::~HesPlayer()
 	m6280   = NULL;
 	mPsg    = NULL;
 	mMemory = NULL;
+
+	delete mBlipBufRight;
+	delete [] mSynthRight;
 }
 
 MusicPlayer::Result HesPlayer::Reset()
@@ -57,6 +60,16 @@ MusicPlayer::Result HesPlayer::Reset()
 	m6280   = NULL;
 	mPsg    = NULL;
 	mMemory = NULL;
+
+	delete mBlipBuf;
+	delete [] mSynth;
+	mBlipBuf = NULL;
+	mSynth   = NULL;
+
+	delete mBlipBufRight;
+	delete [] mSynthRight;
+	mBlipBufRight = NULL;
+	mSynthRight   = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
@@ -111,6 +124,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 	mMemory->SetPsg(mPsg);
 	mMemory->SetCpu(m6280);
 	mMemory->SetPlayer(this);
+	mPsg->SetPlayer(this);
 	m6280->SetMapper(mMemory);
 
 	mMemory->Reset();
@@ -135,6 +149,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 
 		for (int i = 0; i < 3; i++) {
 			mSynth[i].output(mBlipBuf);
+			mSynth[i].volume(0.05);
 		}
 	}
 	{
@@ -149,13 +164,14 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 
 		for (int i = 0; i < 3; i++) {
 			mSynthRight[i].output(mBlipBufRight);
+			mSynthRight[i].volume(0.05);
 		}
 	}
 
 	mFrameCycles = 3580000 / 60;
 	mCycleCount = 0;
 
-	SetMasterVolume(0, 0);
+	//SetMasterVolume(0, 0);
 	SetSubSong(0);
 
 
@@ -188,13 +204,18 @@ void HesPlayer::SetSubSong(uint32_t subSong)
 	m6280->mRegs.PC = mFileHeader.initAddress;
 	m6280->mRegs.A = subSong;
 	m6280->mCycles = 0;
-	m6280->Run(mFrameCycles * 2);
+	m6280->Run(mFrameCycles * 10);		// This is a hack
 }
 
 
 void HesPlayer::Irq(uint8_t irqSource)
 {
+	if (m6280->mRegs.F & HuC6280::FLAG_I) {
+		return;
+	}
+
 	if (HuC6280Mapper::TIMER_IRQ == irqSource) {
+		NLOGD(NLOG_TAG, "Timer IRQ");
 		m6280->Irq(0xFFFA);
 		m6280->mCycles = 0;
 		m6280->Run(m6280->mTimer.mCycles);
@@ -208,9 +229,14 @@ void HesPlayer::Irq(uint8_t irqSource)
 
 void HesPlayer::SetMasterVolume(int left, int right)
 {
+	NLOGD(NLOG_TAG, "SetMasterVolume(%d, %d)", left, right);
+
+	double l = pow(10.0, ((double)(left - 15)) / 6.67) * 0.4;
+	double r = pow(10.0, ((double)(right - 15)) / 6.67) * 0.4;
+
 	for (int i = 0; i < 3; i++) {
-		mSynth[i].volume(pow(10.0, ((float)(left - 15)) / 6.67));
-		mSynthRight[i].volume(pow(10.0, ((float)(right - 15)) / 6.67));
+		mSynth[i].volume(l);
+		mSynthRight[i].volume(r);
 	}
 }
 
@@ -234,6 +260,8 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
     	return MusicPlayer::ERROR_BAD_STATE;
     }
 
+    NLOGD(NLOG_TAG, "Run(%d)", numSamples);
+
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
 	for (k = 0; k < blipLen; k++) {
@@ -246,7 +274,7 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 			left += mPsg->mChannels[i + 1].mOut * HuC6280Psg::HUC6280_VOL_TB[mPsg->mChannels[i + 1].mVolL];
 			left >>= 6;	// 18bit -> 12bit
 			if (left != outL[i >> 1]) {
-				mSynth[i].update(k, left);
+				mSynth[i >> 1].update(k, left);
 				outL[i >> 1] = left;
 			}
 
@@ -254,7 +282,7 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 			right += mPsg->mChannels[i + 1].mOut * HuC6280Psg::HUC6280_VOL_TB[mPsg->mChannels[i + 1].mVolR];
 			right >>= 6;	// 18bit -> 12bit
 			if (right != outR[i >> 1]) {
-				mSynth[i].update(k, right);
+				mSynthRight[i >> 1].update(k, right);
 				outR[i >> 1] = right;
 			}
 		}
