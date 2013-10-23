@@ -342,3 +342,11 @@ MusicPlayer::Result SndhPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	return MusicPlayer::OK;
 }
 
+
+void SndhPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	outputs[0] = mYm->mChannels[0].mOut;
+	outputs[1] = mYm->mChannels[1].mOut;
+	outputs[2] = mYm->mChannels[2].mOut;
+}
+

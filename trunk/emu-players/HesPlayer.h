@@ -38,6 +38,9 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	virtual size_t GetNumChannels() const { return 6; }
+	virtual void GetChannelOutputs(int16_t *outputs) const;
+
 	void Irq(uint8_t irqSource);
 	void SetMasterVolume(int left, int right);
 	virtual void SetSubSong(uint32_t subSong);

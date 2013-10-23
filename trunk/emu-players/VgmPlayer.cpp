@@ -356,3 +356,15 @@ MusicPlayer::Result VgmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	return MusicPlayer::OK;
 }
+
+
+size_t VgmPlayer::GetNumChannels() const
+{
+	// ToDo: implement
+	return 0;
+}
+
+void VgmPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	// ToDo: implement
+}

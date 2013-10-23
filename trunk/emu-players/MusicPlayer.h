@@ -155,6 +155,9 @@ public:
 	 */
 	virtual MusicPlayer::State GetState() const { return mState; }
 
+	virtual size_t GetNumChannels() const = 0;
+	virtual void GetChannelOutputs(int16_t *outputs) const = 0;
+
 	const std::string& GetTitle() const { return mMetaData.GetTitle(); }
 	const std::string& GetSubTtitle() const { return mMetaData.GetSubTitle(); }
 	const std::string& GetAuthor() const { return mMetaData.GetAuthor(); }

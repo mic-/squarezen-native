@@ -283,3 +283,15 @@ void KssPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 }
 
 
+size_t KssPlayer::GetNumChannels() const
+{
+	// ToDo: implement
+	return 0;
+}
+
+void KssPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	// ToDo: implement
+}
+
+

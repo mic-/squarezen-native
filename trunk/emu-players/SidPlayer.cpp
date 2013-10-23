@@ -366,3 +366,10 @@ MusicPlayer::Result SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
 }
 
 
+void SidPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	outputs[0] = mSid->mChannels[0].mOut;
+	outputs[1] = mSid->mChannels[1].mOut;
+	outputs[2] = mSid->mChannels[2].mOut;
+}
+
