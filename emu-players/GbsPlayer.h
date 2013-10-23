@@ -57,6 +57,9 @@ public:
 	void SetMasterVolume(int left, int right);
 	uint16_t GetLoadAddress() const { return mFileHeader.loadAddress; }
 
+	virtual size_t GetNumChannels() const { return 4; }
+	virtual void GetChannelOutputs(int16_t *outputs) const;
+
 	virtual void SetSubSong(uint32_t subSong);
 
 private:

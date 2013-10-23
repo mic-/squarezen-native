@@ -264,3 +264,10 @@ MusicPlayer::Result GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	return MusicPlayer::OK;
 }
+
+
+void GbsPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	// ToDo: implement
+}
+

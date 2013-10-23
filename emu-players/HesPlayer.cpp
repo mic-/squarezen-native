@@ -272,3 +272,9 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 	return MusicPlayer::OK;
 }
+
+
+void HesPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	// ToDo: implement
+}

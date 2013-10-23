@@ -374,3 +374,15 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	return MusicPlayer::OK;
 }
 
+
+size_t NsfPlayer::GetNumChannels() const
+{
+	// ToDo: implement
+	return 0;
+}
+
+void NsfPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	// ToDo: implement
+}
+

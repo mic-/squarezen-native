@@ -92,3 +92,10 @@ MusicPlayer::Result AyPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	// ToDo: implement
 	return MusicPlayer::OK;
 }
+
+void AyPlayer::GetChannelOutputs(int16_t *outputs) const
+{
+	// ToDo: implement
+}
+
+

@@ -40,6 +40,9 @@ public:
 	virtual MusicPlayer::Result Run(uint32_t numSamples, int16_t *buffer);
 	virtual MusicPlayer::Result Reset();
 
+	virtual size_t GetNumChannels() const;
+	virtual void GetChannelOutputs(int16_t *outputs) const;
+
 	virtual void SetSubSong(uint32_t subSong);
 
 	enum {
