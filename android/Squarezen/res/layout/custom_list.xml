@@ -6,9 +6,9 @@
 <TextView  
     android:layout_width="fill_parent" 
     android:layout_height="wrap_content" 
-    android:id="@+id/textView"
+    android:id="@+id/textView" 
     android:textColor="#ffff"
-    android:textSize="18dp"
+    android:textSize="18sp"
     android:paddingLeft="10dp"
     android:paddingTop="10dip"
     android:paddingBottom="10dip"/>

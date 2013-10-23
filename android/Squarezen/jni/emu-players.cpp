@@ -33,7 +33,7 @@ static pthread_t bufferFillThread;
 static bool playing = false;
 
 static short *pcmBuffer[NUM_BUFFERS];
-static int bufferToEnqueue, bufferToFill;
+static int bufferToEnqueue = -1, bufferToFill;
 
 
 extern "C"
@@ -42,6 +42,7 @@ JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv 
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Close(JNIEnv *ioEnv, jobject ioThis);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Exit(JNIEnv *ioEnv, jobject ioThis);
 //JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetState(JNIEnv *ioEnv, jobject ioThis, jbyteArray state);
+JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEnv *ioEnv, jobject ioThis, jobject byteBuffer);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Run(JNIEnv *ioEnv, jobject ioThis, jint numSamples, jobject byteBuffer);
 };
 
@@ -216,9 +217,13 @@ void CreateBufferQueueAudioPlayer()
 }
 
 
+
+
 void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Close(JNIEnv *ioEnv, jobject ioThis)
 {
 	pthread_mutex_lock(&playerMutex);
+
+	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "Destroying player object");
 
 	if (player) {
 		delete player;
@@ -351,6 +356,24 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 	pthread_mutex_unlock(&playerMutex);
 }
 
+
+void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEnv *ioEnv, jobject ioThis, jobject byteBuffer)
+{
+    int16_t *buffer;
+    static char temp[128];
+
+    buffer = (int16_t*)(ioEnv->GetDirectBufferAddress(byteBuffer));
+    if (buffer == NULL) {
+    	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "failed to get NIO buffer address");
+    	return;
+    }
+
+    if (bufferToEnqueue == -1) {
+    	memset(buffer, 0, BUFFER_SIZE_BYTES);
+    } else {
+    	memcpy(buffer, pcmBuffer[bufferToEnqueue], BUFFER_SIZE_BYTES);
+    }
+}
 
 
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Run(JNIEnv *ioEnv, jobject ioThis, jint numSamples, jobject byteBuffer)
