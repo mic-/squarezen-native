@@ -402,7 +402,7 @@ void cpu_execute(unsigned int max) {
 			// ADD HL,BC
 			case 0x09:
 				ADD_REG_REG_16(cpu.regs.H,cpu.regs.L, cpu.regs.B, cpu.regs.C);
-				NLOGD("GbZ80", "ADD HL,BC => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
+				//NLOGD("GbZ80", "ADD HL,BC => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
 				break;
 
 			// LD A,(BC)
@@ -500,7 +500,7 @@ void cpu_execute(unsigned int max) {
 			// ADD HL,DE
 			case 0x19:
 				ADD_REG_REG_16(cpu.regs.H, cpu.regs.L, cpu.regs.D, cpu.regs.E);
-				NLOGD("GbZ80", "ADD HL,DE => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
+				//NLOGD("GbZ80", "ADD HL,DE => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
 				break;
 
 			// LD A,(DE)
@@ -624,7 +624,7 @@ void cpu_execute(unsigned int max) {
 			// ADD HL,HL
 			case 0x29:
 				ADD_REG_REG_16(cpu.regs.H, cpu.regs.L, cpu.regs.H, cpu.regs.L);
-				NLOGD("GbZ80", "ADD HL,HL => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
+				//NLOGD("GbZ80", "ADD HL,HL => HL=0x%02x%02x, F=%#x)", cpu.regs.H, cpu.regs.L, cpu.regs.F);
 				break;
 
 			// LD A,(HL+)
