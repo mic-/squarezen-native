@@ -22,6 +22,9 @@
 #include "NativeLogger.h"
 #include "FcPlayer.h"
 
+#define BYTESWAP(w) w = (((w) & 0xFF00) >> 8) | (((w) & 0x00FF) << 8)
+#define WORDSWAP(d) d = (((d) & 0xFFFF0000) >> 16) | (((d) & 0x0000FFFF) << 16)
+
 const std::string FcPlayer::FC13_ID = "SMOD";
 const std::string FcPlayer::FC14_ID = "FC14";
 
@@ -30,7 +33,6 @@ FcPlayer::FcPlayer()
 	: mIsFc14(false)
 	, mFileHeader(NULL)
 {
-
 }
 
 
@@ -42,7 +44,6 @@ MusicPlayer *FcPlayerFactory()
 
 FcPlayer::~FcPlayer()
 {
-
 }
 
 
@@ -54,6 +55,68 @@ MusicPlayer::Result FcPlayer::Reset()
 	return MusicPlayer::OK;
 }
 
+static void ByteswapUint32(uint32_t *u)
+{
+	uint16_t *p16;
+	uint32_t littleEndian = 1;
+	if (*(uint8_t*)&littleEndian == 1) {
+		p16 = (uint16_t*)u;
+		BYTESWAP(*p16);
+		p16++;
+		BYTESWAP(*p16);
+		WORDSWAP(*u);
+	}
+}
+
+
+// The header fields are big-endian.
+// Change the byte order to little-endian if we're running
+// on a little-endian machine.
+static void ByteswapFc13Header(FcPlayer::Fc13FileHeader *header)
+{
+	uint32_t littleEndian = 1;
+	if (*(uint8_t*)&littleEndian == 1) {
+		ByteswapUint32(&(header->sequenceLength));
+		ByteswapUint32(&(header->patternOffset));
+		ByteswapUint32(&(header->patternLength));
+		ByteswapUint32(&(header->freqSequenceOffset));
+		ByteswapUint32(&(header->freqSequenceLength));
+		ByteswapUint32(&(header->volSequenceOffset));
+		ByteswapUint32(&(header->volSequenceLength));
+		ByteswapUint32(&(header->sampleDataOffset));
+		ByteswapUint32(&(header->sampleDataLength));
+		for (int i = 0; i < 10; i++) {
+			BYTESWAP(header->sampleInfo[i].length);
+			BYTESWAP(header->sampleInfo[i].loopStart);
+			BYTESWAP(header->sampleInfo[i].loopLength);
+		}
+	}
+}
+
+
+// The header fields are big-endian.
+// Change the byte order to little-endian if we're running
+// on a little-endian machine.
+static void ByteswapFc14Header(FcPlayer::Fc14FileHeader *header)
+{
+	uint32_t littleEndian = 1;
+	if (*(uint8_t*)&littleEndian == 1) {
+		ByteswapUint32(&(header->sequenceLength));
+		ByteswapUint32(&(header->patternOffset));
+		ByteswapUint32(&(header->patternLength));
+		ByteswapUint32(&(header->freqSequenceOffset));
+		ByteswapUint32(&(header->freqSequenceLength));
+		ByteswapUint32(&(header->volSequenceOffset));
+		ByteswapUint32(&(header->volSequenceLength));
+		ByteswapUint32(&(header->sampleDataOffset));
+		ByteswapUint32(&(header->waveTableOffset));
+		for (int i = 0; i < 10; i++) {
+			BYTESWAP(header->sampleInfo[i].length);
+			BYTESWAP(header->sampleInfo[i].loopStart);
+			BYTESWAP(header->sampleInfo[i].loopLength);
+		}
+	}
+}
 
 MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 {
@@ -79,11 +142,13 @@ MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 
 	if (FC13_ID.compare(0, 4, id, 4) == 0) {
 		mFileHeader = new Fc13FileHeader;
-		 musicFile.read((char*)&mFileHeader, sizeof(Fc13FileHeader) - 4);
+		musicFile.read((char*)&mFileHeader, sizeof(Fc13FileHeader) - 4);
+		ByteswapFc13Header((Fc13FileHeader*)mFileHeader);
 	} else if (FC14_ID.compare(0, 4, id, 4) == 0) {
 		mIsFc14 = true;
 		mFileHeader = new Fc14FileHeader;
 		musicFile.read((char*)&mFileHeader, sizeof(Fc14FileHeader) - 4);
+		ByteswapFc14Header((Fc14FileHeader*)mFileHeader);
 	} else {
 		NLOGE(NLOG_TAG, "Unsupported Future Composer type: %c%c%c%c", id[0], id[1], id[2], id[3]);
     	musicFile.close();
@@ -96,6 +161,33 @@ MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
+	// Read sequences
+	NLOGD(NLOG_TAG, "Allocating space for %d sequences", ((Fc13FileHeader*)mFileHeader)->sequenceLength / 13);
+	mSequences = new std::vector<FcSequence>(((Fc13FileHeader*)mFileHeader)->sequenceLength / 13);
+	mCurrSequence = 0;
+
+	for (int i = 0; i < mSequences->size(); i++) {
+		musicFile.read((char*)&mSequences[i], sizeof(FcSequence));
+		if (!musicFile) {
+			NLOGE(NLOG_TAG, "Reading FC sequence data failed");
+	        musicFile.close();
+			return MusicPlayer::ERROR_FILE_IO;
+		}
+	}
+
+	// Read patterns
+	NLOGD(NLOG_TAG, "Allocating space for %d patterns", ((Fc13FileHeader*)mFileHeader)->patternLength / sizeof(FcPattern));
+	mPatterns = new std::vector<FcPattern>(((Fc13FileHeader*)mFileHeader)->patternLength / sizeof(FcPattern));
+	musicFile.seekg(((Fc13FileHeader*)mFileHeader)->patternOffset, musicFile.beg);
+
+	for (int i = 0; i < mPatterns->size(); i++) {
+		musicFile.read((char*)&mPatterns[i], sizeof(FcPattern));
+		if (!musicFile) {
+			NLOGE(NLOG_TAG, "Reading FC pattern data failed");
+	        musicFile.close();
+			return MusicPlayer::ERROR_FILE_IO;
+		}
+	}
 
     // ToDo: finish
 

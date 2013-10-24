@@ -22,6 +22,7 @@
 #define FCPLAYER_H_
 
 #include <string>
+#include <vector>
 #include <stdint.h>
 #include "MusicPlayer.h"
 
@@ -87,7 +88,7 @@ public:
 		uint32_t sampleDataOffset;
 		uint32_t waveTableOffset;
 		FcSampleInfo sampleInfo[10];
-		uint16_t waveTableLengths[40];
+		uint8_t waveTableLengths[80];	// in words
 	}  Fc14FileHeader;
 
 	typedef struct __attribute__ ((__packed__))
@@ -128,6 +129,9 @@ public:
 private:
 	bool mIsFc14;
 	void *mFileHeader;
+	std::vector<FcSequence> *mSequences;
+	std::vector<FcPattern> *mPatterns;
+	uint32_t mCurrSequence;
 	static const std::string FC13_ID;
 	static const std::string FC14_ID;
 };
