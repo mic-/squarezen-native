@@ -15,32 +15,35 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
-#define NLOG_TAG "AyPlayer"
+#define NLOG_TAG "FcPlayer"
 
 #include <iostream>
 #include <fstream>
 #include "NativeLogger.h"
-#include "AyPlayer.h"
+#include "FcPlayer.h"
 
 
-AyPlayer::AyPlayer()
+FcPlayer::FcPlayer()
+	: mIsFc14(false)
+	, mFileHeader(NULL)
 {
 
 }
 
 
-MusicPlayer *AyPlayerFactory()
+MusicPlayer *FcPlayerFactory()
 {
-	return new AyPlayer;
+	return new FcPlayer;
 }
 
 
-AyPlayer::~AyPlayer()
+FcPlayer::~FcPlayer()
 {
 
 }
 
-MusicPlayer::Result AyPlayer::Reset()
+
+MusicPlayer::Result FcPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV(NLOG_TAG, "Reset");
@@ -48,7 +51,8 @@ MusicPlayer::Result AyPlayer::Reset()
 	return MusicPlayer::OK;
 }
 
-MusicPlayer::Result AyPlayer::Prepare(std::string fileName)
+
+MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 {
 	size_t fileSize;
 
@@ -61,26 +65,34 @@ MusicPlayer::Result AyPlayer::Prepare(std::string fileName)
     	return result;
     }
 
-    NLOGV(NLOG_TAG, "Reading header");
-    musicFile.read((char*)&mFileHeader, sizeof(mFileHeader));
+    char id[4];
+    NLOGV(NLOG_TAG, "Reading signature");
+    musicFile.read(id, 4);
 	if (!musicFile) {
-		NLOGE(NLOG_TAG, "Reading AY file header failed");
+		NLOGE(NLOG_TAG, "Reading FC header ID failed");
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-    if (strncmp(mFileHeader.ID, "ZXAY", 4) || strncmp(mFileHeader.typeID, "EMUL", 4)) {
-    	NLOGE(NLOG_TAG, "Unknown AY header ID");
+	if (strncmp(id, "SMOD", 4) == 0) {
+		mFileHeader = new Fc13FileHeader;
+		 musicFile.read((char*)&mFileHeader, sizeof(Fc13FileHeader) - 4);
+	} else if (strncmp(id, "FC14", 4) == 0) {
+		mIsFc14 = true;
+		mFileHeader = new Fc14FileHeader;
+		musicFile.read((char*)&mFileHeader, sizeof(Fc14FileHeader) - 4);
+	} else {
+		NLOGE(NLOG_TAG, "Unsupported Future Composer type: %c%c%c%c", id[0], id[1], id[2], id[3]);
     	musicFile.close();
     	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
-    }
+	}
 
-    // ToDo: byteswap offsets
+	if (!musicFile) {
+		NLOGE(NLOG_TAG, "Reading the FC header failed");
+        musicFile.close();
+		return MusicPlayer::ERROR_FILE_IO;
+	}
 
-
-    for (int i = 0; i < mFileHeader.numSongs; i++) {
-    	// ToDo: read song structs
-    }
 
     // ToDo: finish
 
@@ -94,15 +106,13 @@ MusicPlayer::Result AyPlayer::Prepare(std::string fileName)
 }
 
 
-MusicPlayer::Result AyPlayer::Run(uint32_t numSamples, int16_t *buffer)
+MusicPlayer::Result FcPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	// ToDo: implement
 	return MusicPlayer::OK;
 }
 
-void AyPlayer::GetChannelOutputs(int16_t *outputs) const
+void FcPlayer::GetChannelOutputs(int16_t *outputs) const
 {
 	// ToDo: implement
 }
-
-

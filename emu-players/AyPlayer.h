@@ -85,5 +85,6 @@ private:
 	std::vector<AySongStruct*> mSongs;
 };
 
+MusicPlayer *AyPlayerFactory();
 
 #endif /* AYPLAYER_H_ */
