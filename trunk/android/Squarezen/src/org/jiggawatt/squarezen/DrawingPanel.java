@@ -11,6 +11,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -114,6 +115,15 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
     	mainActivity = mainAct;
     }
     
+    @Override
+    public boolean onTouchEvent(MotionEvent me) {
+    	Log.e("DrawPanel", me.toString());
+    	if (me.getAction() == MotionEvent.ACTION_DOWN) {
+    		mainActivity.NextSubSong();
+    	}
+    	return false;
+    }
+    
     @Override 
     public void onDraw(Canvas canvas) { 
     	super.onDraw(canvas);
@@ -131,19 +141,22 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 		
 		if (true) { //ymState != null) {
 			//mainActivity.GetState(ymState);
-
+	
 			long currDrawTime = System.nanoTime();
 			long timeDiffMillis = (currDrawTime - prevDrawTime)/1000000;		
 			float dx = 735/(width/4); //(44100*timeDiffMillis/1000) / (width/2);   //((7526*2)/(width*15));
 			bufferX = lastBufferX + 735.0f*(float)(44100*timeDiffMillis/1000);
 			float y,lastX = (width/2)+1;
 			
+			int alpha = 0x80;
+			int alphaCount = 0;
+			paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));
 			paint.setAntiAlias(true);
 	
 			if (playingBuffer != null) {
 				synchronized (bufferX) {
 					playingBuffer[bufferToReadFrom].order(ByteOrder.LITTLE_ENDIAN);
-					for (int i = (width/2)+1; i < width; i += 2) {
+					for (int i = (width/2)+1; i < width; i += 2, alphaCount += 1) {
 						if (bufferX.intValue() >= 2048) {
 							mainActivity.GetBuffer(playingBuffer[1-bufferToReadFrom]);
 							bufferToReadFrom = 1-bufferToReadFrom;
@@ -156,6 +169,13 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 						lastX = (float)i;
 						lastY = y;
 						bufferX += dx;
+						if (alphaCount < 30) {
+							alpha += 4;
+							paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));
+						} else if (i >= width-60) {
+							alpha -= 4;
+							paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));						
+						}
 					}
 				}
 				prevDrawTime = currDrawTime;
@@ -168,7 +188,7 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 				}
 			}
 			
-			paint.setColor(android.graphics.Color.WHITE);	
+			/*paint.setColor(android.graphics.Color.WHITE);	
 			canvas.drawText("A", CHN_GRID_X-16, 56+12, paint);
 			canvas.drawText("B", CHN_GRID_X-16, 56+15+12, paint);
 			canvas.drawText("C", CHN_GRID_X-16, 56+30+12, paint);
@@ -197,7 +217,7 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 			//
 			canvas.drawPoint(CHN_GRID_X+16, 49, paint);
 			canvas.drawPoint(CHN_GRID_X+18, 49, paint);
-			canvas.drawPoint(CHN_GRID_X+20, 49, paint);
+			canvas.drawPoint(CHN_GRID_X+20, 49, paint);*/
 			
 			paint.setAntiAlias(false);
 		

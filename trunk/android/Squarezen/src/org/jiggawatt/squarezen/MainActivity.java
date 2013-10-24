@@ -162,6 +162,13 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     }
 
     @Override
+    public void onStart() {
+    	setVolumeControlStream(AudioManager.STREAM_MUSIC);
+    	super.onStart();
+    }
+    
+    
+    @Override
     public void onAudioFocusChange(int focusChange) {
     	if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
             // Pause playback
@@ -248,17 +255,16 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     @Override
     public void onStop() {
     	stopSong();
+    	setVolumeControlStream(AudioManager.USE_DEFAULT_STREAM_TYPE);
     	super.onStop();
     }
     
     @Override
     public void onDestroy() {
-    	//stopAudioRunner = true;
     	stopSong();
-        activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    	//while (stopAudioRunner) {}
-    	//audioTrack.stop();
-    	//audioTrack.release();
+    	if (activityWindow != null) {
+    		activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    	}
     	Close();
     	Exit();
     	super.onDestroy();
@@ -282,5 +288,7 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     public native byte[] GetTitle();
     public native byte[] GetArtist();
     public native void Run(int numSamples, ByteBuffer byteBuffer);
+    public native void NextSubSong();
+    
     //public native void GetState(byte[] state);    
 }

@@ -28,12 +28,13 @@ static SLVolumeItf bqPlayerVolume;
 #define NUM_BUFFERS 4
 
 static pthread_mutex_t playerMutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t bufferFillCond = PTHREAD_COND_INITIALIZER;
-static pthread_t bufferFillThread;
+//static pthread_cond_t bufferFillCond = PTHREAD_COND_INITIALIZER;
+//static pthread_t bufferFillThread;
 static bool playing = false;
 
 static short *pcmBuffer[NUM_BUFFERS];
 static int bufferToEnqueue = -1, bufferToFill;
+static int numSubSongs, currSubSong;
 
 
 extern "C"
@@ -45,6 +46,7 @@ JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEn
 JNIEXPORT jbyteArray JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetTitle(JNIEnv *ioEnv, jobject ioThis);
 JNIEXPORT jbyteArray JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetArtist(JNIEnv *ioEnv, jobject ioThis);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Run(JNIEnv *ioEnv, jobject ioThis, jint numSamples, jobject byteBuffer);
+JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_NextSubSong(JNIEnv *ioEnv, jobject ioThis);
 };
 
 
@@ -59,33 +61,6 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved)
 }
 
 
-void *BufferFillThread(void *parm)
-{
-	static char temp[128];
-
-	while (playing) {
-		pthread_mutex_lock(&playerMutex);
-		pthread_cond_wait(&bufferFillCond, &playerMutex);
-
-		if (player) {
-	    	struct timeval t1, t2;
-	    	gettimeofday(&t1, NULL);
-	    	player->Run(BUFFER_SIZE_BYTES/4, pcmBuffer[bufferToFill]);
-	    	gettimeofday(&t2, NULL);
-#ifdef HAVE_NEON
-	    	sprintf(temp, "Player::Run took %d us for %d samples", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4);
-	    	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
-#endif
-	    }
-
-	    bufferToFill++;
-	    bufferToFill = (bufferToFill < NUM_BUFFERS) ? bufferToFill : 0;
-
-	    pthread_mutex_unlock(&playerMutex);
-	}
-
-	return NULL;
-}
 
 
 // this callback handler is called every time a buffer finishes playing
@@ -115,8 +90,8 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
 #ifdef HAVE_NEON
     	SLAndroidSimpleBufferQueueState st;
    	    SLresult res = (*bqPlayerBufferQueue)->GetState(bqPlayerBufferQueue, &st);
-    	sprintf(temp, "Player::Run took %d us for %d samples, index = %d", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4, st.count);
-    	__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
+    	//sprintf(temp, "Player::Run took %d us for %d samples, index = %d", t2.tv_usec-t1.tv_usec, BUFFER_SIZE_BYTES/4, st.count);
+    	//__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", temp);
 #endif
     }
 
@@ -356,6 +331,9 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 	bufferToEnqueue = NUM_BUFFERS-1;
 	bufferToFill = 0;
 
+	currSubSong = player->GetDefaultSong();
+	numSubSongs = player->GetNumSubSongs();
+
 	pthread_mutex_unlock(&playerMutex);
 }
 
@@ -407,6 +385,22 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEnv *ioEnv, 
     	if (idx < 0) idx += NUM_BUFFERS;
     	memcpy(buffer, pcmBuffer[idx], BUFFER_SIZE_BYTES);
     }
+}
+
+
+void JNICALL Java_org_jiggawatt_squarezen_MainActivity_NextSubSong(JNIEnv *ioEnv, jobject ioThis)
+{
+	if (player) {
+		pthread_mutex_lock(&playerMutex);
+
+		if (numSubSongs > 1) {
+			currSubSong++;
+			if (currSubSong > numSubSongs) currSubSong = 1;
+			player->SetSubSong(currSubSong);
+		}
+
+		pthread_mutex_unlock(&playerMutex);
+	}
 }
 
 
