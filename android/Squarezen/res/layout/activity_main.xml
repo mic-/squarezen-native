@@ -11,30 +11,50 @@
             android:id="@+id/BBB"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="240dp"
+            android:layout_marginBottom="180dp"
             android:orientation="vertical" >
+   
+   <TextView
+       android:id="@+id/textView1"
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:text="Title"
+       android:textAppearance="?android:attr/textAppearanceMedium"
+       android:textColor="#FFA"
+       android:background="#7000"
+       android:textSize="13dp" />
 
-          <LinearLayout
-      android:id="@+id/top_layout"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content" >
+   <TextView
+       android:id="@+id/textView2"
+       android:layout_below="@+id/textView1"
+       android:layout_width="match_parent"
+       android:layout_height="wrap_content"
+       android:paddingBottom="8dp"
+       android:text="Author"
+       android:textAppearance="?android:attr/textAppearanceMedium"
+       android:textColor="#FFA"
+       android:background="#7000"
+       android:textSize="13dp" />
+ 
+   	
        <TextView
            android:id="@+id/TV1"
+           android:layout_below="@+id/textView2"
            android:layout_width="match_parent"
            android:layout_height="wrap_content"
            android:textColor="#ffff"
            android:background="#7000"
            android:text="@string/str_files"
        />
-       </LinearLayout>
+
 		       
         <ListView
             android:id="@+id/listView1"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
-            android:background="#50000000"
+            android:layout_marginTop="64dp"
             android:clickable="true"
+            android:background="#50000000"
             android:divider="#a444"
             android:dividerHeight="1dp"
             android:minHeight="48dp"
@@ -55,8 +75,8 @@
      <org.jiggawatt.squarezen.DrawingPanel
                     android:id="@+id/surfaceView1"
                     android:layout_width="fill_parent"
-                    android:background="#3F000000"
-                    android:layout_height="100dp" 
+                    android:layout_height="100dp"
+                    android:background="#3F000000" 
                     android:layout_weight = "1" />
        
     <Button
@@ -68,25 +88,6 @@
         android:text="@string/str_quit" />
 </LinearLayout>
 
-   <TextView
-       android:id="@+id/textView1"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:layout_above="@+id/bottom_layout"
-       android:layout_alignParentLeft="true"
-       android:layout_marginBottom="26dp"
-       android:textAppearance="?android:attr/textAppearanceMedium"
-       android:textColor="#FFA"
-       android:textSize="12dp" />
 
-   <TextView
-       android:id="@+id/textView2"
-       android:layout_width="wrap_content"
-       android:layout_height="wrap_content"
-       android:layout_above="@+id/bottom_layout"
-       android:layout_alignParentLeft="true"
-       android:textAppearance="?android:attr/textAppearanceMedium"
-       android:textColor="#FFA"
-       android:textSize="12dp" />
 
 </RelativeLayout>
