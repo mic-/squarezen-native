@@ -194,10 +194,17 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     	Prepare(Environment.getExternalStorageDirectory().getPath() + "/YM/" + songName);
     	playing = true;
     	
-    	TextView titleText = (TextView)findViewById(R.id.textView1);
-    	titleText.setText(GetTitle());
-    	TextView authorText = (TextView)findViewById(R.id.textView2);
-    	authorText.setText(GetArtist());
+    	try {
+	    	TextView titleText = (TextView)findViewById(R.id.textView1);
+	    	byte[] title = GetTitle();
+	    	titleText.setText(new String(title, 0, title.length, "ISO-8859-1"));
+	    	
+	    	TextView authorText = (TextView)findViewById(R.id.textView2);
+	    	byte[] author = GetArtist();
+	    	authorText.setText(new String(author, 0, author.length, "ISO-8859-1"));
+    	} catch (Exception e) {
+    		Log.e("Squarezen", e.toString());
+    	}
     	
         /*Run(minBufferSize>>2, pcmFromNative[0]);
         bufferToPlay = 0;
@@ -272,8 +279,8 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     public native void Close();
     public native void Exit();
     public native void GetBuffer(ByteBuffer byteBuffer);
-    public native String GetTitle();
-    public native String GetArtist();
+    public native byte[] GetTitle();
+    public native byte[] GetArtist();
     public native void Run(int numSamples, ByteBuffer byteBuffer);
     //public native void GetState(byte[] state);    
 }
