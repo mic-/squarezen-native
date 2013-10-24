@@ -41,10 +41,9 @@ extern "C"
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jobject ioThis, jstring filePath);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Close(JNIEnv *ioEnv, jobject ioThis);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Exit(JNIEnv *ioEnv, jobject ioThis);
-//JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetState(JNIEnv *ioEnv, jobject ioThis, jbyteArray state);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetBuffer(JNIEnv *ioEnv, jobject ioThis, jobject byteBuffer);
-JNIEXPORT jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetTitle(JNIEnv *ioEnv, jobject ioThis);
-JNIEXPORT jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetArtist(JNIEnv *ioEnv, jobject ioThis);
+JNIEXPORT jbyteArray JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetTitle(JNIEnv *ioEnv, jobject ioThis);
+JNIEXPORT jbyteArray JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetArtist(JNIEnv *ioEnv, jobject ioThis);
 JNIEXPORT void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Run(JNIEnv *ioEnv, jobject ioThis, jint numSamples, jobject byteBuffer);
 };
 
@@ -361,20 +360,32 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Prepare(JNIEnv *ioEnv, jo
 }
 
 
-jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetTitle(JNIEnv *ioEnv, jobject ioThis)
+jbyteArray JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetTitle(JNIEnv *ioEnv, jobject ioThis)
 {
+	int len = 0;
+
 	if (player) {
-		return ioEnv->NewStringUTF(player->GetTitle().c_str());
+		len = player->GetTitle().length();
 	}
-	return ioEnv->NewStringUTF("");
+    jbyteArray arr = ioEnv->NewByteArray(len);
+    if (player) {
+    	ioEnv->SetByteArrayRegion(arr, 0, len, (jbyte*)player->GetTitle().c_str());
+    }
+    return arr;
 }
 
-jstring JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetArtist(JNIEnv *ioEnv, jobject ioThis)
+jbyteArray JNICALL Java_org_jiggawatt_squarezen_MainActivity_GetArtist(JNIEnv *ioEnv, jobject ioThis)
 {
+	int len = 0;
+
 	if (player) {
-		return ioEnv->NewStringUTF(player->GetAuthor().c_str());
+		len = player->GetAuthor().length();
 	}
-	return ioEnv->NewStringUTF("");
+    jbyteArray arr = ioEnv->NewByteArray(len);
+    if (player) {
+    	ioEnv->SetByteArrayRegion(arr, 0, len, (jbyte*)player->GetAuthor().c_str());
+    }
+    return arr;
 }
 
 
