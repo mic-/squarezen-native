@@ -27,6 +27,10 @@
 
 #define BYTESWAP(w) w = (((w) & 0xFF00) >> 8) | (((w) & 0x00FF) << 8)
 
+const std::string SndhPlayer::SNDH_SIGNATURE = "SNDH";
+const std::string SndhPlayer::ICE_PACKER_SIGNATURE = "ICE!";
+
+
 SndhPlayer::SndhPlayer()
 	: m68k(NULL)
 	, mYm(NULL)
@@ -236,7 +240,7 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
 	SndhFileHeader *header = (SndhFileHeader*)fileImage;
 
 	// First check if this is a compressed file
-	if (strncmp((char*)fileImage, "ICE!", 4) == 0) {
+	if (ICE_PACKER_SIGNATURE.compare(0, 4, (char*)fileImage, 4) == 0) {
 		int depackedSize = unice68_get_depacked_size(fileImage, NULL);
 		if (depackedSize <= 0) {
 			NLOGE(NLOG_TAG, "Malformed ICE header");
@@ -257,7 +261,7 @@ MusicPlayer::Result SndhPlayer::Prepare(std::string fileName)
 		fileSize = depackedSize;
 	}
 
-    if (strncmp(header->signature, "SNDH", 4)) {
+    if (SNDH_SIGNATURE.compare(0, 4, header->signature, 4)) {
 		NLOGE(NLOG_TAG, "No SNDH or ICE! signature");
 		return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
     }

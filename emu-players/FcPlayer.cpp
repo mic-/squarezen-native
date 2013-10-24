@@ -22,6 +22,9 @@
 #include "NativeLogger.h"
 #include "FcPlayer.h"
 
+const std::string FcPlayer::FC13_ID = "SMOD";
+const std::string FcPlayer::FC14_ID = "FC14";
+
 
 FcPlayer::FcPlayer()
 	: mIsFc14(false)
@@ -74,10 +77,10 @@ MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 		return MusicPlayer::ERROR_FILE_IO;
 	}
 
-	if (strncmp(id, "SMOD", 4) == 0) {
+	if (FC13_ID.compare(0, 4, id, 4) == 0) {
 		mFileHeader = new Fc13FileHeader;
 		 musicFile.read((char*)&mFileHeader, sizeof(Fc13FileHeader) - 4);
-	} else if (strncmp(id, "FC14", 4) == 0) {
+	} else if (FC14_ID.compare(0, 4, id, 4) == 0) {
 		mIsFc14 = true;
 		mFileHeader = new Fc14FileHeader;
 		musicFile.read((char*)&mFileHeader, sizeof(Fc14FileHeader) - 4);
