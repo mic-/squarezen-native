@@ -226,7 +226,7 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 	mCycleCount = 0;
 	mPlayCounter = 0;
 
-	float synthVolume = 0.5f; //0.95f / (float)numSynths;
+	float synthVolume = 0.95f / (float)numSynths;
     // Setup waves
 	for (int i = 0; i < numSynths; i++) {
 		mSynth[i].volume(synthVolume);
