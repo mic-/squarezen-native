@@ -65,6 +65,9 @@ private:
 	uint16_t mVblFrequency;
 	uint16_t mTimerFrequency[4];			// Frequencies for timer A-D
 	size_t mNumSongs;
+
+	static const std::string SNDH_SIGNATURE;
+	static const std::string ICE_PACKER_SIGNATURE;
 };
 
 MusicPlayer *SndhPlayerFactory();

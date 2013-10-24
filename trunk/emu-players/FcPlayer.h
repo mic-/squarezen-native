@@ -76,7 +76,7 @@ public:
 
 	typedef struct __attribute__ ((__packed__))
 	{
-		char ID[4];		// "SMOD"
+		char ID[4];		// "FC14"
 		uint32_t sequenceLength;	// in bytes
 		uint32_t patternOffset;
 		uint32_t patternLength;
@@ -128,6 +128,8 @@ public:
 private:
 	bool mIsFc14;
 	void *mFileHeader;
+	static const std::string FC13_ID;
+	static const std::string FC14_ID;
 };
 
 MusicPlayer *FcPlayerFactory();
