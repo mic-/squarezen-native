@@ -32,6 +32,8 @@ const std::string FcPlayer::FC14_ID = "FC14";
 FcPlayer::FcPlayer()
 	: mIsFc14(false)
 	, mFileHeader(NULL)
+	, mSequences(NULL)
+	, mPatterns(NULL)
 {
 }
 
@@ -44,6 +46,13 @@ MusicPlayer *FcPlayerFactory()
 
 FcPlayer::~FcPlayer()
 {
+	if (mIsFc14) {
+		delete (Fc14FileHeader*)mFileHeader;
+	} else {
+		delete (Fc13FileHeader*)mFileHeader;
+	}
+	delete mSequences;
+	delete mPatterns;
 }
 
 
@@ -51,6 +60,19 @@ MusicPlayer::Result FcPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV(NLOG_TAG, "Reset");
+
+	if (mIsFc14) {
+		delete (Fc14FileHeader*)mFileHeader;
+	} else {
+		delete (Fc13FileHeader*)mFileHeader;
+	}
+	delete mSequences;
+	delete mPatterns;
+
+	mFileHeader = NULL;
+	mSequences = NULL;
+	mPatterns = NULL;
+
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
@@ -141,13 +163,15 @@ MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 	}
 
 	if (FC13_ID.compare(0, 4, id, 4) == 0) {
+		NLOGD(NLOG_TAG, "Reading FC1.3 header");
 		mFileHeader = new Fc13FileHeader;
-		musicFile.read((char*)&mFileHeader, sizeof(Fc13FileHeader) - 4);
+		musicFile.read((char*)mFileHeader, sizeof(Fc13FileHeader) - 4);
 		ByteswapFc13Header((Fc13FileHeader*)mFileHeader);
 	} else if (FC14_ID.compare(0, 4, id, 4) == 0) {
+		NLOGD(NLOG_TAG, "Reading FC1.4 header");
 		mIsFc14 = true;
 		mFileHeader = new Fc14FileHeader;
-		musicFile.read((char*)&mFileHeader, sizeof(Fc14FileHeader) - 4);
+		musicFile.read((char*)mFileHeader, sizeof(Fc14FileHeader) - 4);
 		ByteswapFc14Header((Fc14FileHeader*)mFileHeader);
 	} else {
 		NLOGE(NLOG_TAG, "Unsupported Future Composer type: %c%c%c%c", id[0], id[1], id[2], id[3]);
@@ -166,8 +190,9 @@ MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 	mSequences = new std::vector<FcSequence>(((Fc13FileHeader*)mFileHeader)->sequenceLength / 13);
 	mCurrSequence = 0;
 
-	for (int i = 0; i < mSequences->size(); i++) {
-		musicFile.read((char*)&mSequences[i], sizeof(FcSequence));
+	 for (std::vector<FcSequence>::iterator it = mSequences->begin();
+			 it != mSequences->end(); ++it) {
+		musicFile.read((char*)&(*it), sizeof(FcSequence));
 		if (!musicFile) {
 			NLOGE(NLOG_TAG, "Reading FC sequence data failed");
 	        musicFile.close();
@@ -180,8 +205,9 @@ MusicPlayer::Result FcPlayer::Prepare(std::string fileName)
 	mPatterns = new std::vector<FcPattern>(((Fc13FileHeader*)mFileHeader)->patternLength / sizeof(FcPattern));
 	musicFile.seekg(((Fc13FileHeader*)mFileHeader)->patternOffset, musicFile.beg);
 
-	for (int i = 0; i < mPatterns->size(); i++) {
-		musicFile.read((char*)&mPatterns[i], sizeof(FcPattern));
+	 for (std::vector<FcPattern>::iterator it = mPatterns->begin();
+			 it != mPatterns->end(); ++it) {
+		musicFile.read((char*)&(*it), sizeof(FcPattern));
 		if (!musicFile) {
 			NLOGE(NLOG_TAG, "Reading FC pattern data failed");
 	        musicFile.close();
