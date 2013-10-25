@@ -320,7 +320,7 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		pulseOut += (-m2A03->mChannels[Emu2A03::CHN_PULSE2].mPhase)
 					& (m2A03->mChannels[Emu2A03::CHN_PULSE2].mVol & 0x0F)
 					& m2A03->mChannels[Emu2A03::CHN_PULSE2].mOutputMask;
-		pulseOut = (uint16_t)(pulseTable[pulseOut] * 5460.0f);
+		pulseOut = (uint16_t)(pulseTable[pulseOut] * 6460.0f); //5460.0f);
 
 		tndOut = ((-m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mPhase)
 					& (m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mVol & 0x0F)
@@ -330,7 +330,7 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 					& m2A03->mChannels[Emu2A03::CHN_NOISE].mOutputMask) * 2;
 		tndOut += ((m2A03->mChannels[Emu2A03::CHN_DMC].mDuty)
 					& m2A03->mChannels[Emu2A03::CHN_DMC].mOutputMask);
-		tndOut = (uint16_t)(tndTable[tndOut] * 5460.0f);
+		tndOut = (uint16_t)(tndTable[tndOut] * 6460.0f); //5460.0f);
 
 		if (pulseOut != m2A03->mChannels[0].mOut) {
 			mSynth[0].update(k, pulseOut);
