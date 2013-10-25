@@ -396,7 +396,7 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_NextSubSong(JNIEnv *ioEnv
 		if (numSubSongs > 1) {
 			currSubSong++;
 			if (currSubSong > numSubSongs) currSubSong = 1;
-			player->SetSubSong(currSubSong);
+			player->SetSubSong(currSubSong - 1);
 		}
 
 		pthread_mutex_unlock(&playerMutex);
