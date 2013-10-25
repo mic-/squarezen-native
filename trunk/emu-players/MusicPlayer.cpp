@@ -19,6 +19,7 @@
 #include <algorithm>
 #include "NativeLogger.h"
 #include "MusicPlayer.h"
+#include "FcPlayer.h"
 #include "GbsPlayer.h"
 #include "HesPlayer.h"
 #include "KssPlayer.h"
@@ -39,6 +40,7 @@ std::map<std::string, PlayerFactory> CreateSupportedFormatsMap()
 	formatsMap.insert( std::make_pair(".nsf", &NsfPlayerFactory) );
 	formatsMap.insert( std::make_pair(".sgc", &SgcPlayerFactory) );
 	formatsMap.insert( std::make_pair(".sid", &SidPlayerFactory) );
+	formatsMap.insert( std::make_pair(".smod", &FcPlayerFactory) );
 	formatsMap.insert( std::make_pair(".sndh", &SndhPlayerFactory) );
 	formatsMap.insert( std::make_pair(".spc", &SpcPlayerFactory) );
 	formatsMap.insert( std::make_pair(".vgm", &VgmPlayerFactory) );
