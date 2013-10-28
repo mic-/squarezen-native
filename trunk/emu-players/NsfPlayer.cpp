@@ -342,13 +342,22 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		}
 
 		if (mVrc6) {
-			// ToDo: output VRC6 channels to blip synths
+			mVrc6->Step();
+			for (int i = KonamiVrc6::CHN_PULSE1; i < KonamiVrc6::CHN_SAW; i++) {
+				out = (mVrc6->mChannels[i].mPhase * mVrc6->mChannels[i].mVol);
+				out = Emu2A03::VOL_TB[out];
+				if (out != mVrc6->mChannels[i].mOut) {
+					mSynth[2 + i].update(k, out);
+					mVrc6->mChannels[i].mOut = out;
+				}
+			}
 		}
+
 		if (mN163) {
 			// ToDo: output Namco163 channels to blip synths
 		}
+
 		if (mSunsoft5B) {
-			// ToDo: output Sunsoft-5B channels to blip synths
 			mSunsoft5B->Step();
 			for (int i = 0; i < 3; i++) {
 				out = (mSunsoft5B->mChannels[i].mPhase | mSunsoft5B->mChannels[i].mToneOff) &

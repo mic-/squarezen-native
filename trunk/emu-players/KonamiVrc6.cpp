@@ -45,7 +45,7 @@ void KonamiVrc6Channel::Step()
 	if (mEnabled) mPos++;
 
 	if (mIndex <= KonamiVrc6::CHN_PULSE2) {
-		if (mPos >= mPeriod*2) {
+		if (mPos >= mPeriod) {
 			mPos = 0;
 			mWaveStep &= 0x0F;
 			mPhase = (mMode) ? 1 : KonamiVrc6::SQUARE_WAVES[mDuty][mWaveStep++];
@@ -79,13 +79,17 @@ void KonamiVrc6Channel::Write(uint32_t addr, uint8_t data)
 
 void KonamiVrc6::Reset()
 {
-	// ToDo: implement
+	for (int i = KonamiVrc6::CHN_PULSE1; i < KonamiVrc6::CHN_SAW; i++) {
+		mChannels[i].Reset();
+	}
 }
 
 
 void KonamiVrc6::Step()
 {
-	// ToDo: implement
+	for (int i = KonamiVrc6::CHN_PULSE1; i < KonamiVrc6::CHN_SAW; i++) {
+		mChannels[i].Step();
+	}
 }
 
 

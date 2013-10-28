@@ -457,7 +457,7 @@ void Emu2A03::Write(uint32_t addr, uint8_t data)
 		}
 
 	} else if (reg == R_FRAMECNT) {
-		NLOGD("Emu2A03", "Frame counter Write(%#x)", data);
+		// NLOGD("Emu2A03", "Frame counter Write(%#x)", data);
 		mGenerateFrameIRQ = ((data & 0x40) == 0);
 		mMaxFrameCount = (data & 0x80) ? 4 : 3;
 		if (data & 0x80) {
