@@ -343,9 +343,13 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		if (mVrc6) {
 			mVrc6->Step();
-			for (int i = KonamiVrc6::CHN_PULSE1; i < KonamiVrc6::CHN_SAW; i++) {
-				out = (mVrc6->mChannels[i].mPhase * mVrc6->mChannels[i].mVol);
-				out = Emu2A03::VOL_TB[out];
+			for (int i = KonamiVrc6::CHN_PULSE1; i <= KonamiVrc6::CHN_SAW; i++) {
+				if (i <= KonamiVrc6::CHN_PULSE2) {
+					out = (mVrc6->mChannels[i].mPhase * mVrc6->mChannels[i].mVol);
+					out = Emu2A03::VOL_TB[out];
+				} else {
+					out = (mVrc6->mChannels[i].mPhase * mVrc6->mChannels[i].mVol) << 3;
+				}
 				if (out != mVrc6->mChannels[i].mOut) {
 					mSynth[2 + i].update(k, out);
 					mVrc6->mChannels[i].mOut = out;

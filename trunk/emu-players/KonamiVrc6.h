@@ -44,6 +44,7 @@ public:
 	uint8_t mPhase;
 	uint8_t mDuty;
 	uint8_t mMode;
+	uint8_t mAccum, mAccumStep, mAccumClockCount;
 };
 
 
