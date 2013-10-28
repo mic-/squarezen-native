@@ -37,6 +37,7 @@ public:
 	void SetIndex(uint8_t index) { mIndex = index; }
 
 	bool mEnabled;
+	int16_t mOut;
 	uint16_t mWaveStep;
 	uint16_t mIndex;
 	uint16_t mVol;
@@ -63,7 +64,6 @@ public:
 
 	static const uint8_t SQUARE_WAVES[8][16];
 
-private:
 	KonamiVrc6Channel mChannels[3];
 };
 
