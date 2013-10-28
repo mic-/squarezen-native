@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_DEBUG 0
+#define NLOG_TAG "KonamiVrc6"
 
 #include "NativeLogger.h"
 #include "KonamiVrc6.h"
@@ -37,6 +38,8 @@ void KonamiVrc6Channel::Reset()
 {
 	// ToDo: implement
 	mEnabled = false;
+	mAccum = 0;
+	mAccumClockCount = 0;
 }
 
 
@@ -51,8 +54,21 @@ void KonamiVrc6Channel::Step()
 			mPhase = (mMode) ? 1 : KonamiVrc6::SQUARE_WAVES[mDuty][mWaveStep++];
 			if (mPeriod < 8) mPhase = 0;
 		}
+	} else {
+		// handle saw wave
+		if (mPos >= mPeriod) {
+			mPos = 0;
+			if (mAccumClockCount & 1) {
+				mAccum += mAccumStep;
+			}
+			mAccumClockCount++;
+			if (mAccumClockCount == 14) {
+				mAccumClockCount = 0;
+				mAccum = 0;
+			}
+			mPhase = mAccum >> 3;
+		}
 	}
-	// ToDo: handle saw wave
 }
 
 
@@ -60,9 +76,15 @@ void KonamiVrc6Channel::Write(uint32_t addr, uint8_t data)
 {
 	switch (addr & 3) {
 	case 0:	// control
-		mVol = data = 0x0F;
-		mDuty = (data >> 4) & 7;
-		mMode = data & 0x80;
+		if (addr != 0xB000) {
+			mVol = data = 0x0F;
+			mDuty = (data >> 4) & 7;
+			mMode = data & 0x80;
+		} else {
+			// Saw channel
+			mVol = data & 0x0F;
+			mAccumStep = data & 0x3F;
+		}
 		break;
 	case 1:	// freq low
 		mPeriod = (mPeriod & 0xF00) | data;
@@ -79,7 +101,8 @@ void KonamiVrc6Channel::Write(uint32_t addr, uint8_t data)
 
 void KonamiVrc6::Reset()
 {
-	for (int i = KonamiVrc6::CHN_PULSE1; i < KonamiVrc6::CHN_SAW; i++) {
+	for (int i = KonamiVrc6::CHN_PULSE1; i <= KonamiVrc6::CHN_SAW; i++) {
+		mChannels[i].SetIndex(i);
 		mChannels[i].Reset();
 	}
 }
@@ -87,7 +110,7 @@ void KonamiVrc6::Reset()
 
 void KonamiVrc6::Step()
 {
-	for (int i = KonamiVrc6::CHN_PULSE1; i < KonamiVrc6::CHN_SAW; i++) {
+	for (int i = KonamiVrc6::CHN_PULSE1; i <= KonamiVrc6::CHN_SAW; i++) {
 		mChannels[i].Step();
 	}
 }
@@ -112,7 +135,7 @@ void KonamiVrc6::Write(uint32_t addr, uint8_t data)
 		mChannels[KonamiVrc6::CHN_SAW].Write(addr, data);
 		break;
 	default:
-		NLOGV("KonamiVrc6", "Unrecognized address: %#x", addr);
+		NLOGV(NLOG_TAG, "Unrecognized address: %#x", addr);
 		break;
 	}
 }
