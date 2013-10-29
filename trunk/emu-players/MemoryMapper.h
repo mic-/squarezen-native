@@ -32,6 +32,12 @@ public:
 	virtual uint8_t ReadByte(uint32_t addr) = 0;
 	virtual void WriteByte(uint32_t addr, uint8_t data) = 0;
 
+	virtual uint16_t ReadHalfWord(uint32_t addr) { return 0; }
+	virtual void WriteHalfWord(uint32_t addr, uint16_t data) {}
+
+	virtual uint32_t ReadWord(uint32_t addr) { return 0; }
+	virtual void WriteWord(uint32_t addr, uint32_t data) {}
+
 	virtual uint8_t ReadPort(uint16_t port) { return 0; }
 	virtual void WritePort(uint16_t port, uint8_t data) {}
 };

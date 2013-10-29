@@ -35,17 +35,21 @@ std::map<std::string, PlayerFactory> CreateSupportedFormatsMap()
 {
 	std::map<std::string, PlayerFactory> formatsMap;
 
-	formatsMap.insert( std::make_pair(".gbs", &GbsPlayerFactory) );
-	formatsMap.insert( std::make_pair(".hes", &HesPlayerFactory) );
-	formatsMap.insert( std::make_pair(".nsf", &NsfPlayerFactory) );
-	formatsMap.insert( std::make_pair(".sgc", &SgcPlayerFactory) );
-	formatsMap.insert( std::make_pair(".sid", &SidPlayerFactory) );
+	formatsMap.insert( std::make_pair(".fc13", &FcPlayerFactory) );
+	formatsMap.insert( std::make_pair(".fc14", &FcPlayerFactory) );
+	formatsMap.insert( std::make_pair(".fc",   &FcPlayerFactory) );
+
+	formatsMap.insert( std::make_pair(".gbs",  &GbsPlayerFactory) );
+	formatsMap.insert( std::make_pair(".hes",  &HesPlayerFactory) );
+	formatsMap.insert( std::make_pair(".nsf",  &NsfPlayerFactory) );
+	formatsMap.insert( std::make_pair(".sgc",  &SgcPlayerFactory) );
+	formatsMap.insert( std::make_pair(".sid",  &SidPlayerFactory) );
 	formatsMap.insert( std::make_pair(".smod", &FcPlayerFactory) );
 	formatsMap.insert( std::make_pair(".sndh", &SndhPlayerFactory) );
-	formatsMap.insert( std::make_pair(".spc", &SpcPlayerFactory) );
-	formatsMap.insert( std::make_pair(".vgm", &VgmPlayerFactory) );
-	formatsMap.insert( std::make_pair(".vgz", &VgmPlayerFactory) );
-	formatsMap.insert( std::make_pair(".ym",  &YmPlayerFactory)  );
+	formatsMap.insert( std::make_pair(".spc",  &SpcPlayerFactory) );
+	formatsMap.insert( std::make_pair(".vgm",  &VgmPlayerFactory) );
+	formatsMap.insert( std::make_pair(".vgz",  &VgmPlayerFactory) );
+	formatsMap.insert( std::make_pair(".ym",   &YmPlayerFactory)  );
 
 	return formatsMap;
 }

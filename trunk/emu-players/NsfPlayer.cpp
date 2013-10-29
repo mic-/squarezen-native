@@ -395,8 +395,11 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 size_t NsfPlayer::GetNumChannels() const
 {
-	// ToDo: implement
-	return 0;
+	size_t numChannels = 2;
+	if (mVrc6) numChannels += 3;
+	if (mN163) numChannels += 8;
+	if (mSunsoft5B) numChannels += 3;
+	return numChannels;
 }
 
 void NsfPlayer::GetChannelOutputs(int16_t *outputs) const
