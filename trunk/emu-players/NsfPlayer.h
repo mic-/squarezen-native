@@ -93,6 +93,8 @@ private:
 	Sunsoft5B *mSunsoft5B;
 	NsfMapper *mMemory;
 
+	uint32_t mVrc6Synth, mN163Synth, mSunsoft5BSynth;
+
 	NsfFileHeader mFileHeader;
 	bool mSongIsBankswitched;
 	uint32_t mFrameCycles, mCycleCount, mPlayCounter;
