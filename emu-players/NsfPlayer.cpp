@@ -158,16 +158,19 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 	if (mFileHeader.extraChips & NsfPlayer::USES_VRC6) {
 		NLOGD("NsfPlayer", "This song uses the Konami VRC6");
 		mVrc6 = new KonamiVrc6;
-		numSynths += 3;
+		mVrc6Synth = numSynths;
+		numSynths += 2;		// One for the two square wave channels, one for the saw wave channel
 	}
 	if (mFileHeader.extraChips & NsfPlayer::USES_N163) {
 		NLOGD("NsfPlayer", "This song uses the Namco163");
 		mN163 = new Namco163;
+		mN163Synth = numSynths;
 		//numSynths += 8;
 	}
 	if (mFileHeader.extraChips & NsfPlayer::USES_SUNSOFT_5B) {
 		NLOGD("NsfPlayer", "This song uses the Sunsoft-5B");
 		mSunsoft5B = new Sunsoft5B(YmChip::YM2149_ENVELOPE_STEPS);
+		mSunsoft5BSynth = numSynths;
 		numSynths += 3;
 	}
 
@@ -343,17 +346,19 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		if (mVrc6) {
 			mVrc6->Step();
-			for (int i = KonamiVrc6::CHN_PULSE1; i <= KonamiVrc6::CHN_SAW; i++) {
-				if (i <= KonamiVrc6::CHN_PULSE2) {
-					out = (mVrc6->mChannels[i].mPhase * mVrc6->mChannels[i].mVol);
-					out = Emu2A03::VOL_TB[out];
-				} else {
-					out = (mVrc6->mChannels[i].mPhase * mVrc6->mChannels[i].mVol) << 3;
-				}
-				if (out != mVrc6->mChannels[i].mOut) {
-					mSynth[2 + i].update(k, out);
-					mVrc6->mChannels[i].mOut = out;
-				}
+			out = mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mPhase * mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mVol;
+			out += mVrc6->mChannels[KonamiVrc6::CHN_PULSE2].mPhase * mVrc6->mChannels[KonamiVrc6::CHN_PULSE2].mVol;
+			out = (uint16_t)(pulseTable[out] * 6460.0f);
+			if (out != mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mOut) {
+				mSynth[mVrc6Synth].update(k, out);
+				mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mOut = out;
+			}
+			out = mVrc6->mChannels[KonamiVrc6::CHN_SAW].mPhase * mVrc6->mChannels[KonamiVrc6::CHN_SAW].mVol;
+			out = (out > 30) ? 30 : out;
+			out = (uint16_t)(pulseTable[out] * 6460.0f);
+			if (out != mVrc6->mChannels[KonamiVrc6::CHN_SAW].mOut) {
+				mSynth[mVrc6Synth + 1].update(k, out);
+				mVrc6->mChannels[KonamiVrc6::CHN_SAW].mOut = out;
 			}
 		}
 
@@ -369,7 +374,7 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 				out = (-out) & *(mSunsoft5B->mChannels[i].mCurVol);
 
 				if (out != mSunsoft5B->mChannels[i].mOut) {
-					mSynth[2 + i].update(k, out);
+					mSynth[mSunsoft5BSynth + i].update(k, out);
 					mSunsoft5B->mChannels[i].mOut = out;
 				}
 			}
