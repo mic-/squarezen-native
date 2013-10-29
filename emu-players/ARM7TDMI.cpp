@@ -22,6 +22,15 @@
 #include "NativeLogger.h"
 #include "ARM7TDMI.h"
 
+#define THUMB_GET_RS_RD(instr, Rs, Rd) \
+	Rd = (instr) & 7; \
+	Rs = (instr >> 3) & 7
+
+#define THUMB_UPDATE_NZ(val32) \
+	mCpsr |= val32 & FLAG_N; \
+	mCpsr |= val32 ? 0 : FLAG_Z
+
+
 static const ARM7TDMI::InstructionDecoder ARM_DECODER_TABLE[] =
 {
 
@@ -30,6 +39,7 @@ static const ARM7TDMI::InstructionDecoder ARM_DECODER_TABLE[] =
 static const ARM7TDMI::InstructionDecoder THUMB_DECODER_TABLE[] =
 {
 	&ARM7TDMI::ThumbType00,
+	&ARM7TDMI::ThumbType01,
 };
 
 
@@ -63,7 +73,7 @@ void ARM7TDMI::Run(uint32_t maxCycles)
 {
 	while (mCycles < maxCycles) {
 		uint32_t instruction;
-		if (mCpsr & 0x20) {
+		if (mCpsr & ARM7TDMI::FLAG_T) {
 			instruction = mMemory->ReadHalfWord(mRegs[15]);
 			mRegs[15] += 2;
 			DecodeThumb(instruction);
@@ -81,27 +91,39 @@ void ARM7TDMI::ThumbType00(uint32_t instruction)
 {
 	// LSL Rd,Rs,#Offset5
 
-	/*thumb_type_00:
-		mov 		esi,eax
-		mov 		ecx,eax
-		mov 		edi,eax
-		ADD_CYCLES 	1
-		and 		esi,38h
-		and 		ecx,7C0h
-		shr 		esi,1
-		and 		edi,7
-		mov 		esi,[r0+esi]
-		shr 		ecx,6
-		jz 		thumb_type_00_zero
-		shl 		esi,cl
-		T_UPDATE_C_FORCE
-		T_UPDATE_NZ
-		mov 		[r0+edi*4],esi
-		T_RETURN
-	thumb_type_00_zero:
-		and 		esi,esi
-		T_UPDATE_NZ
-		mov 		[r0+edi*4],esi
-		;ADD_CYCLES 	1
-		T_RETURN*/
+	uint32_t rs, rd, shamt;
+
+	THUMB_GET_RS_RD(instruction, rs, rd);
+	shamt = (instruction >> 6) & 0x1F;
+
+	mCpsr &= ~(FLAG_C | FLAG_Z | FLAG_N);
+	mRegs[rd] = mRegs[rs] << shamt;
+	mCpsr |= (mRegs[rs] & (1 << (32 - shamt))) ? FLAG_C : 0;
+	THUMB_UPDATE_NZ(mRegs[rd]);
+	mCycles++;
 }
+
+
+void ARM7TDMI::ThumbType01(uint32_t instruction)
+{
+	// LSR Rd,Rs,#Offset5
+
+	uint32_t rs, rd, shamt;
+
+	THUMB_GET_RS_RD(instruction, rs, rd);
+	shamt = (instruction >> 6) & 0x1F;
+
+	mCpsr &= ~(FLAG_C | FLAG_Z | FLAG_N);
+	if (shamt) {
+		mRegs[rd] = mRegs[rs] >> shamt;
+		mCpsr |= (mRegs[rs] & (1 << (shamt - 1))) ? FLAG_C : 0;
+		THUMB_UPDATE_NZ(mRegs[rd]);
+	} else {
+		mRegs[rd] = 0;
+		mCpsr |= (mRegs[rs] & (1 << 31)) ? FLAG_C : 0;
+		mCpsr |= FLAG_Z;
+	}
+	mCycles++;
+}
+
+
