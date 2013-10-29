@@ -31,16 +31,27 @@ public:
 	void Run(uint32_t maxCycles);
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
+	enum {
+		FLAG_T = 0x20,
+		FLAG_F = 0x40,
+		FLAG_I = 0x80,
+		FLAG_Q = (1<<27),
+		FLAG_V = (1<<28),
+		FLAG_C = (1<<29),
+		FLAG_Z = (1<<30),
+		FLAG_N = (1<<31),
+	};
+
 	uint32_t mCycles;
 	MemoryMapper *mMemory;
-	int32_t mRegs[16];
-	int32_t mRegsUsr[16];
-	int32_t mRegsFiq[16];
-	int32_t mRegsSvc[16];
-	int32_t mRegsAbt[16];
-	int32_t mRegsIrq[16];
-	int32_t mRegsUnd[16];
-	int32_t *mRegBank;
+	uint32_t mRegs[16];
+	uint32_t mRegsUsr[16];
+	uint32_t mRegsFiq[16];
+	uint32_t mRegsSvc[16];
+	uint32_t mRegsAbt[16];
+	uint32_t mRegsIrq[16];
+	uint32_t mRegsUnd[16];
+	uint32_t *mRegBank;
 
 	uint32_t 	mCpsr;
 	uint32_t 	mSpsrFiq, mSpsrSvc, mSpsrAbt, mSpsrIrq, mSpsrUnd;
@@ -54,6 +65,7 @@ public:
 	typedef void (ARM7TDMI::*InstructionDecoder)(uint32_t);
 
 	void ThumbType00(uint32_t instruction);
+	void ThumbType01(uint32_t instruction);
 
 private:
 	inline void DecodeARM(uint32_t instruction);
