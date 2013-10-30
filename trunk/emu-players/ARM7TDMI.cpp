@@ -30,6 +30,10 @@
 	mCpsr |= val32 & FLAG_N; \
 	mCpsr |= val32 ? 0 : FLAG_Z
 
+/* ToDo: finish
+#define THUMB_ADD(Rd, op1, op2) \
+	mRegs[Rd] = op1 + op2
+*/
 
 static const ARM7TDMI::InstructionDecoder ARM_DECODER_TABLE[] =
 {
@@ -78,6 +82,7 @@ inline void ARM7TDMI::DecodeThumb(uint32_t instruction)
 {
 	// Decoder bits:
 	// d15 d14 d13 d12
+
 	uint32_t decoderBits = (instruction >> 12) & 0xF;
 	(this->*THUMB_DECODER_TABLE[decoderBits])(instruction);
 }
@@ -138,8 +143,46 @@ void ARM7TDMI::ThumbType00(uint32_t instruction)
 
 void ARM7TDMI::ThumbType01(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rs, rd, shamt;
+
+	THUMB_GET_RS_RD(instruction, rs, rd);
+
+	if (!(instruction & (1 << 11))) {
+
+		// ASR Rd,Rs,#Offset5
+
+		shamt = (instruction >> 6) & 0x1F;
+		mCpsr &= ~(FLAG_C | FLAG_Z | FLAG_N);
+		if (shamt) {
+			*(int32_t*)&mRegs[rd] = (int32_t)mRegs[rs] >> shamt;
+			mCpsr |= (mRegs[rs] & (1 << (shamt - 1))) ? FLAG_C : 0;
+			THUMB_UPDATE_NZ(mRegs[rd]);
+		} else {
+			*(int32_t*)&mRegs[rd] = (int32_t)mRegs[rs] >> 31;
+			mCpsr |= (mRegs[rd]) ? FLAG_C : 0;
+			THUMB_UPDATE_NZ(mRegs[rd]);
+		}
+
+	} else {
+		uint32_t rnImm3 = (instruction >> 6) & 7;
+		switch ((instruction >> 9) & 3) {
+		case 0:
+			// ADD Rd,Rs,Rn
+			break;
+		case 1:
+			// SUB Rd,Rs,#imm3
+			break;
+		case 2:
+			// ADD Rd,Rs,Rn
+			break;
+		case 3:
+			// SUBB Rd,Rs,#imm3
+			break;
+		}
+	}
+	mCycles++;
 }
+
 
 void ARM7TDMI::ThumbType02(uint32_t instruction)
 {
