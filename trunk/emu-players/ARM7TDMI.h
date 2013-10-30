@@ -66,6 +66,20 @@ public:
 
 	void ThumbType00(uint32_t instruction);
 	void ThumbType01(uint32_t instruction);
+	void ThumbType02(uint32_t instruction);
+	void ThumbType03(uint32_t instruction);
+	void ThumbType04(uint32_t instruction);
+	void ThumbType05(uint32_t instruction);
+	void ThumbType06(uint32_t instruction);
+	void ThumbType07(uint32_t instruction);
+	void ThumbType08(uint32_t instruction);
+	void ThumbType09(uint32_t instruction);
+	void ThumbType0A(uint32_t instruction);
+	void ThumbType0B(uint32_t instruction);
+	void ThumbType0C(uint32_t instruction);
+	void ThumbType0D(uint32_t instruction);
+	void ThumbType0E(uint32_t instruction);
+	void ThumbType0F(uint32_t instruction);
 
 private:
 	inline void DecodeARM(uint32_t instruction);
