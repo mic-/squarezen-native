@@ -36,10 +36,24 @@ static const ARM7TDMI::InstructionDecoder ARM_DECODER_TABLE[] =
 
 };
 
-static const ARM7TDMI::InstructionDecoder THUMB_DECODER_TABLE[] =
+static const ARM7TDMI::InstructionDecoder THUMB_DECODER_TABLE[16] =
 {
 	&ARM7TDMI::ThumbType00,
 	&ARM7TDMI::ThumbType01,
+	&ARM7TDMI::ThumbType02,
+	&ARM7TDMI::ThumbType03,
+	&ARM7TDMI::ThumbType04,
+	&ARM7TDMI::ThumbType05,
+	&ARM7TDMI::ThumbType06,
+	&ARM7TDMI::ThumbType07,
+	&ARM7TDMI::ThumbType08,
+	&ARM7TDMI::ThumbType09,
+	&ARM7TDMI::ThumbType0A,
+	&ARM7TDMI::ThumbType0B,
+	&ARM7TDMI::ThumbType0C,
+	&ARM7TDMI::ThumbType0D,
+	&ARM7TDMI::ThumbType0E,
+	&ARM7TDMI::ThumbType0F,
 };
 
 
@@ -63,8 +77,8 @@ inline void ARM7TDMI::DecodeARM(uint32_t instruction)
 inline void ARM7TDMI::DecodeThumb(uint32_t instruction)
 {
 	// Decoder bits:
-	// d15 d14 d13 d12 d11
-	uint32_t decoderBits = (instruction >> 11) & 0x1F;
+	// d15 d14 d13 d12
+	uint32_t decoderBits = (instruction >> 12) & 0xF;
 	(this->*THUMB_DECODER_TABLE[decoderBits])(instruction);
 }
 
@@ -89,41 +103,111 @@ void ARM7TDMI::Run(uint32_t maxCycles)
 
 void ARM7TDMI::ThumbType00(uint32_t instruction)
 {
-	// LSL Rd,Rs,#Offset5
-
 	uint32_t rs, rd, shamt;
 
 	THUMB_GET_RS_RD(instruction, rs, rd);
 	shamt = (instruction >> 6) & 0x1F;
 
-	mCpsr &= ~(FLAG_C | FLAG_Z | FLAG_N);
-	mRegs[rd] = mRegs[rs] << shamt;
-	mCpsr |= (mRegs[rs] & (1 << (32 - shamt))) ? FLAG_C : 0;
-	THUMB_UPDATE_NZ(mRegs[rd]);
+	if (!(instruction & (1 << 11))) {
+
+		// LSL Rd,Rs,#Offset5
+
+		mCpsr &= ~(FLAG_C | FLAG_Z | FLAG_N);
+		mRegs[rd] = mRegs[rs] << shamt;
+		mCpsr |= (mRegs[rs] & (1 << (32 - shamt))) ? FLAG_C : 0;
+		THUMB_UPDATE_NZ(mRegs[rd]);
+
+	} else {
+
+		// LSR Rd,Rs,#Offset5
+
+		mCpsr &= ~(FLAG_C | FLAG_Z | FLAG_N);
+		if (shamt) {
+			mRegs[rd] = mRegs[rs] >> shamt;
+			mCpsr |= (mRegs[rs] & (1 << (shamt - 1))) ? FLAG_C : 0;
+			THUMB_UPDATE_NZ(mRegs[rd]);
+		} else {
+			mRegs[rd] = 0;
+			mCpsr |= (mRegs[rs] & (1 << 31)) ? FLAG_C : 0;
+			mCpsr |= FLAG_Z;
+		}
+	}
 	mCycles++;
 }
 
 
 void ARM7TDMI::ThumbType01(uint32_t instruction)
 {
-	// LSR Rd,Rs,#Offset5
-
-	uint32_t rs, rd, shamt;
-
-	THUMB_GET_RS_RD(instruction, rs, rd);
-	shamt = (instruction >> 6) & 0x1F;
-
-	mCpsr &= ~(FLAG_C | FLAG_Z | FLAG_N);
-	if (shamt) {
-		mRegs[rd] = mRegs[rs] >> shamt;
-		mCpsr |= (mRegs[rs] & (1 << (shamt - 1))) ? FLAG_C : 0;
-		THUMB_UPDATE_NZ(mRegs[rd]);
-	} else {
-		mRegs[rd] = 0;
-		mCpsr |= (mRegs[rs] & (1 << 31)) ? FLAG_C : 0;
-		mCpsr |= FLAG_Z;
-	}
-	mCycles++;
+	// ToDo: implement
 }
 
+void ARM7TDMI::ThumbType02(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType03(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType04(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType05(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType06(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType07(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType08(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType09(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType0A(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType0B(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType0C(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType0D(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType0E(uint32_t instruction)
+{
+	// ToDo: implement
+}
+
+void ARM7TDMI::ThumbType0F(uint32_t instruction)
+{
+	// ToDo: implement
+}
 
