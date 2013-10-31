@@ -26,6 +26,11 @@
 	Rd = (instr) & 7; \
 	Rs = (instr >> 3) & 7
 
+#define THUMB_GET_RO_RB_RD(instr, Ro, Rb, Rd) \
+	Rd = (instr) & 7; \
+	Rb = (instr >> 3) & 7; \
+	Ro = (instr >> 6) & 7
+
 #define THUMB_GET_RD_IMM8(instr, Rd, imm8) \
 	Rd = (instr >> 8) & 7; \
 	imm8 = (instr) & 0xFF
@@ -48,8 +53,8 @@ static const ARM7TDMI::InstructionDecoder THUMB_DECODER_TABLE[16] =
 {
 	&ARM7TDMI::ThumbType00,
 	&ARM7TDMI::ThumbType01,
-	&ARM7TDMI::ThumbType02,
-	&ARM7TDMI::ThumbType03,
+	&ARM7TDMI::ThumbType0203,
+	&ARM7TDMI::ThumbType0203,
 	&ARM7TDMI::ThumbType04,
 	&ARM7TDMI::ThumbType05,
 	&ARM7TDMI::ThumbType06,
@@ -181,6 +186,7 @@ void ARM7TDMI::AluMVN(uint32_t rd, uint32_t operand1, uint32_t operand2, bool up
 
 void ARM7TDMI::AluNEG(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
 {
+	AluRSB(rd, operand2, 0, updateFlags);
 }
 
 void ARM7TDMI::AluORR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
@@ -317,7 +323,7 @@ void ARM7TDMI::ThumbType01(uint32_t instruction)
 }
 
 
-void ARM7TDMI::ThumbType02(uint32_t instruction)
+void ARM7TDMI::ThumbType0203(uint32_t instruction)
 {
 	uint32_t rd, imm;
 
@@ -343,35 +349,41 @@ void ARM7TDMI::ThumbType02(uint32_t instruction)
 	}
 }
 
-void ARM7TDMI::ThumbType03(uint32_t instruction)
-{
-	// Same as ThumbType02
-}
 
 void ARM7TDMI::ThumbType04(uint32_t instruction)
 {
 	uint32_t rd, rs, imm;
 
 	if (instruction & (1 << 11)) {
+
 		// LDR Rd,[PC, #WordOffset8]
 		THUMB_GET_RD_IMM8(instruction, rd, imm);
 		uint32_t addr = (mRegs[15] & 0xFFFFFFFD) + (imm << 2);
 		mRegs[rd] = mMemory->ReadWord(addr);
 
 	} else if (instruction & (1 << 10)) {
+
 		// Hi register ops
+		THUMB_GET_RS_RD(instruction, rs, rd);
+		uint32_t h1 = (instruction >> 4) & 8;
+		uint32_t h2 = (instruction >> 3) & 8;
+
 		switch ((instruction >> 8) & 3) {
 		case 0:
 			// ADD Rd, Rs
+			AluADD(rd + h1, mRegs[rd + h1], mRegs[rs + h2]);
 			break;
 		case 1:
 			// CMP Rd, Rs
+			AluCMP(rd + h1, mRegs[rd + h1], mRegs[rs + h2], true);
 			break;
 		case 2:
 			// MOV Rd, Rs
+			mRegs[rd + h1] = mRegs[rs + h2];
 			break;
 		case 3:
 			// BX Rs
+			// ToDo: implement
 			break;
 		}
 
@@ -385,7 +397,48 @@ void ARM7TDMI::ThumbType04(uint32_t instruction)
 
 void ARM7TDMI::ThumbType05(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rd, rb, ro;
+
+	THUMB_GET_RO_RB_RD(instruction, ro, rb, rd);
+
+	switch ((instruction >> 9) & 7) {
+	case 0:
+		// STR Rd,[Rb,Ro]
+		mMemory->WriteWord(mRegs[rb] + mRegs[ro], mRegs[rd]);
+		// ToDo: add cycles
+		break;
+	case 1:
+		// STRH Rd,[Rb,Ro]
+		mMemory->WriteHalfWord(mRegs[rb] + mRegs[ro], mRegs[rd]);
+		// ToDo: add cycles
+		break;
+	case 2:
+		// STRB Rd,[Rb,Ro]
+		mMemory->WriteByte(mRegs[rb] + mRegs[ro], mRegs[rd]);
+		// ToDo: add cycles
+		break;
+	case 3:
+		// LDSB Rd,[Rb,Ro]
+		break;
+	case 4:
+		// LDR Rd,[Rb,Ro]
+		mRegs[rd] = mMemory->ReadWord(mRegs[rb] + mRegs[ro]);
+		// ToDo: add cycles
+		break;
+	case 5:
+		// LDRH Rd,[Rb,Ro]
+		mRegs[rd] = mMemory->ReadHalfWord(mRegs[rb] + mRegs[ro]);
+		// ToDo: add cycles
+		break;
+	case 6:
+		// LDRB Rd,[Rb,Ro]
+		mRegs[rd] = mMemory->ReadByte(mRegs[rb] + mRegs[ro]);
+		// ToDo: add cycles
+		break;
+	case 7:
+		// LDSH Rd,[Rb,Ro]
+		break;
+	}
 }
 
 void ARM7TDMI::ThumbType06(uint32_t instruction)

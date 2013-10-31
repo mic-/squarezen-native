@@ -90,8 +90,7 @@ public:
 
 	void ThumbType00(uint32_t instruction);
 	void ThumbType01(uint32_t instruction);
-	void ThumbType02(uint32_t instruction);
-	void ThumbType03(uint32_t instruction);
+	void ThumbType0203(uint32_t instruction);
 	void ThumbType04(uint32_t instruction);
 	void ThumbType05(uint32_t instruction);
 	void ThumbType06(uint32_t instruction);
