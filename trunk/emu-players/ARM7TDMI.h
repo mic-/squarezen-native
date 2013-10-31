@@ -63,6 +63,30 @@ public:
 	uint32_t	*mCurFlags;
 
 	typedef void (ARM7TDMI::*InstructionDecoder)(uint32_t);
+	typedef void (ARM7TDMI::*AluOp)(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags);
+
+	void AluADC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluADD(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluAND(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluASR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluBIC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluCMN(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluCMP(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluEOR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluLSL(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluLSR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluMOV(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluMUL(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluMVN(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluNEG(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluORR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluROR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluRSB(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluRSC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluSBC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluSUB(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluTEQ(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
+	void AluTST(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags = false);
 
 	void ThumbType00(uint32_t instruction);
 	void ThumbType01(uint32_t instruction);
@@ -85,6 +109,8 @@ private:
 	inline void DecodeARM(uint32_t instruction);
 	inline void DecodeThumb(uint32_t instruction);
 
+	AluOp armDataProcOps[16];
+	AluOp thumbAluOps[16];
 };
 
 #endif	/* ARM7TDMI_H_ */
