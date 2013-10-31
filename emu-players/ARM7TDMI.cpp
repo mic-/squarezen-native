@@ -443,22 +443,74 @@ void ARM7TDMI::ThumbType05(uint32_t instruction)
 
 void ARM7TDMI::ThumbType06(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rd, rb, imm;
+
+	THUMB_GET_RS_RD(instruction, rb, rd);
+	imm = (instruction >> 6) & 0x1F;
+
+	if (instruction & (1 << 11)) {
+		// LDR Rd,[Rb,#imm5]
+		mRegs[rd] = mMemory->ReadWord(mRegs[rb] + imm * 4);
+		// ToDo: add cycles
+	} else {
+		// STR Rd,[Rb,#imm5]
+		mMemory->WriteWord(mRegs[rb] + imm * 4, mRegs[rd]);
+		// ToDo: add cycles
+	}
 }
 
 void ARM7TDMI::ThumbType07(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rd, rb, imm;
+
+	THUMB_GET_RS_RD(instruction, rb, rd);
+	imm = (instruction >> 6) & 0x1F;
+
+	if (instruction & (1 << 11)) {
+		// LDRB Rd,[Rb,#imm5]
+		mRegs[rd] = mMemory->ReadByte(mRegs[rb] + imm);
+		// ToDo: add cycles
+	} else {
+		// STRB Rd,[Rb,#imm5]
+		mMemory->WriteByte(mRegs[rb] + imm, mRegs[rd]);
+		// ToDo: add cycles
+	}
 }
 
 void ARM7TDMI::ThumbType08(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rd, rb, imm;
+
+	THUMB_GET_RS_RD(instruction, rb, rd);
+	imm = (instruction >> 6) & 0x1F;
+
+	if (instruction & (1 << 11)) {
+		// LDRH Rd,[Rb,#imm5]
+		mRegs[rd] = mMemory->ReadHalfWord(mRegs[rb] + imm * 2);
+		// ToDo: add cycles
+	} else {
+		// STRH Rd,[Rb,#imm5]
+		mMemory->WriteHalfWord(mRegs[rb] + imm * 2, mRegs[rd]);
+		// ToDo: add cycles
+	}
 }
 
 void ARM7TDMI::ThumbType09(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rd, imm;
+
+	rd = (instruction >> 8) & 7;
+	imm = instruction & 0xFF;
+
+	if (instruction & (1 << 11)) {
+		// LDR Rd,[SP,#imm8]
+		mRegs[rd] = mMemory->ReadWord(mRegs[13] + imm * 4);
+		// ToDo: add cycles
+	} else {
+		// STR Rd,[SP,#imm8]
+		mMemory->WriteWord(mRegs[13] + imm * 4, mRegs[rd]);
+		// ToDo: add cycles
+	}
 }
 
 void ARM7TDMI::ThumbType0A(uint32_t instruction)
