@@ -26,6 +26,10 @@
 	Rd = (instr) & 7; \
 	Rs = (instr >> 3) & 7
 
+#define THUMB_GET_RD_IMM8(instr, Rd, imm8) \
+	Rd = (instr >> 8) & 7; \
+	imm8 = (instr) & 0xFF
+
 #define THUMB_UPDATE_NZ(val32) \
 	mCpsr |= val32 & FLAG_N; \
 	mCpsr |= val32 ? 0 : FLAG_Z
@@ -64,6 +68,40 @@ static const ARM7TDMI::InstructionDecoder THUMB_DECODER_TABLE[16] =
 void ARM7TDMI::Reset()
 {
 	// ToDo: implement
+
+	armDataProcOps[0x00] = &ARM7TDMI::AluAND;
+	armDataProcOps[0x01] = &ARM7TDMI::AluEOR;
+	armDataProcOps[0x02] = &ARM7TDMI::AluSUB;
+	armDataProcOps[0x03] = &ARM7TDMI::AluRSB;
+	armDataProcOps[0x04] = &ARM7TDMI::AluADD;
+	armDataProcOps[0x05] = &ARM7TDMI::AluADC;
+	armDataProcOps[0x06] = &ARM7TDMI::AluSBC;
+	armDataProcOps[0x07] = &ARM7TDMI::AluRSC;
+	armDataProcOps[0x08] = &ARM7TDMI::AluTST;
+	armDataProcOps[0x09] = &ARM7TDMI::AluTEQ;
+	armDataProcOps[0x0A] = &ARM7TDMI::AluCMP;
+	armDataProcOps[0x0B] = &ARM7TDMI::AluCMN;
+	armDataProcOps[0x0C] = &ARM7TDMI::AluORR;
+	//armDataProcOps[0x0D] = &ARM7TDMI::AluMOV;
+	armDataProcOps[0x0E] = &ARM7TDMI::AluBIC;
+	armDataProcOps[0x0F] = &ARM7TDMI::AluMVN;
+
+	thumbAluOps[0x00] = &ARM7TDMI::AluAND;
+	thumbAluOps[0x01] = &ARM7TDMI::AluEOR;
+	thumbAluOps[0x02] = &ARM7TDMI::AluLSL;
+	thumbAluOps[0x03] = &ARM7TDMI::AluLSR;
+	thumbAluOps[0x04] = &ARM7TDMI::AluASR;
+	thumbAluOps[0x05] = &ARM7TDMI::AluADC;
+	thumbAluOps[0x06] = &ARM7TDMI::AluSBC;
+	thumbAluOps[0x07] = &ARM7TDMI::AluROR;
+	thumbAluOps[0x08] = &ARM7TDMI::AluTST;
+	thumbAluOps[0x09] = &ARM7TDMI::AluNEG;
+	thumbAluOps[0x0A] = &ARM7TDMI::AluCMP;
+	thumbAluOps[0x0B] = &ARM7TDMI::AluCMN;
+	thumbAluOps[0x0C] = &ARM7TDMI::AluORR;
+	thumbAluOps[0x0D] = &ARM7TDMI::AluMUL;
+	thumbAluOps[0x0E] = &ARM7TDMI::AluBIC;
+	thumbAluOps[0x0F] = &ARM7TDMI::AluMVN;
 }
 
 
@@ -86,6 +124,97 @@ inline void ARM7TDMI::DecodeThumb(uint32_t instruction)
 	uint32_t decoderBits = (instruction >> 12) & 0xF;
 	(this->*THUMB_DECODER_TABLE[decoderBits])(instruction);
 }
+
+
+
+void ARM7TDMI::AluADC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluADD(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluAND(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluASR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluBIC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluCMN(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluCMP(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluEOR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluLSL(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluLSR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluMOV(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluMUL(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluMVN(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluNEG(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluORR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluROR(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluRSB(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluRSC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluSBC(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluSUB(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluTEQ(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
+void ARM7TDMI::AluTST(uint32_t rd, uint32_t operand1, uint32_t operand2, bool updateFlags)
+{
+}
+
 
 
 void ARM7TDMI::Run(uint32_t maxCycles)
@@ -168,15 +297,19 @@ void ARM7TDMI::ThumbType01(uint32_t instruction)
 		switch ((instruction >> 9) & 3) {
 		case 0:
 			// ADD Rd,Rs,Rn
+			AluADD(rd, mRegs[rs], mRegs[rnImm3], true);
 			break;
 		case 1:
-			// SUB Rd,Rs,#imm3
+			// SUB Rd,Rs,Rn
+			AluSUB(rd, mRegs[rs], mRegs[rnImm3], true);
 			break;
 		case 2:
-			// ADD Rd,Rs,Rn
+			// ADD Rd,Rs,#imm3
+			AluADD(rd, mRegs[rs], rnImm3, true);
 			break;
 		case 3:
-			// SUBB Rd,Rs,#imm3
+			// SUB Rd,Rs,#imm3
+			AluSUB(rd, mRegs[rs], rnImm3, true);
 			break;
 		}
 	}
@@ -186,17 +319,68 @@ void ARM7TDMI::ThumbType01(uint32_t instruction)
 
 void ARM7TDMI::ThumbType02(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rd, imm;
+
+	THUMB_GET_RD_IMM8(instruction, rd, imm);
+
+	switch ((instruction >> 11) & 3) {
+	case 0:
+		// MOV Rd,#Offset8
+		//AluMOV(rd, mRegs[rd], imm, true);
+		break;
+	case 1:
+		// CMP Rd,#Offset8
+		AluCMP(rd, mRegs[rd], imm, true);
+		break;
+	case 2:
+		// ADD Rd,#Offset8
+		AluADD(rd, mRegs[rd], imm, true);
+		break;
+	case 3:
+		// SUB Rd,#Offset8
+		AluSUB(rd, mRegs[rd], imm, true);
+		break;
+	}
 }
 
 void ARM7TDMI::ThumbType03(uint32_t instruction)
 {
-	// ToDo: implement
+	// Same as ThumbType02
 }
 
 void ARM7TDMI::ThumbType04(uint32_t instruction)
 {
-	// ToDo: implement
+	uint32_t rd, rs, imm;
+
+	if (instruction & (1 << 11)) {
+		// LDR Rd,[PC, #WordOffset8]
+		THUMB_GET_RD_IMM8(instruction, rd, imm);
+		uint32_t addr = (mRegs[15] & 0xFFFFFFFD) + (imm << 2);
+		mRegs[rd] = mMemory->ReadWord(addr);
+
+	} else if (instruction & (1 << 10)) {
+		// Hi register ops
+		switch ((instruction >> 8) & 3) {
+		case 0:
+			// ADD Rd, Rs
+			break;
+		case 1:
+			// CMP Rd, Rs
+			break;
+		case 2:
+			// MOV Rd, Rs
+			break;
+		case 3:
+			// BX Rs
+			break;
+		}
+
+	} else {
+		// ALU operations
+		uint32_t rs, rd;
+		THUMB_GET_RS_RD(instruction, rs, rd);
+		(this->*thumbAluOps[(instruction >> 6) & 0x0F])(rd, mRegs[rd], mRegs[rs], true);
+	}
 }
 
 void ARM7TDMI::ThumbType05(uint32_t instruction)
