@@ -112,6 +112,7 @@ public:
 	Emu2A03SweepUnit mSU;
 	Emu2A03 *mChip;
 	int16_t mOut;
+	int16_t mDacOut;
 	uint16_t mWaveStep;
 	uint16_t mOutputMask;
 	uint16_t mSampleAddr, mSampleLen;
