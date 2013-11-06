@@ -188,6 +188,7 @@ void Emu2A03Channel::Reset()
 	mSampleLen = 0;
 	mSample = 0;
 	mSampleBits = 0;
+	mDacOut = 0;
 }
 
 
@@ -231,14 +232,13 @@ void Emu2A03Channel::Step()
 			if (mPos >= mPeriod) {
 				mPos = 0;
 
-				mOutputMask = 0xFFFF;
-
 				if (!mSampleBits) {
 					// Load another sample byte
 					if (mWaveStep < mSampleLen) {
 						mSample = mChip->mMemory->ReadByte(((mSampleAddr + mWaveStep) & 0x7FFF) | 0x8000);
 						mWaveStep++;
 						mSampleBits = 8;
+						mOutputMask = 0xFFFF;
 					}
 					if (mWaveStep >= mSampleLen) {
 						if (mChip->mRegs[Emu2A03::R_DMC_PER_LOOP] & 0x40) {
@@ -257,6 +257,8 @@ void Emu2A03Channel::Step()
 					}
 					mSample >>= 1;
 					mSampleBits--;
+
+					mDacOut = mDuty & mOutputMask;
 
 					mVol = mDuty >> 3;
 				}
@@ -328,6 +330,9 @@ void Emu2A03Channel::Write(uint32_t addr, uint8_t val)
 		mDuty = val & 0x7F;
 		mPhase = 1;
 		mVol = mDuty >> 3;
+		if (mOutputMask) {
+			mDacOut = mDuty;
+		}
 		break;
 
 	default:
