@@ -22,14 +22,15 @@
 #define ARM7TDMI_H_
 
 #include <stdint.h>
+#include "CpuBase.h"
 #include "MemoryMapper.h"
 
-class ARM7TDMI
+class ARM7TDMI : public CpuBase
 {
 public:
-	void Reset();
-	void Run(uint32_t maxCycles);
-	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+	virtual void Reset();
+	virtual void Run(uint32_t maxCycles);
+	//void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
 	enum {
 		FLAG_T = 0x20,
@@ -43,7 +44,6 @@ public:
 	};
 
 	uint32_t mCycles;
-	MemoryMapper *mMemory;
 	uint32_t mRegs[16];
 	uint32_t mRegsUsr[16];
 	uint32_t mRegsFiq[16];

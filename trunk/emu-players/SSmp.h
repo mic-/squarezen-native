@@ -23,14 +23,14 @@
 
 #include <string>
 #include <stdint.h>
+#include "CpuBase.h"
 #include "MemoryMapper.h"
 
-class SSmp
+class SSmp : public CpuBase
 {
 public:
-	void Reset();
-	void Run(uint32_t maxCycles);
-	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+	virtual void Reset();
+	virtual void Run(uint32_t maxCycles);
 
 	typedef struct {
 		uint8_t opcode;
@@ -81,7 +81,6 @@ public:
 	} mRegs;
 
 	uint32_t mCycles;
-	MemoryMapper *mMemory;
 	bool mHalted;
 };
 

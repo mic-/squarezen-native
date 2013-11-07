@@ -22,15 +22,15 @@
 #define Z80_H_
 
 #include <stdint.h>
+#include "CpuBase.h"
 #include "MemoryMapper.h"
 
-class Z80
+class Z80 : public CpuBase
 {
 public:
 	Z80();
-	void Reset();
-	void Run(uint32_t maxCycles);
-	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+	virtual void Reset();
+	virtual void Run(uint32_t maxCycles);
 
 	void Rst(uint8_t vector);
 
@@ -57,7 +57,6 @@ public:
 	uint32_t mCycles;
 
 private:
-	MemoryMapper *mMemory;
 };
 
 #endif	/* Z80_H_ */
