@@ -1,8 +1,4 @@
 /*
- * M68000.h
- *
- *  Created on: Aug 30, 2013
- *
  * Copyright 2013 Mic
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,36 +14,22 @@
  * limitations under the License.
  */
 
-#ifndef M68000_H_
-#define M68000_H_
+#define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "CpuBase"
 
-#include <stdint.h>
+#include <string>
+#include <stdio.h>
+#include "NativeLogger.h"
 #include "CpuBase.h"
-#include "MemoryMapper.h"
 
-class M68000 : public CpuBase
+CpuBase::CpuBase()
+	: mMemory(NULL)
 {
-public:
-	virtual void Reset();
-	virtual void Run(uint32_t maxCycles);
 
-	enum {
-		FLAG_C = 0x01,
-		FLAG_V = 0x02,
-		FLAG_Z = 0x04,
-		FLAG_N = 0x08,
-		FLAG_X = 0x10,
-	};
+}
 
-	struct {
-		uint32_t D[8];
-		uint32_t A[8];
-		uint32_t PC;
-		uint8_t CCR;
-	} mRegs;
+CpuBase::CpuBase(MemoryMapper *mapper)
+	: mMemory(mapper)
+{
 
-	uint32_t mCycles;
-private:
-};
-
-#endif
+}

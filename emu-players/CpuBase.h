@@ -1,7 +1,7 @@
 /*
- * M68000.h
+ * CpuBase.h
  *
- *  Created on: Aug 30, 2013
+ *  Created on: Nov 7, 2013
  *
  * Copyright 2013 Mic
  *
@@ -18,36 +18,28 @@
  * limitations under the License.
  */
 
-#ifndef M68000_H_
-#define M68000_H_
+#ifndef CPUBASE_H_
+#define CPUBASE_H_
 
 #include <stdint.h>
-#include "CpuBase.h"
-#include "MemoryMapper.h"
 
-class M68000 : public CpuBase
+class MemoryMapper;
+
+class CpuBase
 {
 public:
-	virtual void Reset();
-	virtual void Run(uint32_t maxCycles);
 
-	enum {
-		FLAG_C = 0x01,
-		FLAG_V = 0x02,
-		FLAG_Z = 0x04,
-		FLAG_N = 0x08,
-		FLAG_X = 0x10,
-	};
+	CpuBase();
+	CpuBase(MemoryMapper *mapper);
 
-	struct {
-		uint32_t D[8];
-		uint32_t A[8];
-		uint32_t PC;
-		uint8_t CCR;
-	} mRegs;
+	virtual ~CpuBase() {}
 
-	uint32_t mCycles;
-private:
+	virtual void Reset() = 0;
+	virtual void Run(uint32_t maxCycles) = 0;
+	virtual void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+
+	MemoryMapper *mMemory;
 };
 
-#endif
+
+#endif /* CPUBASE_H_ */
