@@ -46,7 +46,8 @@ public:
 	uint16_t mVol;
 	uint8_t mMode;
 	uint8_t mToneOff, mNoiseOff;
-	uint8_t mChnIndex;
+	//uint8_t mChnIndex;
+	uint8_t mSfxActive;
 	uint8_t mPhase;
 };
 
@@ -99,17 +100,29 @@ public:
 
 	void SetChip(YmChip *chip) { mChip = chip; }
 	void SetIndex(uint16_t index) { mIndex = index; }
+	void SetYmFormat(uint16_t fmt) { mFormat = fmt; }
 
 	enum {
 		SFX_SID_VOICE = 0,
 		SFX_DIGI_DRUM = 1,
+		SFX_SINUS_SID = 2,
+		SFX_SYNC_BUZZER = 3,
+		SFX_NONE = 100,
+	};
+
+	enum {
+		YM_FORMAT_UNKNOWN = 0,
+		YM_FORMAT_5 = 5,
+		YM_FORMAT_6 = 6,
 	};
 
 	YmChip *mChip;
 	uint32_t mDigiDrumPos, mDigiDrumLen;
 	uint8_t *mDigiDrumSample;
 	uint16_t mIndex;
+	uint16_t mFormat;
 	uint8_t mType;
+	bool mActivated;
 	uint16_t mVol, mVMax;
 };
 

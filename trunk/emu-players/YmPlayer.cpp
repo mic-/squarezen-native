@@ -154,6 +154,7 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 	mYmRegStream = (uint8_t*)mYmData + 0x22;
 
 	i = 0;
+	NLOGD("YmPlayer", "Found %d digidrums", numDigiDrums);
 	while (numDigiDrums) {
 		sampleBytes  = ((uint32_t)mYmRegStream[0]) << 24;
 		sampleBytes |= ((uint32_t)mYmRegStream[1]) << 16;
@@ -175,6 +176,17 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 	while (*mYmRegStream++);		// Skip author name
 	mMetaData.SetComment((char*)mYmRegStream);
 	while (*mYmRegStream++);		// Skip song comment
+
+	if (mYmData[0x02] == '5') {
+		mChip.mSfx[0].SetYmFormat(YmSoundFX::YM_FORMAT_5);
+		mChip.mSfx[1].SetYmFormat(YmSoundFX::YM_FORMAT_5);
+	} else if (mYmData[0x02] == '6') {
+		mChip.mSfx[0].SetYmFormat(YmSoundFX::YM_FORMAT_6);
+		mChip.mSfx[1].SetYmFormat(YmSoundFX::YM_FORMAT_6);
+	} else {
+		mChip.mSfx[0].SetYmFormat(YmSoundFX::YM_FORMAT_UNKNOWN);
+		mChip.mSfx[1].SetYmFormat(YmSoundFX::YM_FORMAT_UNKNOWN);
+	}
 
 	mChip.mEG.mEnvTable  = (uint16_t*)YmChip::YM2149_ENVE_TB;
 	mFrameCycles = 2000000/50;
@@ -260,9 +272,13 @@ MusicPlayer::Result YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		mChip.Step();
 
 		for (i = 0; i < 3; i++) {
-			out = (mChip.mChannels[i].mPhase | mChip.mChannels[i].mToneOff) &
-				  (mChip.mNoise.mOut         | mChip.mChannels[i].mNoiseOff);
-			out = (-out) & *(mChip.mChannels[i].mCurVol);
+			if (mChip.mChannels[i].mSfxActive != YmSoundFX::SFX_DIGI_DRUM) {
+				out = (mChip.mChannels[i].mPhase | mChip.mChannels[i].mToneOff) &
+					  (mChip.mNoise.mOut         | mChip.mChannels[i].mNoiseOff);
+				out = (-out) & *(mChip.mChannels[i].mCurVol);
+			} else {
+				out = *(mChip.mChannels[i].mCurVol);
+			}
 
 			if (out != mChip.mChannels[i].mOut) {
 				mSynth[i].update(k, out);
