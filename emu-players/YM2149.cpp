@@ -16,6 +16,7 @@
 
 #define NLOG_LEVEL_VERBOSE 0
 
+#include "NativeLogger.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
@@ -241,7 +242,8 @@ void YmSoundFX::Step()
 				mVol ^= mVMax;
 			} else if (mType == SFX_DIGI_DRUM) {
 				if (mDigiDrumPos < mDigiDrumLen) {
-					mVol = YmChip::YM2149_VOL_TB[mDigiDrumSample[mDigiDrumPos] & 0x0F];
+					// ToDo: handle different sample formats (4-bit, signed 8-bit)
+					mVol = mDigiDrumSample[mDigiDrumPos] << 3; //YmChip::YM2149_VOL_TB[(mDigiDrumSample[mDigiDrumPos>>1] >> (mDigiDrumPos & 1)*4) & 0x0F];
 					mDigiDrumPos++;
 				}
 			}
@@ -252,33 +254,92 @@ void YmSoundFX::Step()
 
 void YmSoundFX::Write(uint8_t *regs)
 {
-	int i;
+	int i, sidVoice, digiDrum;
 	YmChannel *chn;
 
 	// TODO: Handle SFX #2
 
-	mPeriod = 0;
-	i = regs[1] & 0x30;
-	if (i) {
-		chn = &(mChip->mChannels[i >> 4]);
+	for (i = 0; i < 3; i++) {
+		mChip->mChannels[i].mSfxActive = SFX_NONE;
+	}
 
-		mType = regs[1] >> 6;
-		// TODO: Handle other effects than SID Voice / Digidrum
-		if (mType == SFX_SID_VOICE || mType == SFX_DIGI_DRUM) {
-			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6] >> 5] * (uint32_t)regs[14] * 13) >> 4;
+	if (YM_FORMAT_6 == mFormat) {
+		mType = (regs[1] >> 6) & 3;
+		i = (regs[1] >> 4) & 3;
+		if (i) {
+			chn = &(mChip->mChannels[i - 1]);
 			chn->mCurVol = &mVol;
+			chn->mSfxActive = mType;
 
-			if (mType == SFX_SID_VOICE) {
+			if (SFX_SID_VOICE == mType) {
+				if (!mPeriod || (mVol != 0 && chn->mVol != mVMax)) {
+					mVol = chn->mVol;
+				}
+				mVMax = chn->mVol;
+				mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6] >> 5] * (uint32_t)regs[14] * 13) >> 4;
+				if (regs[1] & 0x40) {
+					// ToDo: does YM6 have a way of saying that the effect should be reset?
+					//mPos = 0;
+				}
+			} else if (SFX_DIGI_DRUM == mType) {
+				if (!mPeriod) {
+					mVol = regs[YmChip::R_LEVEL_A + chn->mIndex] & 0x1F;
+					mDigiDrumSample = mChip->mDigiDrumPtr[mVol];
+					mDigiDrumLen = mChip->mDigiDrumLen[mVol];
+					mVol = mDigiDrumSample[0] << 3; //YmChip::YM2149_VOL_TB[mDigiDrumSample[0] & 0x0F];
+					mDigiDrumPos = 1;
+				}
+				mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6] >> 5] * (uint32_t)regs[14] * 13) >> 4;
+			} else {
+				// ToDo: handle sinus-sid & sync-buzz
+				mPeriod = 0;
+				chn->mSfxActive = SFX_NONE;
+			}
+		} else {
+			mPeriod = 0;
+		}
+
+	} else {
+		sidVoice = regs[1] & 0x30;
+		digiDrum = regs[3] & 0x30;
+
+		if (sidVoice) {
+			chn = &(mChip->mChannels[(sidVoice >> 4) - 1]);
+
+			mType = SFX_SID_VOICE;
+			chn->mCurVol = &mVol;
+			chn->mSfxActive = mType;
+
+			if (!mPeriod || (mVol != 0 && chn->mVol != mVMax)) {
 				mVol = chn->mVol;
-				mVMax = mVol;
-			} else if (mType == SFX_DIGI_DRUM) {
-				mVol = regs[YmChip::R_LEVEL_A + chn->mChnIndex];
-				mVol >>= 4;
+			}
+			mVMax = chn->mVol;
+			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6] >> 5] * (uint32_t)regs[14] * 13) >> 4;
+			if (regs[1] & 0x40) {
+				mPos = 0;
+			}
+
+		} else if (digiDrum) {
+			mType = SFX_DIGI_DRUM;
+			chn = &(mChip->mChannels[(digiDrum >> 4) - 1]);
+			chn->mCurVol = &mVol;
+			chn->mSfxActive = mType;
+
+			if (!mPeriod) {
+				mVol = regs[YmChip::R_LEVEL_A + chn->mIndex] & 0x1F;
+				//mVol >>= 4;
+				NLOGE("YM2149", "Starting digidrum %d on channel %d (volumes: %d, %d, %d)", mVol, digiDrum,
+						regs[YmChip::R_LEVEL_A],regs[YmChip::R_LEVEL_B],regs[YmChip::R_LEVEL_C]);
+				NLOGE("YM2149", "The pointer is %p and the length is %d", mChip->mDigiDrumPtr[mVol], mChip->mDigiDrumLen[mVol]);
 				mDigiDrumSample = mChip->mDigiDrumPtr[mVol];
 				mDigiDrumLen = mChip->mDigiDrumLen[mVol];
-				mVol = YmChip::YM2149_VOL_TB[mDigiDrumSample[0]];
+				mVol = mDigiDrumSample[0] << 3; //YmChip::YM2149_VOL_TB[mDigiDrumSample[0] & 0x0F];
 				mDigiDrumPos = 1;
 			}
+			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6] >> 5] * (uint32_t)regs[14] * 13) >> 4;
+
+		} else {
+			mPeriod = 0;
 		}
 	}
 }
@@ -323,7 +384,7 @@ void YmChip::Step()
 	mEG.Step();
 	mNoise.Step();
 	mSfx[0].Step();
-	mSfx[1].Step();
+	//mSfx[1].Step();
 }
 
 
@@ -335,7 +396,7 @@ void YmChip::Write(uint8_t *regs)
 	mEG.Write(regs);
 	mNoise.Write(regs);
 	mSfx[0].Write(regs);
-	mSfx[1].Write(regs);
+	//mSfx[1].Write(regs);
 }
 
 
