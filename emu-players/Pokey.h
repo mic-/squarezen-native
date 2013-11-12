@@ -23,10 +23,27 @@
 
 #include "Oscillator.h"
 
+class Pokey;
+
+
 class PokeyChannel : public Oscillator
 {
+public:
+	virtual ~PokeyChannel() {}
 
+	virtual void Reset();
+	virtual void Step();
+	virtual void Write(uint32_t addr, uint8_t val);
+
+	void SetChip(Pokey *chip) { mChip = chip; }
+	void SetIndex(uint32_t index) { mIndex = index; }
+
+private:
+	Pokey *mChip;
+	uint32_t mClockPrescaler, mPrescalerStep;
+	uint32_t mIndex;
 };
+
 
 class Pokey
 {
@@ -34,6 +51,13 @@ public:
 	void Reset();
 	void Step();
 	void Write(uint32_t addr, uint8_t val);
+
+	enum
+	{
+		CLOCK_1_79_MHZ = 1789790,
+		CLOCK_64_KHZ = 63921,
+		CLOCK_15_KHZ = 15699,
+	};
 
 	// Register enumerators (zero-based)
 	enum
@@ -84,6 +108,12 @@ public:
 		AUDCTL_POLY_17_BITS = 0x00,
 		AUDCTL_POLY_9_BITS = 0x80,
 	};
+
+	PokeyChannel mChannels[4];
+
+private:
+	friend class PokeyChannel;
+	uint8_t mRegs[16];
 };
 
 #endif /* POKEY_H_ */
