@@ -33,7 +33,57 @@ class Pokey
 public:
 	void Reset();
 	void Step();
-	void Write(uint8_t addr, uint8_t val);
+	void Write(uint32_t addr, uint8_t val);
+
+	// Register enumerators (zero-based)
+	enum
+	{
+		R_AUDF1 = 0x00,
+		R_AUDC1 = 0x01,
+		R_AUDF2 = 0x02,
+		R_AUDC2 = 0x03,
+		R_AUDF3 = 0x04,
+		R_AUDC3 = 0x05,
+		R_AUDF4 = 0x06,
+		R_AUDC4 = 0x07,
+		R_AUDCTL = 0x08,
+	};
+
+	// AUDCTL settings
+	enum
+	{
+		AUDCTL_NORMAL_CLOCK_MASK = 0x01,
+		AUDCTL_NORMAL_CLOCK_64KHZ = 0x00,
+		AUDCTL_NORMAL_CLOCK_15KHZ = 0x01,
+
+		AUDCTL_CHN2_FILTER_MASK = 0x02,
+		AUDCTL_CHN2_FILTER_OFF = 0x00,
+		AUDCTL_CHN2_FILTER_ON = 0x02,
+
+		AUDCTL_CHN1_FILTER_MASK = 0x04,
+		AUDCTL_CHN1_FILTER_OFF = 0x00,
+		AUDCTL_CHN1_FILTER_ON = 0x04,
+
+		AUDCTL_CHN3_4_PAIR_MASK = 0x08,
+		AUDCTL_CHN3_4_SEPARATE = 0x00,
+		AUDCTL_CHN3_4_PAIRED = 0x08,
+
+		AUDCTL_CHN1_2_PAIR_MASK = 0x10,
+		AUDCTL_CHN1_2_SEPARATE = 0x00,
+		AUDCTL_CHN1_2_PAIRED = 0x10,
+
+		AUDCTL_CHN3_CLOCK_MASK = 0x20,
+		AUDCTL_CHN3_CLOCK_64KHZ = 0x00,
+		AUDCTL_CHN3_CLOCK_1_79MHZ = 0x20,
+
+		AUDCTL_CHN1_CLOCK_MASK = 0x40,
+		AUDCTL_CHN1_CLOCK_64KHZ = 0x00,
+		AUDCTL_CHN1_CLOCK_1_79MHZ = 0x40,
+
+		AUDCTL_POLY_BITS_MASK = 0x80,
+		AUDCTL_POLY_17_BITS = 0x00,
+		AUDCTL_POLY_9_BITS = 0x80,
+	};
 };
 
 #endif /* POKEY_H_ */

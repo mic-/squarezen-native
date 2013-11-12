@@ -24,6 +24,7 @@
 #include <stdint.h>
 #include "MemoryMapper.h"
 
+class Pokey;
 
 class SapMapper : public MemoryMapper
 {
@@ -34,6 +35,12 @@ public:
 	virtual void Reset();
 	virtual uint8_t ReadByte(uint32_t addr);
 	virtual void WriteByte(uint32_t addr, uint8_t data);
+
+	void SetApu(Pokey *apu) { mApu = apu; }
+
+private:
+	uint8_t *mRam;
+	Pokey *mApu;
 };
 
 #endif /* SAPMAPPER_H_ */
