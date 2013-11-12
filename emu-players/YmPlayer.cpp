@@ -272,7 +272,7 @@ MusicPlayer::Result YmPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		mChip.Step();
 
 		for (i = 0; i < 3; i++) {
-			if (mChip.mChannels[i].mSfxActive != YmSoundFX::SFX_DIGI_DRUM) {
+			if ((mChip.mChannels[i].mSfxActive & YmSoundFX::SFX_DIGI_DRUM) == 0) {
 				out = (mChip.mChannels[i].mPhase | mChip.mChannels[i].mToneOff) &
 					  (mChip.mNoise.mOut         | mChip.mChannels[i].mNoiseOff);
 				out = (-out) & *(mChip.mChannels[i].mCurVol);

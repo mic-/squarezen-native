@@ -107,7 +107,7 @@ public:
 		SFX_DIGI_DRUM = 1,
 		SFX_SINUS_SID = 2,
 		SFX_SYNC_BUZZER = 3,
-		SFX_NONE = 100,
+		SFX_NONE = 0x80,
 	};
 
 	enum {
@@ -122,7 +122,6 @@ public:
 	uint16_t mIndex;
 	uint16_t mFormat;
 	uint8_t mType;
-	bool mActivated;
 	uint16_t mVol, mVMax;
 };
 
