@@ -15,6 +15,7 @@
  */
 
 #define NLOG_LEVEL_VERBOSE 0
+#define NLOG_TAG "Z80"
 
 #include <string>
 #include <stdio.h>
@@ -313,11 +314,11 @@ static uint8_t gParityTable[256];
 
 // ====
 
-#define ILLEGAL_OP() NLOGE("Z80", "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
+#define ILLEGAL_OP() NLOGE(NLOG_TAG, "Run(): Illegal opcode: %#x at PC=%#x", opcode, mRegs.PC); \
 					 mCycles += 2; \
 					 mRegs.PC++
 
-#define ILLEGAL_OP2() NLOGE("Z80", "Run(): Illegal opcode: %#x%#x at PC=%#x", opcode, opcode2, mRegs.PC); \
+#define ILLEGAL_OP2() NLOGE(NLOG_TAG, "Run(): Illegal opcode: %#x%#x at PC=%#x", opcode, opcode2, mRegs.PC); \
 					 mCycles += 2; \
 					 mRegs.PC++
 
@@ -548,23 +549,29 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x40:	// LD B,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x40, mRegs.B);
 			break;
+			// covers 0x40..0x47
 		case 0x48:	// LD C,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x48, mRegs.C);
 			break;
+			// covers 0x48..0x4F
 
 		case 0x50:	// LD D,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x50, mRegs.D);
 			break;
+			// covers 0x50..0x57
 		case 0x58:	// LD E,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x58, mRegs.E);
 			break;
+			// covers 0x58..0x5F
 
 		case 0x60:	// LD H,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x60, mRegs.H);
 			break;
+			// covers 0x60..0x67
 		case 0x68:	// LD L,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x68, mRegs.L);
 			break;
+			// covers 0x68..0x6F
 
 		case 0x70:	// LD (HL),B
 			mMemory->WriteByte(((uint16_t)mRegs.H << 8) + mRegs.L, mRegs.B);
@@ -601,16 +608,20 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x78:	// LD A,R2
 			CMD_GROUP_2OP(MOVE_REG8_REG8, 0x78, mRegs.A);
 			break;
+			// covers 0x78..0x7F
 
 		case 0x80:	// ADD A,R2
 			CMD_GROUP_2OP(ADD8, 0x80, mRegs.A);
 			break;
+			// covers 0x80..0x87
 		case 0x88:	// ADC A,R2
 			CMD_GROUP_2OP(ADC8, 0x88, mRegs.A);
 			break;
+			// covers 0x88..0x8F
 		case 0x90:	// SUB A,R2
 			CMD_GROUP_2OP(SUB8, 0x90, mRegs.A);
 			break;
+			// covers 0x90..0x97
 
 		case 0xA0:	// AND A,R2
 			CMD_GROUP_2OP(AND8, 0xA0, mRegs.A);
@@ -625,6 +636,12 @@ void Z80::Run(uint32_t maxCycles)
 			CMD_GROUP_2OP(CP8, 0xB8, mRegs.A);
 			break;
 
+		case 0xC0:	// RET NZ
+			// ToDo: implement
+			break;
+		case 0xC1:	// POP BC
+			// ToDo: implement
+			break;
 		case 0xC7:	// RST 00
 			Rst(0x00);
 			mCycles += 11;
@@ -655,11 +672,23 @@ void Z80::Run(uint32_t maxCycles)
 				break;
 			}
 			break;
+		case 0xCC:	// CALL Z,aaaa
+			// ToDo: implement
+			break;
+		case 0xCD:	// CALL aaaa
+			// ToDo: implement
+			break;
 		case 0xCF:	// RST 08
 			Rst(0x08);
 			mCycles += 11;
 			break;
 
+		case 0xD0:	// RET NC
+			// ToDo: implement
+			break;
+		case 0xD1:	// POP DE
+			// ToDo: implement
+			break;
 		case 0xD3:	// OUT (N),A
 			addr = mMemory->ReadByte(mRegs.PC++);
 			mMemory->WritePort(addr, mRegs.A);
@@ -755,6 +784,9 @@ void Z80::Run(uint32_t maxCycles)
 			mCycles += 11;
 			break;
 
+		case 0xE0:	// RET PO
+			// ToDo: implement
+			break;
 		case 0xE7:	// RST 20
 			Rst(0x20);
 			mCycles += 11;
@@ -835,6 +867,9 @@ void Z80::Run(uint32_t maxCycles)
 			mCycles += 11;
 			break;
 
+		case 0xF0:	// RET P
+			// ToDo: implement
+			break;
 		case 0xF7:	// RST 30
 			Rst(0x30);
 			mCycles += 11;
