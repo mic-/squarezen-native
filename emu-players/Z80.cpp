@@ -247,6 +247,24 @@ static uint8_t gParityTable[256];
     mRegs.F |= (R == 0) ? Z80::FLAG_Z : 0; \
     mCycles += 8
 
+#define RLC8(R) \
+	temp8 = (R & 0x80) ? Z80::FLAG_C : 0; \
+    R = (R << 1) | ((R & 0x80) >> 7); \
+	mRegs.F = R & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= gParityTable[R]; \
+	mRegs.F |= temp8; \
+    mRegs.F |= (R == 0) ? Z80::FLAG_Z : 0; \
+    mCycles += 8
+
+#define RRC8(R) \
+	temp8 = (R & 0x01) ? Z80::FLAG_C : 0; \
+    R = (R >> 1) | ((R & 0x01) << 7); \
+	mRegs.F = R & (Z80::FLAG_S | Z80::FLAG_X | Z80::FLAG_Y); \
+	mRegs.F |= gParityTable[R]; \
+	mRegs.F |= temp8; \
+    mRegs.F |= (R == 0) ? Z80::FLAG_Z : 0; \
+    mCycles += 8
+
 #define SRA8(R) \
 	mRegs.F = (R & 0x01) ? Z80::FLAG_C : 0; \
     R = (R >> 1) | (R & 0x80); \
@@ -377,6 +395,17 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x05:	// DEC B
 			DEC8(mRegs.B, 1);
 			break;
+		case 0x06:	// LD B,aa
+			MOVE_REG8_IMM8(mRegs.B);
+			break;
+		case 0x07:	// RLCA
+			temp8 = (mRegs.A & 0x80) ? Z80::FLAG_C : 0;
+		    mRegs.A = (mRegs.A << 1) | ((mRegs.A & 0x80) >> 7);
+		    mRegs.F &= (Z80::FLAG_S | Z80::FLAG_Z | Z80::FLAG_P);
+			mRegs.F |= mRegs.A & (Z80::FLAG_X | Z80::FLAG_Y);
+			mRegs.F |= temp8;
+		    mCycles += 4;
+			break;
 		case 0x08:	// EX AF,AF'
 			temp8 = mRegs.A;
 			mRegs.A = mRegs.A2;
@@ -385,6 +414,13 @@ void Z80::Run(uint32_t maxCycles)
 			mRegs.F = mRegs.F2;
 			mRegs.F2 = temp8;
 			mCycles += 4;
+			break;
+		case 0x09:	// ADD HL,BC
+			// ToDo: implement
+			break;
+		case 0x0A:	// LD A,(BC)
+			mRegs.A = mMemory->ReadByte(mRegs.C + ((uint16_t)mRegs.B << 8));
+			mCycles += 7;
 			break;
 		case 0x0B:	// DEC BC
 			DEC16(mRegs.B, mRegs.C);
@@ -395,7 +431,21 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x0D:	// DEC C
 			DEC8(mRegs.C, 1);
 			break;
+		case 0x0E:	// LD C,aa
+			MOVE_REG8_IMM8(mRegs.C);
+			break;
+		case 0x0F:	// RRCA
+			temp8 = (mRegs.A & 0x01) ? Z80::FLAG_C : 0;
+		    mRegs.A = (mRegs.A >> 1) | ((mRegs.A & 0x01) << 7);
+		    mRegs.F &= (Z80::FLAG_S | Z80::FLAG_Z | Z80::FLAG_P);
+			mRegs.F |= mRegs.A & (Z80::FLAG_X | Z80::FLAG_Y);
+			mRegs.F |= temp8;
+		    mCycles += 4;
+		    break;
 
+
+		case 0x10:	// DJNZ aa
+			// ToDo: implement
 		case 0x11:	// LD DE,aaaa
 			MOVE_REG16_IMM16(mRegs.D, mRegs.E);
 			break;
