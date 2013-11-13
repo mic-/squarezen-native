@@ -67,9 +67,9 @@ void Pokey::Reset()
 void Pokey::Step()
 {
 	for (int i = 0; i < 4; i++) {
-		if (mIndex == 1 && (mChip->mRegs[Pokey::R_AUDCTL] & Pokey::AUDCTL_CHN1_2_PAIR_MASK) == Pokey::AUDCTL_CHN1_2_PAIRED)
+		if (i == 1 && (mRegs[Pokey::R_AUDCTL] & Pokey::AUDCTL_CHN1_2_PAIR_MASK) == Pokey::AUDCTL_CHN1_2_PAIRED)
 			continue;
-		else if (mIndex == 3 && (mChip->mRegs[Pokey::R_AUDCTL] & Pokey::AUDCTL_CHN3_4_PAIR_MASK) == Pokey::AUDCTL_CHN3_4_PAIRED)
+		else if (i == 3 && (mRegs[Pokey::R_AUDCTL] & Pokey::AUDCTL_CHN3_4_PAIR_MASK) == Pokey::AUDCTL_CHN3_4_PAIRED)
 			continue;
 		mChannels[i].Step();
 	}

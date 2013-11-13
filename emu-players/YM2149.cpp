@@ -229,6 +229,8 @@ void YmNoise::Write(uint32_t addr, uint8_t data)
 void YmSoundFX::Reset()
 {
 	mPeriod = 0;
+	mEffectChannel = 0;
+	mType = SFX_NONE;
 }
 
 
@@ -237,7 +239,7 @@ void YmSoundFX::Step()
 	if (mPeriod) {
 		mPos++;
 		if (mPos >= mPeriod) {
-			mPos -= mPeriod;
+			mPos = 0; //-= mPeriod;
 			if (mType == SFX_SID_VOICE) {
 				mVol ^= mVMax;
 			} else if (mType == SFX_DIGI_DRUM) {
@@ -245,8 +247,12 @@ void YmSoundFX::Step()
 					// ToDo: handle different sample formats (4-bit, signed 8-bit)
 					//mVol = ((mDigiDrumSample[mDigiDrumPos] + 0x80) & 0xFF) << 4; //YmChip::YM2149_VOL_TB[(mDigiDrumSample[mDigiDrumPos>>1] >> (mDigiDrumPos & 1)*4) & 0x0F];
 					//mVol = YmChip::YM2149_VOL_TB[(mDigiDrumSample[mDigiDrumPos>>1] >> (((mDigiDrumPos & 1)^1)*4)) & 0x0F];
-					mVol = YmChip::YM2149_VOL_TB[mDigiDrumSample[mDigiDrumPos] >> 4];
+					mVol = mDigiDrumSample[mDigiDrumPos] << 4; //YmChip::YM2149_VOL_TB[mDigiDrumSample[mDigiDrumPos] >> 4];
 					mDigiDrumPos++;
+				} else {
+					NLOGE("YM2149", "Reached end of sample; stopping digidrum");
+					mPeriod = 0;
+					mType = SFX_NONE;
 				}
 			}
 		}
@@ -258,6 +264,10 @@ void YmSoundFX::Write(uint8_t *regs)
 {
 	int effectChannel;
 	YmChannel *chn;
+	static uint32_t frame = 0;
+
+	uint8_t prevType = mType;
+	uint8_t prevChannel = mEffectChannel;
 
 	mType = 0;
 
@@ -279,9 +289,10 @@ void YmSoundFX::Write(uint8_t *regs)
 	}
 
 	if (effectChannel) {
+		mEffectChannel = effectChannel;
 		chn = &(mChip->mChannels[effectChannel - 1]);
 		chn->mCurVol = &mVol;
-		chn->mSfxActive |= (1 << mType);
+		chn->mSfxActive = (1 << mType);
 
 		if (SFX_SID_VOICE == mType) {
 			if (!mPeriod || (mVol != 0 && chn->mVol != mVMax)) {
@@ -302,14 +313,24 @@ void YmSoundFX::Write(uint8_t *regs)
 				mDigiDrumPos = 1;
 			}
 			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6 + mIndex*2] >> 5] * (uint32_t)regs[14 + mIndex] * 13) >> 4;
+			NLOGE("YM2149", "Starting Digidrum on channel %d at frame %d with period %d (%d Hz)", chn->mIndex, frame, mPeriod, 2000000/mPeriod);
 		} else {
 			// ToDo: handle Sinus-SID & Sync-Buzzer
 			NLOGD("YM2149", "Using an unsupported effect: %d", mType);
 			mPeriod = 0;
 		}
 	} else {
-		mPeriod = 0;
+		if (prevType & SFX_DIGI_DRUM) {
+			// Let the digidrum effect run until the end of the sample has been reached
+			mChip->mChannels[prevChannel - 1].mSfxActive = (1 << SFX_DIGI_DRUM);
+			mChip->mChannels[prevChannel - 1].mCurVol = &mVol;
+			mType = prevType;
+		} else {
+			mPeriod = 0;
+		}
 	}
+
+	frame++;
 }
 
 
