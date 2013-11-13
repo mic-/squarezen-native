@@ -24,6 +24,7 @@
 
 
 SapPlayer::SapPlayer()
+	: mFormat(TYPE_UNKNOWN)
 {
 
 }
@@ -51,9 +52,69 @@ MusicPlayer::Result SapPlayer::Reset()
 {
 	// ToDo: implement
 	NLOGV(NLOG_TAG, "Reset");
+
+	mFormat = TYPE_UNKNOWN;
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
 }
+
+
+MusicPlayer::Result SapPlayer::ParseTags(std::ifstream& musicFile)
+{
+	static char buffer[256];
+	char *ptr;
+	size_t tagLength;
+	bool allTagsParsed = false;
+	bool sapSignatureFound = false;
+
+	while (!allTagsParsed) {
+		musicFile.read((char*)buffer, 1);
+
+		if (0xFF == *((uint8_t*)buffer)) {
+			musicFile.read((char*)buffer+1, 1);
+			if (0xFF == *((uint8_t*)buffer+1)) {
+				// We've reached the end of the tags when we find the byte sequence 0xFF 0xFF
+				allTagsParsed = true;
+			} else {
+				NLOGE(NLOG_TAG, "Expected 0xFF, 0xFF; got 0xFF %02x", *((uint8_t*)buffer+1));
+				return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+			}
+		} else {
+			ptr = buffer;
+			tagLength = 1;
+			while (0x0D != *ptr && musicFile.good() && tagLength < 250) {
+				ptr++;
+				musicFile.read(ptr, 1);
+				tagLength++;
+			}
+			*ptr = 0;	// replace the CR character with a NUL terminator in the read buffer
+			musicFile.read(ptr+1, 1); 	// consume the LF character
+
+			if (strncmp(buffer, "SAP", 3) == 0) {
+				sapSignatureFound = true;
+
+			} else if (strncmp(buffer, "TYPE B", 6) == 0) {
+				mFormat = TYPE_B;
+			} else if (strncmp(buffer, "TYPE C", 6) == 0) {
+				mFormat = TYPE_C;
+			} else if (strncmp(buffer, "TYPE D", 6) == 0) {
+				mFormat = TYPE_D;
+			} else if (strncmp(buffer, "TYPE S", 6) == 0) {
+				mFormat = TYPE_S;
+			} else if (strncmp(buffer, "TYPE R", 6) == 0) {
+				mFormat = TYPE_R;
+			}
+		}
+	}
+
+	if (!sapSignatureFound) {
+		NLOGE(NLOG_TAG, "No SAP signature found");
+		return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+	}
+
+	return MusicPlayer::OK;
+}
+
 
 MusicPlayer::Result SapPlayer::Prepare(std::string fileName)
 {
@@ -68,6 +129,12 @@ MusicPlayer::Result SapPlayer::Prepare(std::string fileName)
     	return result;
     }
 
+    mFormat = TYPE_UNKNOWN;
+    MusicPlayer::Result parseResult = ParseTags(musicFile);
+    if (MusicPlayer::OK != parseResult) {
+    	musicFile.close();
+    	return parseResult;
+    }
     // ToDo: finish
 
 	NLOGV(NLOG_TAG, "File read done");
