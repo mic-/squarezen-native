@@ -43,10 +43,24 @@ public:
 
 	virtual void SetSubSong(uint32_t subSong);
 
+	// SAP format types
+	enum
+	{
+		TYPE_UNKNOWN = 0,
+		TYPE_B,
+		TYPE_C,
+		TYPE_D,
+		TYPE_S,
+		TYPE_R,
+	};
+
 private:
+	MusicPlayer::Result ParseTags(std::ifstream& musicFile);
+
 	Emu6502 *m6502;
 	SapMapper *mMemory;
 	Pokey *mPokey;
+	uint8_t mFormat;
 	uint8_t mFrameCycles, mCycleCount;
 };
 
