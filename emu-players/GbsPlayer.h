@@ -63,7 +63,7 @@ public:
 	virtual void SetSubSong(uint32_t subSong);
 
 private:
-	void PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR);
+	//void PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR);
 	void ExecuteGbZ80(uint16_t address);
 
 	Blip_Buffer *mBlipBufRight;

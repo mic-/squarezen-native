@@ -82,7 +82,7 @@ public:
 	} SgcFileHeader;
 
 private:
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
+	//void PresentBuffer(int16_t *out, Blip_Buffer *in);
 	void ExecuteZ80(uint16_t address);
 
 	SgcFileHeader mFileHeader;

@@ -57,7 +57,6 @@ public:
 	uint32_t mLhDataPos,mLhDataAvail;
 	uint8_t *mYmData;
 private:
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 
 	uint32_t mCycleCount, mFrameCycles;
 	uint32_t mFrame, mNumFrames;

@@ -115,3 +115,20 @@ MusicPlayer::Result MusicPlayer::OpenFile(std::ifstream& musicFile, std::string 
 
     return MusicPlayer::OK;
 }
+
+
+void MusicPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in, Blip_Buffer *inRight)
+{
+	int count = in->samples_avail();
+
+	in->read_samples(out, count, 1);
+
+	if (NULL == inRight) {
+		// Mono; copy each left channel sample to the right channel
+		for (int i = 0; i < count*2; i += 2) {
+			out[i+1] = out[i];
+		}
+	} else {
+		inRight->read_samples(out+1, count, 1);
+	}
+}

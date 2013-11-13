@@ -71,7 +71,6 @@ public:
 
 private:
 	void Execute6502(uint16_t address);
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 
 	Emu6502 *m6502;
 	Mos6581 *mSid;

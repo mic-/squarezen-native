@@ -311,19 +311,6 @@ void SidPlayer::Execute6502(uint16_t address)
 }
 
 
-void SidPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
-{
-	int count = in->samples_avail();
-
-	in->read_samples(out, count, 1);
-
-	// Copy each left channel sample to the right channel
-	for (int i = 0; i < count*2; i += 2) {
-		out[i+1] = out[i];
-	}
-}
-
-
 MusicPlayer::Result SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
 {
 	int32_t i, k;
