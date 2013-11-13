@@ -121,7 +121,7 @@ public:
 	uint8_t *mDigiDrumSample;
 	uint16_t mIndex;
 	uint16_t mFormat;
-	uint8_t mType;
+	uint8_t mType, mEffectChannel;
 	uint16_t mVol, mVMax;
 };
 
