@@ -419,7 +419,7 @@ void Z80::Run(uint32_t maxCycles)
 			// ToDo: implement
 			break;
 		case 0x0A:	// LD A,(BC)
-			mRegs.A = mMemory->ReadByte(mRegs.C + ((uint16_t)mRegs.B << 8));
+			mRegs.A = mMemory->ReadByte(((uint16_t)mRegs.B << 8) + mRegs.C);
 			mCycles += 7;
 			break;
 		case 0x0B:	// DEC BC
@@ -462,6 +462,9 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x15:	// DEC D
 			DEC8(mRegs.D, 1);
 			break;
+		case 0x16:	// LD D,aa
+			MOVE_REG8_IMM8(mRegs.D);
+			break;
 		case 0x1B:	// DEC DE
 			DEC16(mRegs.D, mRegs.E);
 			break;
@@ -470,6 +473,9 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 		case 0x1D:	// DEC E
 			DEC8(mRegs.E, 1);
+			break;
+		case 0x1E:	// LD E,aa
+			MOVE_REG8_IMM8(mRegs.E);
 			break;
 
 		case 0x21:	// LD HL,aaaa
@@ -484,6 +490,9 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x25:	// DEC H
 			DEC8(mRegs.H, 1);
 			break;
+		case 0x26:	// LD H,aa
+			MOVE_REG8_IMM8(mRegs.H);
+			break;
 		case 0x2B:	// DEC HL
 			DEC16(mRegs.H, mRegs.L);
 			break;
@@ -492,6 +501,9 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 		case 0x2D:	// DEC L
 			DEC8(mRegs.L, 1);
+			break;
+		case 0x2E:	// LD L,aa
+			MOVE_REG8_IMM8(mRegs.L);
 			break;
 		case 0x2F:	// CPL
 			mRegs.A = ~mRegs.A;
@@ -522,6 +534,9 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 		case 0x3D:	// DEC A
 			DEC8(mRegs.A, 1);
+			break;
+		case 0x3E:	// LD A,aa
+			MOVE_REG8_IMM8(mRegs.A);
 			break;
 		case 0x3F:	// CCF
 			mRegs.F &= ~(Z80::FLAG_H | Z80::FLAG_N);
