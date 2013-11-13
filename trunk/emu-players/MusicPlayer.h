@@ -182,6 +182,11 @@ public:
 	 */
 	virtual void SetSubSong(uint32_t subSong) {}
 
+	/**
+	 * Copy the sample data from the Blip_Buffer(s) to the outout buffer
+	 */
+	void PresentBuffer(int16_t *out, Blip_Buffer *in, Blip_Buffer *inRight = NULL);
+
 protected:
 	Blip_Buffer *mBlipBuf;
 	Blip_Synth<blip_low_quality,4096> *mSynth;

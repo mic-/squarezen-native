@@ -281,7 +281,7 @@ void NsfPlayer::SetSubSong(uint32_t subSong)
 }
 
 
-void NsfPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
+/*void NsfPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 {
 	int count = in->samples_avail();
 
@@ -291,7 +291,7 @@ void NsfPlayer::PresentBuffer(int16_t *out, Blip_Buffer *in)
 	for (int i = 0; i < count*2; i += 2) {
 		out[i+1] = out[i];
 	}
-}
+}*/
 
 
 MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)

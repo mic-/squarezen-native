@@ -93,6 +93,13 @@ MusicPlayer::Result SapPlayer::ParseTags(std::ifstream& musicFile)
 			if (strncmp(buffer, "SAP", 3) == 0) {
 				sapSignatureFound = true;
 
+			} else if (strncmp(buffer, "AUTHOR", 6) == 0) {
+				// ToDo: set author
+			} else if (strncmp(buffer, "NAME", 4) == 0) {
+				// ToDo: set title
+			} else if (strncmp(buffer, "DATE", 4) == 0) {
+				// ToDo: set comment
+
 			} else if (strncmp(buffer, "TYPE B", 6) == 0) {
 				mFormat = TYPE_B;
 			} else if (strncmp(buffer, "TYPE C", 6) == 0) {

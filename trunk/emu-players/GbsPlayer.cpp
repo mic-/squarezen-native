@@ -208,13 +208,13 @@ void GbsPlayer::SetMasterVolume(int left, int right)
 }
 
 
-void GbsPlayer::PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR)
+/*void GbsPlayer::PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR)
 {
 	int count = inL->samples_avail();
 
 	inL->read_samples(out, count, 1);
 	inR->read_samples(out+1, count, 1);
-}
+}*/
 
 
 MusicPlayer::Result GbsPlayer::Run(uint32_t numSamples, int16_t *buffer)

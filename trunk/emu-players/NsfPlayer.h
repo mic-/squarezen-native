@@ -83,7 +83,6 @@ public:
 	virtual void SetSubSong(uint32_t subSong);
 
 private:
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 	void Execute6502(uint16_t address);
 
 	Emu6502 *m6502;

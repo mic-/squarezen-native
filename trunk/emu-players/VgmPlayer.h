@@ -70,7 +70,6 @@ public:
 	
 private:
 	void ParseGd3(size_t fileSize);
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
 	uint8_t GetData();
 	void Step();
 

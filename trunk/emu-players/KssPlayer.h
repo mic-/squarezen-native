@@ -105,8 +105,6 @@ public:
 private:
 	friend class KssMapper;
 
-	void PresentBuffer(int16_t *out, Blip_Buffer *in);
-
 	KssFileHeader mFileHeader;
 	KssxExtraHeader mKssxHeader;
 	Z80 *mZ80;
