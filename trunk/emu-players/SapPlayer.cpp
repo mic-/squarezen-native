@@ -100,6 +100,26 @@ MusicPlayer::Result SapPlayer::ParseTags(std::ifstream& musicFile)
 			} else if (strncmp(buffer, "DATE", 4) == 0) {
 				// ToDo: set comment
 
+			} else if (strncmp(buffer, "SONG", 4) == 0) {
+				// ToDo: handle
+			} else if (strncmp(buffer, "DEFSONG", 7) == 0) {
+				// ToDo: handle
+
+			} else if (strncmp(buffer, "INIT", 4) == 0) {
+				// ToDo: handle
+			} else if (strncmp(buffer, "MUSIC", 5) == 0) {
+				// ToDo: handle
+			} else if (strncmp(buffer, "PLAYER", 6) == 0) {
+				// ToDo: handle
+
+			} else if (strncmp(buffer, "STEREO", 6) == 0) {
+				// ToDo: handle
+			} else if (strncmp(buffer, "NTSC", 4) == 0) {
+				// ToDo: handle
+
+			} else if (strncmp(buffer, "FASTPLAY", 8) == 0) {
+				// ToDo: handle
+
 			} else if (strncmp(buffer, "TYPE B", 6) == 0) {
 				mFormat = TYPE_B;
 			} else if (strncmp(buffer, "TYPE C", 6) == 0) {
