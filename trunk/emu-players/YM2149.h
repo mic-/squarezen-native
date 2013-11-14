@@ -116,9 +116,11 @@ public:
 		YM_FORMAT_6 = 6,
 	};
 
+	static const uint8_t DIGIDRUM_U8_TO_U4_TB[];
+
 	YmChip *mChip;
 	uint32_t mDigiDrumPos, mDigiDrumLen;
-	uint8_t *mDigiDrumSample;
+	uint8_t mDigiDrumSample;
 	uint16_t mIndex;
 	uint16_t mFormat;
 	uint8_t mType, mEffectChannel;
@@ -156,6 +158,14 @@ public:
 
 	enum
 	{
+		DIGI_DRUM_UNKNOWN = 0,
+		DIGI_DRUM_U4,
+		DIGI_DRUM_U8,
+		DIGI_DRUM_S8,
+	};
+
+	enum
+	{
 		AY_3_8910_ENVELOPE_STEPS = 16,
 		YM2149_ENVELOPE_STEPS = 32,
 	};
@@ -164,6 +174,7 @@ public:
 	YmNoise mNoise;
 	YmEnvelopeGenerator mEG;
 	YmSoundFX mSfx[2];
+	uint8_t mDigiDrumFormat;
 	uint8_t *mDigiDrumPtr[16];
 	uint32_t mDigiDrumLen[16];
 };

@@ -46,6 +46,27 @@ const uint32_t YmChip::TIMER_PRESCALER_TB[] = {
 	50,64,100,200
 };
 
+const uint8_t YmSoundFX::DIGIDRUM_U8_TO_U4_TB[] = {
+	0,0,1,1,3,4,4,5,5,5,6,6,6,6,7,7,
+	7,7,7,7,8,8,8,8,8,8,8,8,9,9,9,9,
+	9,9,9,9,9,9,9,10,10,10,10,10,10,10,10,10,
+	10,10,10,10,10,10,10,11,11,11,11,11,11,11,11,11,
+	11,11,11,11,11,11,11,11,11,11,11,11,11,11,12,12,
+	12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,12,
+	12,12,12,12,12,12,12,12,12,12,12,12,12,13,13,13,
+	13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
+	13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
+	13,13,13,13,13,13,13,13,13,13,14,14,14,14,14,14,
+	14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
+	14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
+	14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,14,
+	14,14,14,14,14,14,14,14,14,14,15,15,15,15,15,15,
+	15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
+	15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,15,
+};
+
+static uint8_t ymRegs[16];
+
 
 void YmChannel::Reset()
 {
@@ -241,16 +262,24 @@ void YmSoundFX::Step()
 		if (mPos >= mPeriod) {
 			mPos = 0; //-= mPeriod;
 			if (mType == SFX_SID_VOICE) {
+				mChip->mChannels[mEffectChannel - 1].Write(YmChip::R_LEVEL_A + mEffectChannel - 1, mVol);
 				mVol ^= mVMax;
+
+			} else if (mType == SFX_SYNC_BUZZER) {
+				mChip->mEG.Write(YmChip::R_ENVE_SHAPE, mVol);
+
 			} else if (mType == SFX_DIGI_DRUM) {
-				if (mDigiDrumPos < mDigiDrumLen) {
-					// ToDo: handle different sample formats (4-bit, signed 8-bit)
-					//mVol = ((mDigiDrumSample[mDigiDrumPos] + 0x80) & 0xFF) << 4; //YmChip::YM2149_VOL_TB[(mDigiDrumSample[mDigiDrumPos>>1] >> (mDigiDrumPos & 1)*4) & 0x0F];
-					//mVol = YmChip::YM2149_VOL_TB[(mDigiDrumSample[mDigiDrumPos>>1] >> (((mDigiDrumPos & 1)^1)*4)) & 0x0F];
-					mVol = mDigiDrumSample[mDigiDrumPos] << 4; //YmChip::YM2149_VOL_TB[mDigiDrumSample[mDigiDrumPos] >> 4];
+				if (mDigiDrumPos < mChip->mDigiDrumLen[mDigiDrumSample]) {
+					if (YmChip::DIGI_DRUM_U4 == mChip->mDigiDrumFormat) {
+						mVol = (mChip->mDigiDrumPtr[mDigiDrumSample])[mDigiDrumPos] & 0x0F;
+					} else {
+						mVol = DIGIDRUM_U8_TO_U4_TB[(mChip->mDigiDrumPtr[mDigiDrumSample])[mDigiDrumPos] & 0xFF];
+					}
+					mChip->mChannels[mEffectChannel - 1].Write(YmChip::R_LEVEL_A + mEffectChannel - 1, mVol);
 					mDigiDrumPos++;
 				} else {
 					NLOGE("YM2149", "Reached end of sample; stopping digidrum");
+					mChip->mChannels[mEffectChannel - 1].mSfxActive &= ~(1 << SFX_DIGI_DRUM);
 					mPeriod = 0;
 					mType = SFX_NONE;
 				}
@@ -291,31 +320,32 @@ void YmSoundFX::Write(uint8_t *regs)
 	if (effectChannel) {
 		mEffectChannel = effectChannel;
 		chn = &(mChip->mChannels[effectChannel - 1]);
-		chn->mCurVol = &mVol;
 		chn->mSfxActive = (1 << mType);
 
 		if (SFX_SID_VOICE == mType) {
-			if (!mPeriod || (mVol != 0 && chn->mVol != mVMax)) {
-				mVol = chn->mVol;
+			if (!mPeriod || (mVol != 0 && ymRegs[YmChip::R_LEVEL_A + effectChannel - 1] != mVMax)) {
+				mVol = ymRegs[YmChip::R_LEVEL_A + effectChannel - 1];
 			}
-			mVMax = chn->mVol;
+			mVMax = ymRegs[YmChip::R_LEVEL_A + effectChannel - 1];
 			if (mPeriod != 0 && YM_FORMAT_6 != mFormat && (regs[1] & 0x40)) {
 				// YM5 and below supports resetting the SID-Voice timer by setting r1[6]
 				mPos = 0;
 			}
 			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6 + mIndex*2] >> 5] * (uint32_t)regs[14 + mIndex] * 13) >> 4;
+
+		} else if (SFX_SYNC_BUZZER == mType) {
+			mVol = ymRegs[YmChip::R_LEVEL_A + effectChannel - 1];
+			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6 + mIndex*2] >> 5] * (uint32_t)regs[14 + mIndex] * 13) >> 4;
+
 		} else if (SFX_DIGI_DRUM == mType) {
 			if (!mPeriod) {
-				mVol = regs[YmChip::R_LEVEL_A + chn->mIndex] & 0x1F;
-				mDigiDrumSample = mChip->mDigiDrumPtr[mVol];
-				mDigiDrumLen = mChip->mDigiDrumLen[mVol];
-				mVol = mDigiDrumSample[0] << 3; //YmChip::YM2149_VOL_TB[mDigiDrumSample[0] & 0x0F];
-				mDigiDrumPos = 1;
+				mDigiDrumSample = regs[YmChip::R_LEVEL_A + chn->mIndex] & 0x1F;
+				mDigiDrumPos = 0;
 			}
 			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6 + mIndex*2] >> 5] * (uint32_t)regs[14 + mIndex] * 13) >> 4;
 			NLOGE("YM2149", "Starting Digidrum on channel %d at frame %d with period %d (%d Hz)", chn->mIndex, frame, mPeriod, 2000000/mPeriod);
 		} else {
-			// ToDo: handle Sinus-SID & Sync-Buzzer
+			// ToDo: handle Sinus-SID
 			NLOGD("YM2149", "Using an unsupported effect: %d", mType);
 			mPeriod = 0;
 		}
@@ -323,7 +353,6 @@ void YmSoundFX::Write(uint8_t *regs)
 		if (prevType & SFX_DIGI_DRUM) {
 			// Let the digidrum effect run until the end of the sample has been reached
 			mChip->mChannels[prevChannel - 1].mSfxActive = (1 << SFX_DIGI_DRUM);
-			mChip->mChannels[prevChannel - 1].mCurVol = &mVol;
 			mType = prevType;
 		} else {
 			mPeriod = 0;
@@ -347,6 +376,8 @@ YmChip::YmChip(int16_t envelopeSteps)
 
 void YmChip::Reset()
 {
+	mDigiDrumFormat = DIGI_DRUM_UNKNOWN;
+
 	for (int i = 0; i < 3; i++) {
 		mChannels[i].SetChip(this);
 		mChannels[i].SetIndex(i);
@@ -385,6 +416,7 @@ void YmChip::Step()
 
 void YmChip::Write(uint8_t *regs)
 {
+	memcpy(ymRegs, regs, 16);
 	mChannels[0].Write(regs);
 	mChannels[1].Write(regs);
 	mChannels[2].Write(regs);
@@ -397,6 +429,7 @@ void YmChip::Write(uint8_t *regs)
 
 void YmChip::Write(uint32_t addr, uint8_t data)
 {
+	ymRegs[addr & 0x1F] = data;
 	mChannels[0].Write(addr, data);
 	mChannels[1].Write(addr, data);
 	mChannels[2].Write(addr, data);
