@@ -87,6 +87,10 @@ MusicPlayer::Result SapPlayer::ParseTags(std::ifstream& musicFile)
 				musicFile.read(ptr, 1);
 				tagLength++;
 			}
+			if (!musicFile.good()) {
+				NLOGE(NLOG_TAG, "Error while reading SAP tag data");
+				return MusicPlayer::ERROR_FILE_IO;
+			}
 			*ptr = 0;	// replace the CR character with a NUL terminator in the read buffer
 			musicFile.read(ptr+1, 1); 	// consume the LF character
 
