@@ -212,7 +212,7 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 
 	mChip.Reset();
 
-	if (mYmData[0x13 & 0x04]) {
+	if (mYmData[0x13] & 0x04) {
 		mChip.mDigiDrumFormat = YmChip::DIGI_DRUM_U4;
 	} else if (mYmData[0x13] & 0x02) {
 		mChip.mDigiDrumFormat = YmChip::DIGI_DRUM_S8;
