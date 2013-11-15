@@ -42,16 +42,23 @@ SapPlayer::~SapPlayer()
 	delete mPokey;
 	delete mMemory;
 
-	m6502      = NULL;
-	mPokey = NULL;
-	mMemory    = NULL;
+	m6502   = NULL;
+	mPokey 	= NULL;
+	mMemory = NULL;
 }
 
 
 MusicPlayer::Result SapPlayer::Reset()
 {
-	// ToDo: implement
 	NLOGV(NLOG_TAG, "Reset");
+
+	delete m6502;
+	delete mPokey;
+	delete mMemory;
+
+	m6502   = NULL;
+	mPokey 	= NULL;
+	mMemory = NULL;
 
 	mFormat = TYPE_UNKNOWN;
 	mFastplayScanlines = 312;
@@ -248,6 +255,7 @@ MusicPlayer::Result SapPlayer::Prepare(std::string fileName)
 
 		if (musicFile.good()) {
 			uint8_t c;
+			NLOGV(NLOG_TAG, "Loading %d bytes to $%04x", dataDestEnd+1-dataDestStart, dataDestStart);
 			for (uint16_t i = dataDestStart; i <= dataDestEnd; i++) {
 				musicFile.read((char*)&c, 1);
 				if (!musicFile.good()) {
