@@ -93,21 +93,58 @@ MusicPlayer::Result SapPlayer::ParseTags(std::ifstream& musicFile)
 			}
 			*ptr = 0;	// replace the CR character with a NUL terminator in the read buffer
 			musicFile.read(ptr+1, 1); 	// consume the LF character
+			size_t bufLen = strlen(buffer);
 
 			if (strncmp(buffer, "SAP", 3) == 0) {
 				sapSignatureFound = true;
 
 			} else if (strncmp(buffer, "AUTHOR", 6) == 0) {
-				// ToDo: set author
+				char *openingQuote = strchr(buffer, '\"');
+				char *closingQuote = NULL;
+				if (openingQuote && (closingQuote = strchr(openingQuote+1, '\"'))) {
+					*closingQuote = 0;
+					mMetaData.SetAuthor(openingQuote+1);
+				} else {
+					NLOGE(NLOG_TAG, "Malformed AUTHOR tag");
+					return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+				}
 			} else if (strncmp(buffer, "NAME", 4) == 0) {
-				// ToDo: set title
+				char *openingQuote = strchr(buffer, '\"');
+				char *closingQuote = NULL;
+				if (openingQuote && (closingQuote = strchr(openingQuote+1, '\"'))) {
+					*closingQuote = 0;
+					mMetaData.SetTitle(openingQuote+1);
+				} else {
+					NLOGE(NLOG_TAG, "Malformed NAME tag");
+					return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+				}
 			} else if (strncmp(buffer, "DATE", 4) == 0) {
-				// ToDo: set comment
+				char *openingQuote = strchr(buffer, '\"');
+				char *closingQuote = NULL;
+				if (openingQuote && (closingQuote = strchr(openingQuote+1, '\"'))) {
+					*closingQuote = 0;
+					mMetaData.SetComment(openingQuote+1);
+				} else {
+					NLOGE(NLOG_TAG, "Malformed DATE tag");
+					return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+				}
 
-			} else if (strncmp(buffer, "SONG", 4) == 0) {
-				// ToDo: handle
+			} else if (strncmp(buffer, "SONGS", 5) == 0) {
+				int numSongs = (bufLen >= 7) ? atoi(buffer + 6) : 0;
+				if (numSongs > 0) {
+					mMetaData.SetNumSubSongs(numSongs);
+				} else {
+					NLOGE(NLOG_TAG, "Malformed SONGS tag");
+					return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+				}
 			} else if (strncmp(buffer, "DEFSONG", 7) == 0) {
-				// ToDo: handle
+				int defSong = (bufLen >= 9) ? atoi(buffer + 8) : 0;
+				if (defSong > 0) {
+					mMetaData.SetDefaultSong(defSong);
+				} else {
+					NLOGE(NLOG_TAG, "Malformed DEFSONG tag");
+					return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+				}
 
 			} else if (strncmp(buffer, "INIT", 4) == 0) {
 				// ToDo: handle
