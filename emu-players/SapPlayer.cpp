@@ -203,13 +203,71 @@ MusicPlayer::Result SapPlayer::Prepare(std::string fileName)
     	musicFile.close();
     	return parseResult;
     }
-    // ToDo: finish
+
+    mMemory = new SapMapper(0);		// ToDo: set number of ROM banks
+	m6502 = new Emu6502;
+	mPokey = new Pokey;
+
+	size_t dataBlocksRead = 0;
+
+    while (musicFile.good()) {
+        uint16_t dataDestStart, dataDestEnd;
+
+        musicFile.read((char*)&dataDestStart, 2);
+        if (!musicFile.good()) {
+        	break;
+        }
+		musicFile.read((char*)&dataDestEnd, 2);
+
+		if (musicFile.good()) {
+			uint8_t c;
+			for (uint16_t i = dataDestStart; i <= dataDestEnd; i++) {
+				musicFile.read((char*)&c, 1);
+				if (!musicFile.good()) {
+					break;
+				}
+				mMemory->WriteByte(i, c);
+			}
+		}
+
+		if (!musicFile.good()) {
+			NLOGE(NLOG_TAG, "Error while reading SAP file");
+			musicFile.close();
+			return MusicPlayer::ERROR_FILE_IO;
+		}
+		dataBlocksRead++;
+    }
 
 	NLOGV(NLOG_TAG, "File read done");
 	musicFile.close();
 
-	m6502 = new Emu6502;
-	mPokey = new Pokey;
+    if (!dataBlocksRead) {
+    	NLOGE(NLOG_TAG, "Unable to read any SAP data blocks");
+		return MusicPlayer::ERROR_FILE_IO;
+    }
+
+    switch (mFormat) {
+    case TYPE_B:
+    	m6502->mRegs.A = mMetaData.GetDefaultSong();
+    	// ToDo: run the 6502 at the INIT address
+    	break;
+    case TYPE_C:
+    	// ToDo: handle
+    	/* Should be initalized with
+    	    lda #$70
+    		ldx #<MUSIC
+    		ldy #>MUSIC
+    		jsr PLAYER+3
+    		lda #$00
+    		ldx #DEFSONG
+    		jsr PLAYER+3
+    	 */
+    	break;
+    default:
+    	NLOGE(NLOG_TAG, "Unsupported SAP player type (%d)", mFormat);
+    	return MusicPlayer::ERROR_UNRECOGNIZED_FORMAT;
+    	break;
+    }
 
 	NLOGD(NLOG_TAG, "Prepare finished");
 
