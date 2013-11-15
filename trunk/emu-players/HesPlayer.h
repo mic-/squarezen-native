@@ -60,8 +60,6 @@ public:
 	} HesFileHeader;
 
 private:
-	//void PresentBuffer(int16_t *out, Blip_Buffer *inL, Blip_Buffer *inR);
-
 	Blip_Buffer *mBlipBufRight;
 	Blip_Synth<blip_low_quality,4096> *mSynthRight;
 
