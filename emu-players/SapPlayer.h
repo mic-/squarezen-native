@@ -54,6 +54,10 @@ public:
 		TYPE_R,
 	};
 
+	uint16_t mInitAddress;
+	uint16_t mPlayAddress;
+	uint16_t mMusicAddress;
+
 private:
 	MusicPlayer::Result ParseTags(std::ifstream& musicFile);
 
@@ -61,7 +65,8 @@ private:
 	SapMapper *mMemory;
 	Pokey *mPokey;
 	uint8_t mFormat;
-	uint8_t mFrameCycles, mCycleCount;
+	uint32_t mFastplayScanlines, mFastplayCycles;
+	uint32_t mScanlineCycles, mCycleCount;
 };
 
 MusicPlayer *SapPlayerFactory();
