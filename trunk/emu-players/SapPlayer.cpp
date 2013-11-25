@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <stdlib.h>
 #include "NativeLogger.h"
 #include "SapPlayer.h"
 
