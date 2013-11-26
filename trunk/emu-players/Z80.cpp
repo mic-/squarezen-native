@@ -637,7 +637,14 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 
 		case 0xC0:	// RET NZ
-			// ToDo: implement
+			if (!(mRegs.F & Z80::FLAG_Z)) {
+				addr = mMemory->ReadByte(mRegs.SP);
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.SP+1)) << 8;
+				mRegs.SP += 2;
+				mCycles += 11;
+			} else {
+				mCycles += 5;
+			}
 			break;
 		case 0xC1:	// POP BC
 			// ToDo: implement
@@ -673,10 +680,25 @@ void Z80::Run(uint32_t maxCycles)
 			}
 			break;
 		case 0xCC:	// CALL Z,aaaa
-			// ToDo: implement
+			if (mRegs.F & Z80::FLAG_Z) {
+				mRegs.SP -= 2;
+				mMemory->WriteByte(mRegs.SP, mRegs.PC+2);
+				addr = mMemory->ReadByte(mRegs.PC);
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC+1)) << 8;
+				mRegs.PC = addr;
+				mCycles += 17;
+			} else {
+				mRegs.PC += 2;
+				mCycles += 10;
+			}
 			break;
 		case 0xCD:	// CALL aaaa
-			// ToDo: implement
+			mRegs.SP -= 2;
+			mMemory->WriteByte(mRegs.SP, mRegs.PC+2);
+			addr = mMemory->ReadByte(mRegs.PC);
+			addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC+1)) << 8;
+			mRegs.PC = addr;
+			mCycles += 17;
 			break;
 		case 0xCF:	// RST 08
 			Rst(0x08);
@@ -684,7 +706,14 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 
 		case 0xD0:	// RET NC
-			// ToDo: implement
+			if (!(mRegs.F & Z80::FLAG_C)) {
+				addr = mMemory->ReadByte(mRegs.SP);
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.SP+1)) << 8;
+				mRegs.SP += 2;
+				mCycles += 11;
+			} else {
+				mCycles += 5;
+			}
 			break;
 		case 0xD1:	// POP DE
 			// ToDo: implement
@@ -702,6 +731,19 @@ void Z80::Run(uint32_t maxCycles)
 			addr = mMemory->ReadByte(mRegs.PC++);
 			mRegs.A = mMemory->ReadPort(addr);
 			mCycles += 11;
+			break;
+		case 0xDC:	// CALL C,aaaa
+			if (mRegs.F & Z80::FLAG_C) {
+				mRegs.SP -= 2;
+				mMemory->WriteByte(mRegs.SP, mRegs.PC+2);
+				addr = mMemory->ReadByte(mRegs.PC);
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC+1)) << 8;
+				mRegs.PC = addr;
+				mCycles += 17;
+			} else {
+				mRegs.PC += 2;
+				mCycles += 10;
+			}
 			break;
 		case 0xDD:	// IX prefix
 			opcode2 = mMemory->ReadByte(mRegs.PC++);
