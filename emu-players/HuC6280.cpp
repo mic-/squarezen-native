@@ -529,7 +529,7 @@ void HuC6280::Reset()
 
 
 void HuC6280::Irq(uint16_t vector) {
-	if (!mRegs.F & HuC6280::FLAG_I) {
+	if (!(mRegs.F & HuC6280::FLAG_I)) {
 		PUSHW(mRegs.PC);
 		PUSHB(mRegs.F);
 		mRegs.F |= (HuC6280::FLAG_I);
@@ -550,7 +550,7 @@ void HuC6280::Run(uint32_t maxCycles)
 
 	while (mCycles < maxCycles) {
 
-		//Disassemble(mRegs.PC);
+		Disassemble(mRegs.PC);
 
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
 
@@ -1997,6 +1997,7 @@ void HuC6280Timer::Reset()
 	mPos = mCtrl = 0;
 	mStep = 0;
 	mCycles = 0;
+	mPeriod = 256;
 }
 
 
@@ -2100,7 +2101,7 @@ void HuC6280Psg::Step()
 
 void HuC6280Psg::Write(uint32_t addr, uint8_t data)
 {
-	NLOGD(NLOG_TAG, "Write(%#x, %#x)", addr, data);
+	NLOGE(NLOG_TAG, "Write(%#x, %#x)", addr, data);
 
 	switch (addr) {
 	case R_CHN_SELECT:

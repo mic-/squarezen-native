@@ -53,7 +53,7 @@ uint8_t HesMapper::ReadByte(uint32_t addr)
 	uint32_t mpr = mMPR[page];
 	uint32_t offset = addr & 0x1FFF;
 
-	NLOGD(NLOG_TAG, "ReadByte(%#x): mpr = %#x, numRomPages = %d", mpr, mNumRomPages);
+	//NLOGD(NLOG_TAG, "ReadByte(%#x): mpr = %#x, numRomPages = %d", addr, mpr, mNumRomPages);
 
 	if (mpr < 0x80) {
 		if (mpr < mNumRomPages) {
