@@ -168,7 +168,7 @@ MusicPlayer::Result HesPlayer::Prepare(std::string fileName)
 		}
 	}
 
-	mFrameCycles = 3580000 / 60;
+	mFrameCycles = 1790000 / 60; //3580000 / 60;
 	mCycleCount = 0;
 
 	//SetMasterVolume(0, 0);
@@ -217,12 +217,12 @@ void HesPlayer::Irq(uint8_t irqSource)
 	if (HuC6280Mapper::TIMER_IRQ == irqSource) {
 		NLOGD(NLOG_TAG, "Timer IRQ");
 		m6280->Irq(0xFFFA);
-		m6280->mCycles = 0;
-		m6280->Run(m6280->mTimer.mCycles);
+		//m6280->mCycles = 0;
+		//m6280->Run(m6280->mTimer.mCycles);
 	} else if (HuC6280Mapper::VDC_IRQ == irqSource) {
 		m6280->Irq(0xFFF8);
-		m6280->mCycles = 0;
-		m6280->Run(mFrameCycles);
+		//m6280->mCycles = 0;
+		//m6280->Run(mFrameCycles);
 	}
 }
 
@@ -256,7 +256,7 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 	int blipLen = mBlipBuf->count_clocks(numSamples);
 
 	for (k = 0; k < blipLen; k++) {
-		m6280->mTimer.Step();
+		if (k & 1) m6280->mTimer.Step();
 
 		mPsg->Step();
 
@@ -278,9 +278,11 @@ MusicPlayer::Result HesPlayer::Run(uint32_t numSamples, int16_t *buffer)
 			}
 		}
 
-		mCycleCount++;
+		if (k & 1) mCycleCount++;
 		if (mCycleCount == mFrameCycles) {
 			mMemory->Irq(HuC6280Mapper::VDC_IRQ);
+			m6280->mCycles = 0;
+			m6280->Run(mCycleCount);
 			mCycleCount = 0;
 		}
 	}
