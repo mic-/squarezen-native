@@ -21,6 +21,7 @@
 #ifndef GBPAPU_H_
 #define GBPAPU_H_
 
+#include "EmuCommon.h"
 #include "Oscillator.h"
 #include "GbZ80.h"
 
@@ -36,6 +37,7 @@ class GbPapuChip;
 class GbPapuLengthCounter : public Oscillator
 {
 public:
+	GbPapuLengthCounter() {}
 	virtual ~GbPapuLengthCounter() {}
 
 	virtual void Reset();
@@ -45,12 +47,15 @@ public:
 
 	uint32_t mMax;
 	bool mUse;
+private:
+	MAKE_NON_COPYABLE(GbPapuLengthCounter);
 };
 
 
 class GbPapuEnvelopeGenerator : public Oscillator
 {
 public:
+	GbPapuEnvelopeGenerator() {}
 	virtual ~GbPapuEnvelopeGenerator() {}
 
 	virtual void Reset();
@@ -62,6 +67,8 @@ public:
 	uint32_t mMax;
 	int16_t mDirection;
 	bool mUse;
+private:
+	MAKE_NON_COPYABLE(GbPapuEnvelopeGenerator);
 };
 
 

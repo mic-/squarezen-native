@@ -57,7 +57,7 @@ std::map<std::string, PlayerFactory> CreateSupportedFormatsMap()
 std::map<std::string, PlayerFactory> MusicPlayer::mSupportedFormats = CreateSupportedFormatsMap();
 
 
-bool MusicPlayer::IsSupportedFileType(std::string fileName)
+bool MusicPlayer::IsSupportedFileType(const std::string& fileName)
 {
 	std::string lowerCaseName = fileName;
 	std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), ::tolower);
@@ -73,7 +73,7 @@ bool MusicPlayer::IsSupportedFileType(std::string fileName)
 }
 
 
-MusicPlayer *MusicPlayer::MusicPlayerFactory(std::string fileName)
+MusicPlayer *MusicPlayer::MusicPlayerFactory(const std::string& fileName)
 {
 	std::string lowerCaseName = fileName;
 	std::transform(lowerCaseName.begin(), lowerCaseName.end(), lowerCaseName.begin(), ::tolower);
@@ -100,7 +100,7 @@ MusicPlayer::Result MusicPlayer::Prepare(std::string fileName)
 }
 
 
-MusicPlayer::Result MusicPlayer::OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize)
+MusicPlayer::Result MusicPlayer::OpenFile(std::ifstream& musicFile, const std::string& fileName, size_t& fileSize)
 {
 	fileSize = 0;
 

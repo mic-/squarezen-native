@@ -21,10 +21,11 @@
 #ifndef MUSICPLAYER_H_
 #define MUSICPLAYER_H_
 
+#include <stdint.h>
 #include <fstream>
 #include <map>
 #include <string>
-#include <stdint.h>
+#include "EmuCommon.h"
 #include "Blip_Buffer.h"
 
 class MusicPlayer;
@@ -92,14 +93,14 @@ public:
 	 * looks at the file extension).
 	 * @return true if the file is supported, false if it is not.
 	 */
-	static bool IsSupportedFileType(std::string fileName);
+	static bool IsSupportedFileType(const std::string& fileName);
 
 	/**
 	 * Creates a new player object suitable for playing the file specified by
 	 * fileName.
 	 * @return A pointer to the player object, or NULL.
 	 */
-	static MusicPlayer *MusicPlayerFactory(std::string fileName);
+	static MusicPlayer *MusicPlayerFactory(const std::string& fileName);
 
 	enum State
 	{
@@ -127,7 +128,7 @@ public:
 	 * @param[out] fileSize Size of the file in bytes.
 	 * @return A MusicPlayer::Result set to MusicPlayer::OK on success, or an error code on failure.
 	 */
-	virtual MusicPlayer::Result OpenFile(std::ifstream& musicFile, std::string fileName, size_t& fileSize);
+	virtual MusicPlayer::Result OpenFile(std::ifstream& musicFile, const std::string& fileName, size_t& fileSize);
 
 	/**
 	 * Prepare playback of the file specified by fileName

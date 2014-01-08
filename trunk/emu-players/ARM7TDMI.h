@@ -22,6 +22,7 @@
 #define ARM7TDMI_H_
 
 #include <stdint.h>
+#include "EmuCommon.h"
 #include "CpuBase.h"
 #include "MemoryMapper.h"
 
@@ -105,6 +106,8 @@ public:
 	void ThumbType0F(uint32_t instruction);
 
 private:
+	MAKE_NON_COPYABLE(ARM7TDMI);
+
 	inline void DecodeARM(uint32_t instruction);
 	inline void DecodeThumb(uint32_t instruction);
 

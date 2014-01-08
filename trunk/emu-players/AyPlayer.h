@@ -21,9 +21,10 @@
 #ifndef AYPLAYER_H_
 #define AYPLAYER_H_
 
-#include <vector>
 #include <stdint.h>
 #include <stddef.h>
+#include <vector>
+#include "EmuCommon.h"
 #include "YM2149.h"
 #include "MusicPlayer.h"
 #include "Z80.h"
@@ -79,6 +80,7 @@ public:
 	} AyEmulSongData;
 
 private:
+
 	Z80 		 *mZ80;
 	YmChip 		 mAy;
 	AyFileHeader mFileHeader;
