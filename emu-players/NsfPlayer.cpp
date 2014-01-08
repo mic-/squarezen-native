@@ -153,8 +153,8 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 
 	uint32_t numSynths = 2;
 
-	m6502 = new Emu6502;
-	m2A03 = new Emu2A03;
+	m6502 = new Emu6502();
+	m2A03 = new Emu2A03();
 	if (mFileHeader.extraChips & NsfPlayer::USES_VRC6) {
 		NLOGD("NsfPlayer", "This song uses the Konami VRC6");
 		mVrc6 = new KonamiVrc6;

@@ -22,11 +22,15 @@
 #define EMU6502_H_
 
 #include <stdint.h>
+#include "EmuCommon.h"
 #include "MemoryMapper.h"
 
 class Emu6502
 {
 public:
+	Emu6502() {}
+	virtual ~Emu6502() {}
+
 	void Reset();
 	void Run(uint32_t maxCycles);
 	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
@@ -53,6 +57,8 @@ public:
 	uint32_t mCycles;
 	MemoryMapper *mMemory;
 	uint16_t mBrkVector;
+private:
+	MAKE_NON_COPYABLE(Emu6502);
 };
 
 

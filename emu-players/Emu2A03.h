@@ -22,6 +22,7 @@
 #define EMU2A03_H_
 
 #include <stdint.h>
+#include "EmuCommon.h"
 #include "Oscillator.h"
 #include "MemoryMapper.h"
 
@@ -32,6 +33,7 @@ class Emu2A03Channel;
 class Emu2A03LengthCounter : public Oscillator
 {
 public:
+	Emu2A03LengthCounter() {}
 	virtual ~Emu2A03LengthCounter() {}
 
 	virtual void Reset();
@@ -44,11 +46,15 @@ public:
 	Emu2A03Channel *mChannel;
 	uint32_t mMax;
 	bool mUse;
+private:
+	MAKE_NON_COPYABLE(Emu2A03LengthCounter);
 };
+
 
 class Emu2A03LinearCounter : public Oscillator
 {
 public:
+	Emu2A03LinearCounter() {}
 	virtual ~Emu2A03LinearCounter() {}
 
 	virtual void Reset();
@@ -60,11 +66,15 @@ public:
 	uint32_t mMax;
 	bool mUse;
 	bool mReload;
+private:
+	MAKE_NON_COPYABLE(Emu2A03LinearCounter);
 };
+
 
 class Emu2A03EnvelopeGenerator : public Oscillator
 {
 public:
+	Emu2A03EnvelopeGenerator() {}
 	virtual ~Emu2A03EnvelopeGenerator() {}
 
 	virtual void Reset();
@@ -77,6 +87,8 @@ public:
 	bool mStart;
 	uint8_t mOut;
 	bool mUse;
+private:
+	MAKE_NON_COPYABLE(Emu2A03EnvelopeGenerator);
 };
 
 
@@ -97,6 +109,7 @@ public:
 class Emu2A03Channel : public Oscillator
 {
 public:
+	Emu2A03Channel() {}
 	virtual ~Emu2A03Channel() {}
 
 	virtual void Reset();
@@ -122,12 +135,18 @@ public:
 	uint16_t mVol, mCurVol;
 	uint8_t mPhase;
 	uint8_t mDuty;
+
+private:
+	MAKE_NON_COPYABLE(Emu2A03Channel);
 };
 
 
 class Emu2A03
 {
 public:
+	Emu2A03() {}
+	virtual ~Emu2A03() {}
+
 	void Reset();
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
@@ -186,6 +205,8 @@ public:
 	MemoryMapper *mMemory;
 
 private:
+	MAKE_NON_COPYABLE(Emu2A03);
+
 	void HalfFrame();
 	void QuarterFrame();
 	void SequencerFrame();

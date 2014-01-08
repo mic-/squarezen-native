@@ -22,6 +22,7 @@
 #define CPUBASE_H_
 
 #include <stdint.h>
+#include "EmuCommon.h"
 
 class MemoryMapper;
 
@@ -30,7 +31,7 @@ class CpuBase
 public:
 
 	CpuBase();
-	CpuBase(MemoryMapper *mapper);
+	explicit CpuBase(MemoryMapper *mapper);
 
 	virtual ~CpuBase() {}
 
@@ -39,6 +40,9 @@ public:
 	virtual void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
 
 	MemoryMapper *mMemory;
+
+private:
+	MAKE_NON_COPYABLE(CpuBase);
 };
 
 

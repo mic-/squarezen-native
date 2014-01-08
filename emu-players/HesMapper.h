@@ -31,7 +31,7 @@ class HesPlayer;
 class HesMapper : public HuC6280Mapper
 {
 public:
-	HesMapper(uint32_t numRomPages);
+	explicit HesMapper(uint32_t numRomPages);
 	virtual ~HesMapper();
 
 	uint8_t *GetRomPointer() const { return mCart; }
