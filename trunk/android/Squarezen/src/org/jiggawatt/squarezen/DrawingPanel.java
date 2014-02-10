@@ -9,6 +9,7 @@ import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.PixelFormat;
 import android.graphics.Shader;
+import android.media.audiofx.Visualizer;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -30,6 +31,11 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 	int bufferToReadFrom = 0;
 	Float lastBufferX = 2048.0f, bufferX = 2048.0f;
 	long prevDrawTime;
+	private Visualizer visualizer;
+	private boolean showWaveform = true;
+	private int[] dbvalues;
+	private static final int[] FFT_INDICES = {1,2,3,5,7,11,15,26};
+	byte[] fft;
 	
 	class PanelThread extends Thread {
         private SurfaceHolder _surfaceHolder;
@@ -124,6 +130,22 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
     	return false;
     }
     
+    public void updateVisualizerWithFft(byte[] bytes) {
+    	Log.e("DrawingPanel", "dbValue capture size: " + bytes.length);
+    	
+		//int fftSample = 8;
+		for (int i = 0; i < 8; i++) {
+			byte realPart = bytes[FFT_INDICES[i]*2];
+		    byte imagPart = bytes[FFT_INDICES[i]*2 + 1];
+		    float magnitude = (realPart*realPart + imagPart*imagPart);
+		    int dbValue = (int) (10 * Math.log10(magnitude));
+		    if (dbValue >= 0) dbvalues[i] = dbValue;
+		    //fftSample += 16;
+		    Log.e("DrawPanel", "dbValue["+i+"] = " + dbValue);
+		}    	
+    }
+    
+    
     @Override 
     public void onDraw(Canvas canvas) { 
     	super.onDraw(canvas);
@@ -137,6 +159,34 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 			playingBuffer[0] = ByteBuffer.allocateDirect(2048*4);	// Must match the size used in emu-players.cpp
 			playingBuffer[1] = ByteBuffer.allocateDirect(2048*4);
 			prevDrawTime = System.nanoTime();
+			if (!showWaveform) {
+				visualizer = new Visualizer(0);
+				dbvalues = new int[8];
+				for (int i = 0; i < 8; i++) dbvalues[i] = 0;
+				int[] capSizes = Visualizer.getCaptureSizeRange();
+				Log.e("DrawingPanel", "Valid capture size range: " + capSizes[0] +"-" + capSizes[1]);
+				fft = new byte[128];
+	
+				visualizer.setCaptureSize(Visualizer
+	                    .getCaptureSizeRange()[0]);
+	            visualizer.setDataCaptureListener(
+	                    new Visualizer.OnDataCaptureListener() {
+	                        public void onWaveFormDataCapture(
+	                                Visualizer vis, byte[] bytes,
+	                                int samplingRate) {
+	                            // mVisualizerView.updateVisualizer(bytes);
+	                        }
+	
+	                        public void onFftDataCapture(Visualizer visualizer,
+	                                byte[] bytes, int samplingRate) {
+	
+	                            DrawingPanel.this.updateVisualizerWithFft(bytes);
+	                        }
+	                    }, Visualizer.getMaxCaptureRate() / 2, false, true);
+	            
+				visualizer.setEnabled(true);
+				Log.e("DrawingPanel", "samplign freq = " + visualizer.getSamplingRate());
+			}
 		}
 		
 		if (true) { //ymState != null) {
@@ -148,35 +198,46 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
 			bufferX = lastBufferX + 735.0f*(float)(44100*timeDiffMillis/1000);
 			float y,lastX = (width/2)+1;
 			
+			int barWidth = width/16;
+			
 			int alpha = 0x80;
 			int alphaCount = 0;
 			paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));
 			paint.setAntiAlias(true);
 	
 			if (playingBuffer != null) {
-				synchronized (bufferX) {
-					playingBuffer[bufferToReadFrom].order(ByteOrder.LITTLE_ENDIAN);
-					for (int i = (width/2)+1; i < width; i += 2, alphaCount += 1) {
-						if (bufferX.intValue() >= 2048) {
-							mainActivity.GetBuffer(playingBuffer[1-bufferToReadFrom]);
-							bufferToReadFrom = 1-bufferToReadFrom;
-							playingBuffer[bufferToReadFrom].order(ByteOrder.LITTLE_ENDIAN);
-							bufferX = 0.0f;
-						}
-						short smp = playingBuffer[bufferToReadFrom].getShort(bufferX.intValue()*4);
-						y = (smp+32768)*0.0012f;
-						canvas.drawLine(lastX, lastY+28, (float)i, y+28, paint);
-						lastX = (float)i;
-						lastY = y;
-						bufferX += dx;
-						if (alphaCount < 30) {
-							alpha += 4;
-							paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));
-						} else if (i >= width-60) {
-							alpha -= 4;
-							paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));						
+				if (showWaveform) {
+					synchronized (bufferX) {
+						playingBuffer[bufferToReadFrom].order(ByteOrder.LITTLE_ENDIAN);
+						for (int i = (width/2)+1; i < width; i += 2, alphaCount += 1) {
+							if (bufferX.intValue() >= 2048) {
+								mainActivity.GetBuffer(playingBuffer[1-bufferToReadFrom]);
+								bufferToReadFrom = 1-bufferToReadFrom;
+								playingBuffer[bufferToReadFrom].order(ByteOrder.LITTLE_ENDIAN);
+								bufferX = 0.0f;
+							}
+							short smp = playingBuffer[bufferToReadFrom].getShort(bufferX.intValue()*4);
+							y = (smp+32768)*0.0012f;
+							canvas.drawLine(lastX, lastY+28, (float)i, y+28, paint);
+							lastX = (float)i;
+							lastY = y;
+							bufferX += dx;
+							if (alphaCount < 30) {
+								alpha += 4;
+								paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));
+							} else if (i >= width-60) {
+								alpha -= 4;
+								paint.setColor(android.graphics.Color.argb(alpha, 0x70, 0xD4, 0xE0));						
+							}
 						}
 					}
+				} // end if (showWaveform)
+				else {
+					for (int i = 0; i < 8; i++) {
+						canvas.drawLine((width/2)+barWidth*i+1, 60-dbvalues[i], (width/2)+barWidth*(i+1), 60-dbvalues[i], paint);
+					}
+					
+					//Log.e("DrawPanel", "fft[80] = " + (fft[20]&0xFF)+","+(fft[21]&0xFF));
 				}
 				prevDrawTime = currDrawTime;
 			} else {
@@ -275,6 +336,9 @@ class DrawingPanel extends SurfaceView implements SurfaceHolder.Callback {
         try {
             _thread.setRunning(false);                //Tells thread to stop
             _thread.join();                           //Removes thread from mem.
+            if (visualizer != null) {
+            	visualizer.setEnabled(false);
+            }
         } catch (InterruptedException e) {}	    	
     }
 

@@ -6,6 +6,8 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 
+import android.app.ActionBar;
+import android.app.FragmentTransaction;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -44,7 +46,7 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
 	DrawingPanel drawingPanel;
 	Window activityWindow = null;
 
-	private class CustomListAdapter extends ArrayAdapter {
+	private class CustomListAdapter extends ArrayAdapter<String> {
 
 	    private Context mContext;
 	    private int id;
@@ -82,7 +84,7 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
 	}
 	
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -127,6 +129,7 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
         ArrayAdapter<String> adapter = new CustomListAdapter(this,
                 R.layout.custom_list, Arrays.asList(ymFiles));
         ListView songsListView = (ListView) findViewById(R.id.listView1);
+        Log.e("Squarezen", "listView = " + songsListView + ", adapter = " + adapter);
         songsListView.setAdapter(adapter);
         songsListView.setVisibility(View.VISIBLE);
         songsListView.bringToFront();
@@ -149,18 +152,21 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
         stopAudioRunner = false;
         playing = false;
         
-        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
 
         final Button button = (Button) findViewById(R.id.button1);
         button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
             	Log.e("Squarezen", "Button1 clicked");
+            	stopSong();
             	finish();
                 // Perform action on click
             }
         });        
     }
 
+
+    
     @Override
     public void onStart() {
     	setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -180,7 +186,6 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     }
     
     public void stopSong() {
-    	audioManager.abandonAudioFocus(this);
     	if (playing) {
 	    	stopAudioRunner = true;
 	    	//while (stopAudioRunner) {}
@@ -189,6 +194,7 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
 	    	playing = false;
 	    	audioRunner = null;
     	}
+    	audioManager.abandonAudioFocus(this);
     }
     
     public void playSong(String songName) {
@@ -202,66 +208,33 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     	playing = true;
     	
     	try {
-	    	TextView titleText = (TextView)findViewById(R.id.textView1);
+	    	TextView titleText = (TextView) findViewById(R.id.textView1);
 	    	byte[] title = GetTitle();
 	    	titleText.setText(new String(title, 0, title.length, "ISO-8859-1"));
 	    	
-	    	TextView authorText = (TextView)findViewById(R.id.textView2);
+	    	TextView authorText = (TextView) findViewById(R.id.textView2);
 	    	byte[] author = GetArtist();
 	    	authorText.setText(new String(author, 0, author.length, "ISO-8859-1"));
     	} catch (Exception e) {
     		Log.e("Squarezen", e.toString());
     	}
-    	
-        /*Run(minBufferSize>>2, pcmFromNative[0]);
-        bufferToPlay = 0;
-        
-        if (audioRunner == null) {
-	    	try {
-	            audioTrack.play();
-	        } catch (Exception e) {
-	        	Log.e("YmPlay", "Unable to start playback: " + e.toString());
-	        }
-
-        	t = new Thread(audioRunner = new Runnable()
-	        {
-	        	@Override
-	            public void run() 
-	            {
-	        		android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_URGENT_AUDIO);
-                	pcmFromNative[0].position(0);
-                	pcmFromNative[1].position(0);
-                	playing = true;
-	                while (!stopAudioRunner) {
-	                	pcmFromNative[bufferToPlay].get(buf, bufferToPlay*minBufferSize, minBufferSize);
-	                	//GetState(ymState);
-	                	//DrawingPanel.setYmState(ymState);
-	                	audioTrack.write(buf, bufferToPlay*minBufferSize, minBufferSize);
-	                	drawingPanel.setPlayingBuffer(pcmFromNative[bufferToPlay]);
-	                	bufferToPlay ^= 1;	
-	                	pcmFromNative[bufferToPlay].position(0);
-	                	Run(minBufferSize>>2, pcmFromNative[bufferToPlay]);
-	                }
-	                stopAudioRunner = false;
-	            }
-	        });
-        } 	
-        t.start();*/
-        
+  	        
         activityWindow = getWindow();
         activityWindow.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);       		
     }
 
+    
     @Override
     public void onStop() {
-    	stopSong();
+    	//stopSong();
     	setVolumeControlStream(AudioManager.USE_DEFAULT_STREAM_TYPE);
     	super.onStop();
     }
     
+    
     @Override
     public void onDestroy() {
-    	stopSong();
+    	//stopSong();
     	if (activityWindow != null) {
     		activityWindow.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     	}
@@ -271,12 +244,14 @@ public class MainActivity extends Activity implements AudioManager.OnAudioFocusC
     }
     
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu) { //, MenuInflater menuInflater) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.main, menu);
-        return true;
+    	getMenuInflater().inflate(R.menu.main, menu);
+    	//super.onCreateOptionsMenu(menu,  menuInflater);
+    	return true;
     }
-   
+
+        
     static {
     	System.loadLibrary("emu-players");
     }

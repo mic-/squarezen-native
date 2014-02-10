@@ -99,8 +99,6 @@ void bqPlayerCallback(SLAndroidSimpleBufferQueueItf bq, void *context)
     bufferToFill = (bufferToFill < NUM_BUFFERS) ? bufferToFill : 0;
 
 	pthread_mutex_unlock(&playerMutex);
-
-   	//pthread_cond_signal(&bufferFillCond);
 }
 
 
@@ -209,15 +207,6 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Close(JNIEnv *ioEnv, jobj
 	}
 
 	pthread_mutex_unlock(&playerMutex);
-
-	/*if (playing) {
-		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "signalling bufferFillCond");
-		pthread_cond_signal(&bufferFillCond);
-		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "joining bufferFillThread");
-		playing = false;
-		pthread_join(bufferFillThread, NULL);
-		__android_log_write(ANDROID_LOG_VERBOSE, "squarezen", "joined thread");
-	}*/
 }
 
 
@@ -250,12 +239,6 @@ void JNICALL Java_org_jiggawatt_squarezen_MainActivity_Exit(JNIEnv *ioEnv, jobje
 	}
 
 	pthread_mutex_unlock(&playerMutex);
-
-	/*if (playing) {
-		pthread_cond_signal(&bufferFillCond);
-		playing = false;
-		pthread_join(bufferFillThread, NULL);
-	}*/
 }
 
 
