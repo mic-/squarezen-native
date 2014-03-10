@@ -28,7 +28,7 @@ static float tndTable[203];
 
 
 NsfPlayer::NsfPlayer()
-	: m6502(NULL)
+	: m6502(nullptr)
 	, m2A03(NULL)
 	, mVrc6(NULL)
 	, mSunsoft5B(NULL)
@@ -50,13 +50,13 @@ MusicPlayer *NsfPlayerFactory()
 
 NsfPlayer::~NsfPlayer()
 {
-	delete m6502;
+	//delete m6502;
 	delete m2A03;
 	delete mVrc6;
 	delete mSunsoft5B;
 	delete mMemory;
 
-	m6502      = NULL;
+	//m6502      = NULL;
 	m2A03      = NULL;
 	mVrc6      = NULL;
 	mSunsoft5B = NULL;
@@ -73,12 +73,13 @@ MusicPlayer::Result NsfPlayer::Reset()
 	mBlipBuf = NULL;
 	mSynth   = NULL;
 
-	delete m6502;
+	//delete m6502;
+	m6502 = nullptr;
 	delete m2A03;
 	delete mVrc6;
 	delete mSunsoft5B;
 	delete mMemory;
-	m6502      = NULL;
+	//m6502      = NULL;
 	m2A03      = NULL;
 	mVrc6      = NULL;
 	mSunsoft5B = NULL;
@@ -153,7 +154,7 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 
 	uint32_t numSynths = 2;
 
-	m6502 = new Emu6502();
+	m6502 = std::make_shared<Emu6502>(); //new Emu6502();
 	m2A03 = new Emu2A03();
 	if (mFileHeader.extraChips & NsfPlayer::USES_VRC6) {
 		NLOGD("NsfPlayer", "This song uses the Konami VRC6");

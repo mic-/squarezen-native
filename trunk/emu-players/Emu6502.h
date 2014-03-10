@@ -33,7 +33,7 @@ public:
 
 	void Reset();
 	void Run(uint32_t maxCycles);
-	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+	void SetMapper(std::shared_ptr<MemoryMapper> mapper) { mMemory = mapper; }
 	void Disassemble(uint16_t address);
 
 	void SetBrkVector(uint16_t vector) { mBrkVector = vector; }
@@ -55,7 +55,7 @@ public:
 	} mRegs;
 
 	uint32_t mCycles;
-	MemoryMapper *mMemory;
+	std::shared_ptr<MemoryMapper> mMemory;
 	uint16_t mBrkVector;
 private:
 	MAKE_NON_COPYABLE(Emu6502);
