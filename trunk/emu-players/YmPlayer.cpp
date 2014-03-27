@@ -105,8 +105,9 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
     loggedBuffers = 0;
 #endif
 
-    mYmData = new unsigned char[fileSize];
-    if (!mYmData) {
+    try {
+    	mYmData = std::shared_ptr<uint8_t>(new uint8_t[fileSize]);
+    } catch (std::bad_alloc& ba) {
     	NLOGE("YmPlayer", "Failed to allocate memory");
 		return MusicPlayer::ERROR_OUT_OF_MEMORY;
     }
@@ -125,19 +126,20 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 		NLOGD("YmPlayer", "File is compressed; decoding..");
 		LHADecoderType *decoderType;
 		LHADecoder *decoder;
-		mLhHeader = (LhFileHeader*)mYmData;
-		mLhDataPos = 24 + mLhHeader->filenameLength;
+		//mLhHeader = (LhFileHeader*)mYmData;
+		LhFileHeader *lhHeader = static_cast<LhFileHeader*>(mYmData);
+		mLhDataPos = 24 + lhHeader->filenameLength;
 		mLhDataAvail = fileSize;
-		NLOGD("YmPlayer", "Decompressed size: %d bytes", mLhHeader->uncompressedSize);
+		NLOGD("YmPlayer", "Decompressed size: %d bytes", lhHeader->uncompressedSize);
 		if (!(decoderType = lha_decoder_for_name(const_cast<char*>(LH5_DECODER_NAME)))) {
 			NLOGE("YmPlayer", "Failed to get decoder type for \"-lh5-\"");
 			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
-		if (!(decoder = lha_decoder_new(decoderType, lhDecodeCallback, this, mLhHeader->uncompressedSize))) {
+		if (!(decoder = lha_decoder_new(decoderType, lhDecodeCallback, this, lhHeader->uncompressedSize))) {
 			NLOGE("YmPlayer", "Failed to get decoder for \"-lh5-\"");
 			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
-		uint8_t *decoded = new uint8_t[mLhHeader->uncompressedSize];
+		uint8_t *decoded = new uint8_t[lhHeader->uncompressedSize];
 		uint8_t *p = decoded;
 		while (lha_decoder_read(decoder, p, 4096) == 4096) {
 			p += 4096;
@@ -161,7 +163,7 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 		sampleBytes |= ((uint32_t)mYmRegStream[2]) << 8;
 		sampleBytes |= ((uint32_t)mYmRegStream[3]);
 		mYmRegStream += 4;
-		if (i < 16) {
+		if (i < 256) {
 			mChip.mDigiDrumPtr[i] = mYmRegStream;
 			mChip.mDigiDrumLen[i] = sampleBytes;
 			i++;
@@ -189,8 +191,8 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 	}
 
 	mChip.mEG.mEnvTable  = (uint16_t*)YmChip::YM2149_ENVE_TB;
-	mFrameCycles = 2000000/50;
-	mChip.mEG.mMaxCycle = 31;
+	mFrameCycles = ATARI_ST_CLOCK / 50;
+	mChip.mEG.mMaxCycle = YmChip::YM2149_ENVELOPE_STEPS - 1;
 
 	mBlipBuf = new Blip_Buffer();
 	mSynth = new Blip_Synth<blip_low_quality,4096>[3];
@@ -199,15 +201,15 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 		NLOGE("YmPlayer", "Failed to set blipbuffer sample rate");
 		return MusicPlayer::ERROR_UNKNOWN;
 	}
-	mBlipBuf->clock_rate(2000000);
+	mBlipBuf->clock_rate(ATARI_ST_CLOCK);
 
 	if (mYmData[0x17] == 0x1B) {
 		// This is probably a ZX Spectrum tune with an AY clock of 1773400 Hz
 		// (0x001B0F58 big-endian). Adjust the emulation speed accordingly.
-		mChip.mEG.mMaxCycle = 15;
+		mChip.mEG.mMaxCycle = YmChip::AY_3_8910_ENVELOPE_STEPS - 1;
 		mChip.mEG.mEnvTable = (uint16_t*)YmChip::YM2149_VOL_TB;
-		mBlipBuf->clock_rate(1773400);
-		mFrameCycles = 1773400/50;
+		mBlipBuf->clock_rate(ZX_SPECTRUM_CLOCK);
+		mFrameCycles = ZX_SPECTRUM_CLOCK / 50;
 	}
 
 	mChip.Reset();
