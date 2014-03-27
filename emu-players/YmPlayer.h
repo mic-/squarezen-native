@@ -21,6 +21,7 @@
 #ifndef YMPLAYER_H_
 #define YMPLAYER_H_
 
+#include <memory>
 #include <stdint.h>
 #include <stddef.h>
 #include "YM2149.h"
@@ -39,6 +40,11 @@ public:
 	virtual size_t GetNumChannels() const { return 3; }
 	virtual void GetChannelOutputs(int16_t *outputs) const;
 
+	enum {
+		ATARI_ST_CLOCK = 2000000,
+		ZX_SPECTRUM_CLOCK = 1773400,
+	};
+
 	typedef struct __attribute__ ((__packed__))
 	{
 		uint8_t archiveHeaderSize;
@@ -53,9 +59,8 @@ public:
 	} LhFileHeader;
 
 	YmChip mChip;
-	LhFileHeader *mLhHeader;
 	uint32_t mLhDataPos,mLhDataAvail;
-	uint8_t *mYmData;
+	std::shared_ptr<uint8_t> mYmData;
 private:
 
 	uint32_t mCycleCount, mFrameCycles;

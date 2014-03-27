@@ -339,7 +339,7 @@ void YmSoundFX::Write(uint8_t *regs)
 
 		} else if (SFX_DIGI_DRUM == mType) {
 			if (!mPeriod) {
-				mDigiDrumSample = regs[YmChip::R_LEVEL_A + chn->mIndex] & 0x1F;
+				mDigiDrumSample = regs[YmChip::R_LEVEL_A + chn->mIndex];
 				mDigiDrumPos = 0;
 			}
 			mPeriod = (YmChip::TIMER_PRESCALER_TB[regs[6 + mIndex*2] >> 5] * (uint32_t)regs[14 + mIndex] * 13) >> 4;

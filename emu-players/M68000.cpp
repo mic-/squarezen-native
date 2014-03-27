@@ -61,6 +61,12 @@ void M68000::Run(uint32_t maxCycles)
 			// MOVE
 		}
 		break;
+	case 0x40:
+		dstMode = (opcode16 >> 6) & 7;
+		if (dstMode == 7) {
+			// LEA
+		}
+		break;
 	case 0x70:
 		if (!(opcode & 1)) {
 			// MOVEQ #imm8,Dn

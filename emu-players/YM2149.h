@@ -175,8 +175,8 @@ public:
 	YmEnvelopeGenerator mEG;
 	YmSoundFX mSfx[2];
 	uint8_t mDigiDrumFormat;
-	uint8_t *mDigiDrumPtr[16];
-	uint32_t mDigiDrumLen[16];
+	uint8_t *mDigiDrumPtr[256];
+	uint32_t mDigiDrumLen[256];
 };
 
 
