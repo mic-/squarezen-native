@@ -49,7 +49,7 @@ void SnChannel::Step()
 		if ((mPeriod & NOISE_PERIOD_MASK) == NOISE_PERIOD_TONE2) {
 			period = mChip->mChannels[2].mPeriod;
 		}
-		period <<= 4;
+		period <<= 5;
 
 		if (mPos >= period) {
 			mPos -= period;
@@ -77,6 +77,7 @@ void SnChannel::Write(uint32_t addr, uint8_t val)
 			if ((val & SnChip::CMD_TYPE_MASK) == SnChip::CMD_TYPE_FREQ) {
 				mPeriod &= 0x3F0;
 				mPeriod |= (val & 0x0F);
+				mLfsr = 0x8000;
 			} else {
 				mVol &= 0x3F0;
 				mVol |= (val & 0x0F);
@@ -85,6 +86,7 @@ void SnChannel::Write(uint32_t addr, uint8_t val)
 			if ((mChip->mLatchedByte & SnChip::CMD_TYPE_MASK) == SnChip::CMD_TYPE_FREQ) {
 				mPeriod &= 0x00F;
 				mPeriod |= (uint16_t)(val & 0x3F) << 4;
+				mLfsr = 0x8000;
 			} else {
 				mVol &= 0x00F;
 				mVol |= (uint16_t)(val & 0x3F) << 4;
