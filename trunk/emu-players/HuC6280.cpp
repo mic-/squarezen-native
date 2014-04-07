@@ -156,15 +156,15 @@
 
 // zp
 // Updates PC
-#define ZP_ADDR() (mMemory->ReadByte(mRegs.PC++))
+#define ZP_ADDR() (mMemory->ReadByte(mRegs.PC++) | 0x2000)
 
 // zp,X
 // Updates PC
-#define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0xFF)
+#define ZPX_ADDR() ((ZP_ADDR() + mRegs.X) & 0x20FF)
 
 // zp,Y
 // Updates PC
-#define ZPY_ADDR() ((ZP_ADDR() + mRegs.Y) & 0xFF)
+#define ZPY_ADDR() ((ZP_ADDR() + mRegs.Y) & 0x20FF)
 
 // (zp)
 // Updates PC
@@ -550,7 +550,7 @@ void HuC6280::Run(uint32_t maxCycles)
 
 	while (mCycles < maxCycles) {
 
-		Disassemble(mRegs.PC);
+		//Disassemble(mRegs.PC);
 
 		uint8_t opcode = mMemory->ReadByte(mRegs.PC++);
 
@@ -1489,7 +1489,9 @@ void HuC6280::Run(uint32_t maxCycles)
 			COND_BRANCH(mRegs.F & HuC6280::FLAG_C);
 			break;
 		case 0xB1:	// LDA (zp),Y
+		temp8 = mMemory->ReadByte(mRegs.PC);
 			INDY_ADDR(addr);
+			NLOGE(NLOG_TAG, "LDA (%#x),Y : addr = %#x, Y=%d", temp8, addr, mRegs.Y);
 			mRegs.A = mMemory->ReadByte(addr);
 			UPDATE_NZ(mRegs.A);
 			mCycles += 7;
@@ -2061,6 +2063,7 @@ void HuC6280PsgChannel::Write(uint32_t addr, uint8_t data)
 	case HuC6280Psg::R_WAVE_DATA:
 		switch (mEnable & HuC6280Psg::WRITE_MODE) {
 		case HuC6280Psg::WRITE_WAVEFORM_RAM:
+			NLOGE(NLOG_TAG, "Writing to wave RAM: [%#x] = %#x", mWaveWritePos, data&0x1F);
 			mWaveformRam[mWaveWritePos++] = data & 0x1F;
 			mWaveWritePos &= 0x1F;
 			break;

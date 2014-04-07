@@ -85,10 +85,8 @@ SidPlayer::~SidPlayer()
 {
 	delete m6502;
 	delete mSid;
-	delete mMemory;
 	m6502 = NULL;
 	mSid = NULL;
-	mMemory = NULL;
 }
 
 
@@ -103,10 +101,9 @@ MusicPlayer::Result SidPlayer::Reset()
 
 	delete m6502;
 	delete mSid;
-	delete mMemory;
 	m6502 = NULL;
 	mSid = NULL;
-	mMemory = NULL;
+	mMemory = nullptr;
 
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
@@ -190,12 +187,12 @@ MusicPlayer::Result SidPlayer::Prepare(std::string fileName)
     mMetaData.SetAuthor((char*)mFileHeader.author);
     mMetaData.SetComment((char*)mFileHeader.copyright);
 
-	mMemory = new SidMapper();
+	mMemory = std::make_shared<SidMapper>();
 
 	musicFile.read((char*)mMemory->GetRamPointer() + mFileHeader.loadAddress, fileSize - mFileHeader.dataOffset);
 	if (!musicFile) {
 		NLOGE("SidPlayer", "Read failed");
-		delete mMemory;
+		mMemory = nullptr;
         musicFile.close();
 		return MusicPlayer::ERROR_FILE_IO;
 	}
@@ -214,7 +211,7 @@ MusicPlayer::Result SidPlayer::Prepare(std::string fileName)
 	mSynth = new Blip_Synth<blip_low_quality,4096>[3];
 	if (mBlipBuf->set_sample_rate(44100)) {
 		NLOGE("SidPlayer", "Failed to set blipbuffer sample rate");
-		delete mMemory;
+		mMemory = nullptr;
 		return MusicPlayer::ERROR_UNKNOWN;
 	}
 	mBlipBuf->clock_rate(1000000);

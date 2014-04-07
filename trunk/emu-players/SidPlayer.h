@@ -74,7 +74,7 @@ private:
 
 	Emu6502 *m6502;
 	Mos6581 *mSid;
-	SidMapper *mMemory;
+	std::shared_ptr<SidMapper> mMemory;
 	uint32_t mFrameCycles, mCycleCount;
 	PsidFileHeader mFileHeader;
 	uint16_t mDriverPage;

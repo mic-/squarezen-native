@@ -22,6 +22,7 @@
 #define EMU6502_H_
 
 #include <stdint.h>
+#include <memory>
 #include "EmuCommon.h"
 #include "MemoryMapper.h"
 

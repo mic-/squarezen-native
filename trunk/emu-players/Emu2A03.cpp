@@ -258,7 +258,7 @@ void Emu2A03Channel::Step()
 					mSample >>= 1;
 					mSampleBits--;
 
-					mDacOut = mDuty & mOutputMask;
+					mDacOut = mDuty; // & mOutputMask;
 
 					mVol = mDuty >> 3;
 				}

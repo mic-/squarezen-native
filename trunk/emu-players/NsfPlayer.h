@@ -92,7 +92,7 @@ private:
 	KonamiVrc6 *mVrc6;
 	Namco163 *mN163;
 	Sunsoft5B *mSunsoft5B;
-	NsfMapper *mMemory;
+	std::shared_ptr<NsfMapper> mMemory;
 
 	uint32_t mVrc6Synth, mN163Synth, mSunsoft5BSynth;
 
