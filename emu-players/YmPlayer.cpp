@@ -51,8 +51,7 @@ MusicPlayer::Result YmPlayer::Reset()
 {
 	NLOGV("YmPlayer", "YmPlayer::Reset");
 
-	delete [] mYmData;
-	mYmData = NULL;
+	mYmData = nullptr;
 
 	delete mBlipBuf;
 	delete [] mSynth;
@@ -72,7 +71,7 @@ size_t lhDecodeCallback(void *buf, size_t buf_len, void *user_data)
 	if (bytesToCopy < 0) return 0;
 	bytesToCopy = (bytesToCopy > buf_len) ? buf_len : bytesToCopy;
 
-	memcpy(buf, &(ymPlayer->mYmData[ymPlayer->mLhDataPos]), bytesToCopy);
+	memcpy(buf, &(ymPlayer->mYmData.get()[ymPlayer->mLhDataPos]), bytesToCopy);
 	ymPlayer->mLhDataPos += bytesToCopy;
 	return bytesToCopy;
 }
@@ -105,16 +104,15 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
     loggedBuffers = 0;
 #endif
 
-    try {
-    	mYmData = std::shared_ptr<uint8_t>(new uint8_t[fileSize]);
-    } catch (std::bad_alloc& ba) {
+  	mYmData = std::shared_ptr<uint8_t>(new uint8_t[fileSize]);
+    if (mYmData == nullptr) {
     	NLOGE("YmPlayer", "Failed to allocate memory");
 		return MusicPlayer::ERROR_OUT_OF_MEMORY;
     }
 
 	NLOGV("YmPlayer","Allocation ok");
 
-	musicFile.read((char*)mYmData, fileSize);
+	musicFile.read(reinterpret_cast<char*>(mYmData.get()), fileSize);
 	if (!musicFile) {
 		NLOGE("YmPlayer", "Failed to read data from file");
 		musicFile.close();
@@ -122,12 +120,12 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 	}
 	musicFile.close();
 
-	if (strncmp((char*)&mYmData[2], "-lh5", 4) == 0) {
+	if (strncmp((char*)&(mYmData.get()[2]), "-lh5", 4) == 0) {
 		NLOGD("YmPlayer", "File is compressed; decoding..");
 		LHADecoderType *decoderType;
 		LHADecoder *decoder;
 		//mLhHeader = (LhFileHeader*)mYmData;
-		LhFileHeader *lhHeader = static_cast<LhFileHeader*>(mYmData);
+		LhFileHeader *lhHeader = reinterpret_cast<LhFileHeader*>(mYmData.get());
 		mLhDataPos = 24 + lhHeader->filenameLength;
 		mLhDataAvail = fileSize;
 		NLOGD("YmPlayer", "Decompressed size: %d bytes", lhHeader->uncompressedSize);
@@ -139,21 +137,20 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 			NLOGE("YmPlayer", "Failed to get decoder for \"-lh5-\"");
 			return MusicPlayer::ERROR_DECOMPRESSION;
 		}
-		uint8_t *decoded = new uint8_t[lhHeader->uncompressedSize];
-		uint8_t *p = decoded;
+		std::shared_ptr<uint8_t> decoded = std::shared_ptr<uint8_t>(new uint8_t[lhHeader->uncompressedSize]);
+		uint8_t* p = decoded.get();
 		while (lha_decoder_read(decoder, p, 4096) == 4096) {
 			p += 4096;
 		}
 		NLOGD("YmPlayer", "Number of bytes decoded: %d", lha_decoder_get_length(decoder));
 		lha_decoder_free(decoder);
-		delete [] mYmData;
 		mYmData = decoded;
 	}
 
-	numDigiDrums = ((uint16_t)mYmData[0x14]) << 8;
-	numDigiDrums |= mYmData[0x15];
+	numDigiDrums = ((uint16_t)mYmData.get()[0x14]) << 8;
+	numDigiDrums |= mYmData.get()[0x15];
 
-	mYmRegStream = (uint8_t*)mYmData + 0x22;
+	mYmRegStream = (uint8_t*)mYmData.get() + 0x22;
 
 	i = 0;
 	NLOGD("YmPlayer", "Found %d digidrums", numDigiDrums);
@@ -179,10 +176,10 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 	mMetaData.SetComment((char*)mYmRegStream);
 	while (*mYmRegStream++);		// Skip song comment
 
-	if (mYmData[0x02] == '5') {
+	if (mYmData.get()[0x02] == '5') {
 		mChip.mSfx[0].SetYmFormat(YmSoundFX::YM_FORMAT_5);
 		mChip.mSfx[1].SetYmFormat(YmSoundFX::YM_FORMAT_5);
-	} else if (mYmData[0x02] == '6') {
+	} else if (mYmData.get()[0x02] == '6') {
 		mChip.mSfx[0].SetYmFormat(YmSoundFX::YM_FORMAT_6);
 		mChip.mSfx[1].SetYmFormat(YmSoundFX::YM_FORMAT_6);
 	} else {
@@ -203,7 +200,7 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 	}
 	mBlipBuf->clock_rate(ATARI_ST_CLOCK);
 
-	if (mYmData[0x17] == 0x1B) {
+	if (mYmData.get()[0x17] == 0x1B) {
 		// This is probably a ZX Spectrum tune with an AY clock of 1773400 Hz
 		// (0x001B0F58 big-endian). Adjust the emulation speed accordingly.
 		mChip.mEG.mMaxCycle = YmChip::AY_3_8910_ENVELOPE_STEPS - 1;
@@ -214,17 +211,17 @@ MusicPlayer::Result YmPlayer::Prepare(std::string fileName)
 
 	mChip.Reset();
 
-	if (mYmData[0x13] & 0x04) {
+	if (mYmData.get()[0x13] & 0x04) {
 		mChip.mDigiDrumFormat = YmChip::DIGI_DRUM_U4;
-	} else if (mYmData[0x13] & 0x02) {
+	} else if (mYmData.get()[0x13] & 0x02) {
 		mChip.mDigiDrumFormat = YmChip::DIGI_DRUM_S8;
 	} else {
 		mChip.mDigiDrumFormat = YmChip::DIGI_DRUM_U8;
 	}
 
 	mFrame = 0;
-	mNumFrames = (uint32_t)mYmData[0x0E] << 8;
-	mNumFrames += mYmData[0x0F];
+	mNumFrames = (uint32_t)(mYmData.get()[0x0E]) << 8;
+	mNumFrames += mYmData.get()[0x0F];
 
 	mMetaData.SetLengthMs(mNumFrames * 20);
 

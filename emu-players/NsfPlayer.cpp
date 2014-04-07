@@ -54,13 +54,13 @@ NsfPlayer::~NsfPlayer()
 	delete m2A03;
 	delete mVrc6;
 	delete mSunsoft5B;
-	delete mMemory;
+	//delete mMemory;
 
 	//m6502      = NULL;
 	m2A03      = NULL;
 	mVrc6      = NULL;
 	mSunsoft5B = NULL;
-	mMemory    = NULL;
+	//mMemory    = NULL;
 }
 
 
@@ -78,12 +78,12 @@ MusicPlayer::Result NsfPlayer::Reset()
 	delete m2A03;
 	delete mVrc6;
 	delete mSunsoft5B;
-	delete mMemory;
+	mMemory = nullptr;
+
 	//m6502      = NULL;
 	m2A03      = NULL;
 	mVrc6      = NULL;
 	mSunsoft5B = NULL;
-	mMemory    = NULL;
 
 	mState = MusicPlayer::STATE_CREATED;
 	return MusicPlayer::OK;
@@ -182,7 +182,7 @@ MusicPlayer::Result NsfPlayer::Prepare(std::string fileName)
 
     numBanks = ((fileSize + offset - sizeof(NsfFileHeader)) + 0xfff) >> 12;
     NLOGD("NsfPlayer", "Trying to allocate %d bytes (file size = %d)", (uint32_t)numBanks << 12, fileSize);
-	mMemory = new NsfMapper(numBanks);
+	mMemory = std::make_shared<NsfMapper>(numBanks);
 	mMemory->SetApu(m2A03);
 	mMemory->SetVrc6(mVrc6);
 	mMemory->SetN163(mN163);
@@ -318,23 +318,36 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		m2A03->Step();
 
-		pulseOut = (-m2A03->mChannels[Emu2A03::CHN_PULSE1].mPhase)
-					& (m2A03->mChannels[Emu2A03::CHN_PULSE1].mVol & 0x0F)
-					& m2A03->mChannels[Emu2A03::CHN_PULSE1].mOutputMask;
-		pulseOut += (-m2A03->mChannels[Emu2A03::CHN_PULSE2].mPhase)
-					& (m2A03->mChannels[Emu2A03::CHN_PULSE2].mVol & 0x0F)
-					& m2A03->mChannels[Emu2A03::CHN_PULSE2].mOutputMask;
-		pulseOut = (uint16_t)(pulseTable[pulseOut] * 6460.0f); //5460.0f);
+		if (m2A03->mChannels[Emu2A03::CHN_PULSE1].mOutputMask) {
+			m2A03->mChannels[Emu2A03::CHN_PULSE1].mDacOut =
+				(-m2A03->mChannels[Emu2A03::CHN_PULSE1].mPhase)	& (m2A03->mChannels[Emu2A03::CHN_PULSE1].mVol & 0x0F);
+		}
+		pulseOut = m2A03->mChannels[Emu2A03::CHN_PULSE1].mDacOut;
 
-		tndOut = ((-m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mPhase)
-					& (m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mVol & 0x0F)
-					& m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mOutputMask) * 3;
-		tndOut += ((-m2A03->mChannels[Emu2A03::CHN_NOISE].mPhase)
-					& (m2A03->mChannels[Emu2A03::CHN_NOISE].mVol & 0x0F)
-					& m2A03->mChannels[Emu2A03::CHN_NOISE].mOutputMask) * 2;
-		tndOut += m2A03->mChannels[Emu2A03::CHN_DMC].mDacOut; /*((m2A03->mChannels[Emu2A03::CHN_DMC].mDuty)
-					& m2A03->mChannels[Emu2A03::CHN_DMC].mOutputMask);*/
-		tndOut = (uint16_t)(tndTable[tndOut] * 6460.0f); //5460.0f);
+		if (m2A03->mChannels[Emu2A03::CHN_PULSE2].mOutputMask) {
+			m2A03->mChannels[Emu2A03::CHN_PULSE2].mDacOut =
+				(-m2A03->mChannels[Emu2A03::CHN_PULSE2].mPhase)	& (m2A03->mChannels[Emu2A03::CHN_PULSE2].mVol & 0x0F);
+		}
+		pulseOut += m2A03->mChannels[Emu2A03::CHN_PULSE2].mDacOut;
+
+		pulseOut = (uint16_t)(pulseTable[pulseOut] * 6460.0f);
+
+		if (m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mOutputMask) {
+			m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mDacOut =
+				(-m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mPhase) & (m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mVol & 0x0F);
+
+		}
+		tndOut = m2A03->mChannels[Emu2A03::CHN_TRIANGLE].mDacOut * 3;
+
+		if (m2A03->mChannels[Emu2A03::CHN_NOISE].mOutputMask) {
+			m2A03->mChannels[Emu2A03::CHN_NOISE].mDacOut =
+				(-m2A03->mChannels[Emu2A03::CHN_NOISE].mPhase) & (m2A03->mChannels[Emu2A03::CHN_NOISE].mVol & 0x0F);
+		}
+		tndOut = m2A03->mChannels[Emu2A03::CHN_NOISE].mDacOut * 2;
+
+		tndOut += m2A03->mChannels[Emu2A03::CHN_DMC].mDacOut;
+
+		tndOut = (uint16_t)(tndTable[tndOut] * 6460.0f);
 
 		if (pulseOut != m2A03->mChannels[0].mOut) {
 			mSynth[0].update(k, pulseOut);

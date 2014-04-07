@@ -21,6 +21,7 @@
 #ifndef EMU2A03_H_
 #define EMU2A03_H_
 
+#include <memory>
 #include <stdint.h>
 #include "EmuCommon.h"
 #include "Oscillator.h"
@@ -150,7 +151,7 @@ public:
 	void Reset();
 	void Step();
 	void Write(uint32_t addr, uint8_t data);
-	void SetMapper(MemoryMapper *mapper) { mMemory = mapper; }
+	void SetMapper(std::shared_ptr<MemoryMapper> mapper) { mMemory = mapper; }
 
 	// Channel enumerators
 	enum
@@ -202,7 +203,7 @@ public:
 	uint8_t mStatus;
 	bool mGenerateFrameIRQ;
 	uint8_t mMaxFrameCount, mCurFrame;
-	MemoryMapper *mMemory;
+	std::shared_ptr<MemoryMapper> mMemory;
 
 private:
 	MAKE_NON_COPYABLE(Emu2A03);

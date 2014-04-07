@@ -53,13 +53,13 @@ uint8_t HesMapper::ReadByte(uint32_t addr)
 	uint32_t mpr = mMPR[page];
 	uint32_t offset = addr & 0x1FFF;
 
-	//NLOGD(NLOG_TAG, "ReadByte(%#x): mpr = %#x, numRomPages = %d", addr, mpr, mNumRomPages);
 
 	if (mpr < 0x80) {
 		if (mpr < mNumRomPages) {
 			return mCart[mpr * 0x2000 + offset];
 		}
 	} else if (HuC6280Mapper::MPR_RAM_PAGE == mpr) {
+		NLOGD(NLOG_TAG, "ReadByte(%#x): mpr = %#x, numRomPages = %d -> %#x", addr, mpr, mNumRomPages, mRam[offset]);
 		return mRam[offset];
 	} else if (HuC6280Mapper::MPR_IO_PAGE == mpr) {
 		// ToDo: handle IO reads
@@ -82,6 +82,7 @@ void HesMapper::WriteByte(uint32_t addr, uint8_t data)
 
 	switch (mMPR[page]) {
 	case HuC6280Mapper::MPR_RAM_PAGE:
+		NLOGD(NLOG_TAG, "WriteByte(%#x, %#x)", addr, data);
 		mRam[offset] = data;
 		break;
 	case HuC6280Mapper::MPR_IO_PAGE:
