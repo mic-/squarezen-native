@@ -447,6 +447,7 @@ void Z80::Run(uint32_t maxCycles)
 
 		case 0x10:	// DJNZ aa
 			// ToDo: implement
+			break;
 		case 0x11:	// LD DE,aaaa
 			MOVE_REG16_IMM16(mRegs.D, mRegs.E);
 			break;
@@ -466,6 +467,18 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x16:	// LD D,aa
 			MOVE_REG8_IMM8(mRegs.D);
 			break;
+		case 0x17:	// RLA
+			// ToDo: implement
+			break;
+		case 0x18:	// JR aa
+			// ToDo: implement
+			break;
+		case 0x19:	// ADD HL,DE
+			// ToDo: implement
+			break;
+		case 0x1A:	// LD A,(DE)
+			// ToDo: implement
+			break;
 		case 0x1B:	// DEC DE
 			DEC16(mRegs.D, mRegs.E);
 			break;
@@ -478,9 +491,18 @@ void Z80::Run(uint32_t maxCycles)
 		case 0x1E:	// LD E,aa
 			MOVE_REG8_IMM8(mRegs.E);
 			break;
+		case 0x1F:	// RRA
+			// ToDo: implement
+			break;
 
+		case 0x20:	// JR NZ,aa
+			// ToDo: implement
+			break;
 		case 0x21:	// LD HL,aaaa
 			MOVE_REG16_IMM16(mRegs.H, mRegs.L);
+			break;
+		case 0x22:	// LD (aaaa),HL
+			// ToDo: implement
 			break;
 		case 0x23:	// INC HL
 			INC16(mRegs.H, mRegs.L);
@@ -493,6 +515,18 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 		case 0x26:	// LD H,aa
 			MOVE_REG8_IMM8(mRegs.H);
+			break;
+		case 0x27:	// DAA
+			// ToDo: implement
+			break;
+		case 0x28:	// JR Z,aa
+			// ToDo: implement
+			break;
+		case 0x29:	// ADD HL,HL
+			// ToDo: implement
+			break;
+		case 0x2A:	// LD HL,(aaaa)
+			// ToDo: implement
 			break;
 		case 0x2B:	// DEC HL
 			DEC16(mRegs.H, mRegs.L);
