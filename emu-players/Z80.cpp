@@ -468,10 +468,17 @@ void Z80::Run(uint32_t maxCycles)
 			MOVE_REG8_IMM8(mRegs.D);
 			break;
 		case 0x17:	// RLA
-			// ToDo: implement
+			temp8 = (mRegs.A & 0x80) ? Z80::FLAG_C : 0;
+			mRegs.A = (mRegs.A << 1) | (mRegs.F & Z80::FLAG_C);
+		    mRegs.F &= (Z80::FLAG_S | Z80::FLAG_Z | Z80::FLAG_P);
+			mRegs.F |= mRegs.A & (Z80::FLAG_X | Z80::FLAG_Y);
+			mRegs.F |= temp8;
+			mCycles += 4;
 			break;
 		case 0x18:	// JR aa
-			// ToDo: implement
+			mRegs.PC++;
+			mRegs.PC += (int8_t) mMemory->ReadByte(mRegs.PC - 1);
+			mCycles += 12;
 			break;
 		case 0x19:	// ADD HL,DE
 			// ToDo: implement
@@ -496,7 +503,12 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 
 		case 0x20:	// JR NZ,aa
-			// ToDo: implement
+			mRegs.PC++;
+			if (!(mRegs.F & Z80::FLAG_Z)) {
+				mRegs.PC += (int8_t) mMemory->ReadByte(mRegs.PC - 1);
+				mCycles += 5;
+            }
+			mCycles += 7;
 			break;
 		case 0x21:	// LD HL,aaaa
 			MOVE_REG16_IMM16(mRegs.H, mRegs.L);
@@ -520,7 +532,12 @@ void Z80::Run(uint32_t maxCycles)
 			// ToDo: implement
 			break;
 		case 0x28:	// JR Z,aa
-			// ToDo: implement
+			mRegs.PC++;
+			if (mRegs.F & Z80::FLAG_Z) {
+				mRegs.PC += (int8_t) mMemory->ReadByte(mRegs.PC - 1);
+				mCycles += 5;
+            }
+			mCycles += 7;
 			break;
 		case 0x29:	// ADD HL,HL
 			// ToDo: implement
@@ -548,7 +565,12 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 
 		case 0x30:	// JR NC,aa
-			// ToDo: implement
+			mRegs.PC++;
+			if (!(mRegs.F & Z80::FLAG_C)) {
+				mRegs.PC += (int8_t) mMemory->ReadByte(mRegs.PC - 1);
+				mCycles += 5;
+            }
+			mCycles += 7;
 			break;
 		case 0x31:	// LD SP,aaaa
 			MOVE_REG16_IMM16(operand, temp8);
@@ -576,7 +598,12 @@ void Z80::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 		case 0x38:	// JR C,aa
-			// ToDo: implement
+			mRegs.PC++;
+			if (mRegs.F & Z80::FLAG_C) {
+				mRegs.PC += (int8_t) mMemory->ReadByte(mRegs.PC - 1);
+				mCycles += 5;
+            }
+			mCycles += 7;
 			break;
 		case 0x39:	// ADD HL,SP
 			// ToDo: implement
@@ -701,7 +728,8 @@ void Z80::Run(uint32_t maxCycles)
 		case 0xC0:	// RET NZ
 			if (!(mRegs.F & Z80::FLAG_Z)) {
 				addr = mMemory->ReadByte(mRegs.SP);
-				addr |= (uint16_t)(mMemory->ReadByte(mRegs.SP+1)) << 8;
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.SP + 1)) << 8;
+				mRegs.PC = addr;
 				mRegs.SP += 2;
 				mCycles += 11;
 			} else {
@@ -712,10 +740,17 @@ void Z80::Run(uint32_t maxCycles)
 			// ToDo: implement
 			break;
 		case 0xC2:	// JP NZ,aaaa
-			// ToDo: implement
+			if (!(mRegs.F & Z80::FLAG_Z)) {
+				addr = mMemory->ReadByte(mRegs.PC);
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC + 1)) << 8;
+				mRegs.PC = addr;
+			}
+			mCycles += 10;
 			break;
 		case 0xC3:	// JP aaaa
-			// ToDo: implement
+			addr = mMemory->ReadByte(mRegs.PC);
+			addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC + 1)) << 8;
+			mRegs.PC = addr;
 			break;
 		case 0xC7:	// RST 00
 			Rst(0x00);
@@ -750,9 +785,9 @@ void Z80::Run(uint32_t maxCycles)
 		case 0xCC:	// CALL Z,aaaa
 			if (mRegs.F & Z80::FLAG_Z) {
 				mRegs.SP -= 2;
-				mMemory->WriteByte(mRegs.SP, mRegs.PC+2);
+				mMemory->WriteByte(mRegs.SP, mRegs.PC + 2);
 				addr = mMemory->ReadByte(mRegs.PC);
-				addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC+1)) << 8;
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC + 1)) << 8;
 				mRegs.PC = addr;
 				mCycles += 17;
 			} else {
@@ -762,9 +797,9 @@ void Z80::Run(uint32_t maxCycles)
 			break;
 		case 0xCD:	// CALL aaaa
 			mRegs.SP -= 2;
-			mMemory->WriteByte(mRegs.SP, mRegs.PC+2);
+			mMemory->WriteByte(mRegs.SP, mRegs.PC + 2);
 			addr = mMemory->ReadByte(mRegs.PC);
-			addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC+1)) << 8;
+			addr |= (uint16_t)(mMemory->ReadByte(mRegs.PC + 1)) << 8;
 			mRegs.PC = addr;
 			mCycles += 17;
 			break;
@@ -776,7 +811,8 @@ void Z80::Run(uint32_t maxCycles)
 		case 0xD0:	// RET NC
 			if (!(mRegs.F & Z80::FLAG_C)) {
 				addr = mMemory->ReadByte(mRegs.SP);
-				addr |= (uint16_t)(mMemory->ReadByte(mRegs.SP+1)) << 8;
+				addr |= (uint16_t)(mMemory->ReadByte(mRegs.SP + 1)) << 8;
+				mRegs.PC = addr;
 				mRegs.SP += 2;
 				mCycles += 11;
 			} else {

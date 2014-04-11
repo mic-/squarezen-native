@@ -21,6 +21,7 @@
 #ifndef YM2149_H_
 #define YM2149_H_
 
+#include <memory>
 #include "Oscillator.h"
 
 class YmChip;
