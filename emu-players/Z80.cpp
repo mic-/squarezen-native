@@ -547,18 +547,42 @@ void Z80::Run(uint32_t maxCycles)
 			mCycles += 4;
 			break;
 
+		case 0x30:	// JR NC,aa
+			// ToDo: implement
+			break;
 		case 0x31:	// LD SP,aaaa
 			MOVE_REG16_IMM16(operand, temp8);
 			mRegs.SP = (((uint16_t)operand) << 8) | temp8;
+			break;
+		case 0x32:	// LD (aaaa),A
+			// ToDo: implement
 			break;
 		case 0x33:	// INC SP
 			mRegs.SP++;
 			mCycles += 6;
 			break;
+		case 0x34:	// INC (HL)
+			// ToDo: implement
+			break;
+		case 0x35:	// DEC (HL)
+			// ToDo: implement
+			break;
+		case 0x36:	// LD (HL),aa
+			// ToDo: implement
+			break;
 		case 0x37:	// SCF
 			mRegs.F &= ~(Z80::FLAG_H | Z80::FLAG_N);
 			mRegs.F |= Z80::FLAG_C;
 			mCycles += 4;
+			break;
+		case 0x38:	// JR C,aa
+			// ToDo: implement
+			break;
+		case 0x39:	// ADD HL,SP
+			// ToDo: implement
+			break;
+		case 0x3A:	// LD A,(aaaa)
+			// ToDo: implement
 			break;
 		case 0x3B:	// DEC SP
 			mRegs.SP--;
@@ -660,15 +684,19 @@ void Z80::Run(uint32_t maxCycles)
 		case 0xA0:	// AND A,R2
 			CMD_GROUP_2OP(AND8, 0xA0, mRegs.A);
 			break;
+			// covers 0xA0..0xA7
 		case 0xA8:	// XOR A,R2
 			CMD_GROUP_2OP(XOR8, 0xA8, mRegs.A);
 			break;
+			// covers 0xA8..0xAF
 		case 0xB0:	// OR A,R2
 			CMD_GROUP_2OP(OR8, 0xB0, mRegs.A);
 			break;
+			// covers 0xB0..0xB7
 		case 0xB8:	// CP A,R2
 			CMD_GROUP_2OP(CP8, 0xB8, mRegs.A);
 			break;
+			// covers 0xB8..0xBF
 
 		case 0xC0:	// RET NZ
 			if (!(mRegs.F & Z80::FLAG_Z)) {
@@ -681,6 +709,12 @@ void Z80::Run(uint32_t maxCycles)
 			}
 			break;
 		case 0xC1:	// POP BC
+			// ToDo: implement
+			break;
+		case 0xC2:	// JP NZ,aaaa
+			// ToDo: implement
+			break;
+		case 0xC3:	// JP aaaa
 			// ToDo: implement
 			break;
 		case 0xC7:	// RST 00
