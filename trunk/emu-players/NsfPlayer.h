@@ -86,7 +86,6 @@ public:
 private:
 	void Execute6502(uint16_t address);
 
-	//Emu6502 *m6502;
 	std::shared_ptr<Emu6502> m6502;
 	Emu2A03 *m2A03;
 	KonamiVrc6 *mVrc6;

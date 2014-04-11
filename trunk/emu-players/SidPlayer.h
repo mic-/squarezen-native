@@ -21,6 +21,7 @@
 #ifndef SIDPLAYER_H_
 #define SIDPLAYER_H_
 
+#include <memory>
 #include <string>
 #include <stdint.h>
 #include "Emu6502.h"
