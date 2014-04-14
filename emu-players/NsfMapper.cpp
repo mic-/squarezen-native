@@ -24,12 +24,14 @@
 #include "KonamiVrc6.h"
 #include "Namco163.h"
 #include "Sunsoft5B.h"
+#include "MMC5.h"
 
 
 NsfMapper::NsfMapper(uint32_t numRomBanks)
 	: mVrc6(NULL)
 	, mN163(NULL)
 	, mSunsoft5B(NULL)
+	, mMMC5(nullptr)
 	, mNumRomBanks(numRomBanks)
 {
     mCart = new uint8_t[(uint32_t)numRomBanks << 12];
@@ -118,7 +120,11 @@ void NsfMapper::WriteByte_4000(uint16_t addr, uint8_t data)
 
 void NsfMapper::WriteByte_5000(uint16_t addr, uint8_t data)
 {
-	if (addr >= 0x5FF8 && addr <= 0x5FFF) {
+	if (addr <= 0x5003) {
+		if (mMMC5 != nullptr) {
+			mMMC5->Write(addr, data);
+		}
+	} else if (addr >= 0x5FF8 && addr <= 0x5FFF) {
 		if (data >= mNumRomBanks) {
 			mRomTbl[addr - 0x5FF8] = NULL;
 			NLOGV(NLOG_TAG, "Mapping nothing to #%x", 0x8000 + (addr - 0x5FF8) * 0x1000);
