@@ -32,7 +32,7 @@ NsfPlayer::NsfPlayer()
 	, m2A03(NULL)
 	, mVrc6(NULL)
 	, mSunsoft5B(NULL)
-	, mMemory(NULL)
+	, mMemory(nullptr)
 	, mSongIsBankswitched(false)
 {
 	for (int i = 0; i < 31; i++) {
@@ -50,17 +50,13 @@ MusicPlayer *NsfPlayerFactory()
 
 NsfPlayer::~NsfPlayer()
 {
-	//delete m6502;
 	delete m2A03;
 	delete mVrc6;
 	delete mSunsoft5B;
-	//delete mMemory;
 
-	//m6502      = NULL;
 	m2A03      = NULL;
 	mVrc6      = NULL;
 	mSunsoft5B = NULL;
-	//mMemory    = NULL;
 }
 
 
@@ -73,14 +69,12 @@ MusicPlayer::Result NsfPlayer::Reset()
 	mBlipBuf = NULL;
 	mSynth   = NULL;
 
-	//delete m6502;
 	m6502 = nullptr;
 	delete m2A03;
 	delete mVrc6;
 	delete mSunsoft5B;
 	mMemory = nullptr;
 
-	//m6502      = NULL;
 	m2A03      = NULL;
 	mVrc6      = NULL;
 	mSunsoft5B = NULL;
@@ -360,7 +354,7 @@ MusicPlayer::Result NsfPlayer::Run(uint32_t numSamples, int16_t *buffer)
 
 		if (mVrc6) {
 			mVrc6->Step();
-			out = mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mPhase * mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mVol;
+			out  = mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mPhase * mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mVol;
 			out += mVrc6->mChannels[KonamiVrc6::CHN_PULSE2].mPhase * mVrc6->mChannels[KonamiVrc6::CHN_PULSE2].mVol;
 			out = (uint16_t)(pulseTable[out] * 6460.0f);
 			if (out != mVrc6->mChannels[KonamiVrc6::CHN_PULSE1].mOut) {

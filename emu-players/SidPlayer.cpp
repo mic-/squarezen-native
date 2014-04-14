@@ -72,7 +72,7 @@ static const uint8_t SID_DRIVER[] = {
 SidPlayer::SidPlayer()
 	: m6502(NULL)
 	, mSid(NULL)
-	, mMemory(NULL){
+	, mMemory(nullptr){
 	// TODO: fill out
 }
 
@@ -101,6 +101,7 @@ MusicPlayer::Result SidPlayer::Reset()
 
 	delete m6502;
 	delete mSid;
+
 	m6502 = NULL;
 	mSid = NULL;
 	mMemory = nullptr;
@@ -325,6 +326,9 @@ MusicPlayer::Result SidPlayer::Run(uint32_t numSamples, int16_t *buffer)
 		}
 
 		mMemory->mCia[SidMapper::CIA1].mTimer[Cia6526::TIMER_A]->Step();
+		mMemory->mCia[SidMapper::CIA1].mTimer[Cia6526::TIMER_B]->Step();
+		mMemory->mCia[SidMapper::CIA2].mTimer[Cia6526::TIMER_A]->Step();
+		mMemory->mCia[SidMapper::CIA2].mTimer[Cia6526::TIMER_B]->Step();
 		mMemory->mVicII.Step();
 		mSid->Step();
 
