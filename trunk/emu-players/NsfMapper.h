@@ -3,7 +3,7 @@
  *
  *  Created on: Jun 1, 2013
  *
- * Copyright 2013 Mic
+ * Copyright 2013-2014 Mic
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@
 #ifndef NSFMAPPER_H_
 #define NSFMAPPER_H_
 
+#include <memory>
 #include <stdint.h>
 #include "MemoryMapper.h"
 #include "Emu2A03.h"
@@ -28,6 +29,7 @@
 class KonamiVrc6;
 class Namco163;
 class Sunsoft5B;
+class MMC5;
 
 
 class NsfMapper : public MemoryMapper
@@ -45,6 +47,7 @@ public:
 	void SetVrc6(KonamiVrc6 *vrc6) { mVrc6 = vrc6; }
 	void SetN163(Namco163 *n163) { mN163 = n163; }
 	void SetSunsoft5B(Sunsoft5B *s5b) { mSunsoft5B = s5b; }
+	void SetMMC5(std::shared_ptr<MMC5> mmc5) { mMMC5 = mmc5; }
 
 private:
 	uint8_t ReadByte_0000(uint16_t addr);
@@ -72,6 +75,7 @@ private:
 	KonamiVrc6 *mVrc6;
 	Namco163 *mN163;
 	Sunsoft5B * mSunsoft5B;
+	std::shared_ptr<MMC5> mMMC5;
 
 	uint16_t mNumRomBanks;
 	uint8_t mCallCode[0x10];
