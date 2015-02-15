@@ -18,8 +18,7 @@
  * limitations under the License.
  */
 
-#ifndef HUC6280MAPPER_H_
-#define HUC6280MAPPER_H_
+#pragma once
 
 #include <stdint.h>
 #include "MemoryMapper.h"
@@ -27,7 +26,7 @@
 class HuC6280Mapper : public MemoryMapper
 {
 public:
-	virtual void Irq(uint8_t irqSource) {}
+	virtual void Irq(uint8_t irqSource) { (void)irqSource; }
 	virtual void SetMpr(uint8_t mprNum, uint8_t val) { mMPR[mprNum & 7] = val; }
 
 	enum {
@@ -42,5 +41,3 @@ public:
 
 	uint8_t mMPR[8];
 };
-
-#endif	/* HUC6280MAPPER_H_ */

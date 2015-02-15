@@ -18,7 +18,7 @@
 #define NLOG_TAG "HuC6280"
 
 #include <string>
-#include <stdio.h>
+#include <cstdio>
 #include "NativeLogger.h"
 #include "HuC6280.h"
 #include "HesMapper.h"
@@ -2081,6 +2081,7 @@ void HuC6280PsgChannel::Write(uint32_t addr, uint8_t data)
 
 HuC6280Psg::HuC6280Psg()
 	: mChannelSelect(0)
+    , mPlayer(nullptr)
 {
 }
 
@@ -2095,7 +2096,6 @@ void HuC6280Psg::Reset()
 
 void HuC6280Psg::Step()
 {
-	// ToDo: implement
 	for (int i = 0; i < 6; i++) {
 		mChannels[i].Step();
 	}
