@@ -18,10 +18,9 @@
  * limitations under the License.
  */
 
-#ifndef ARM7TDMI_H_
-#define ARM7TDMI_H_
+#pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include "EmuCommon.h"
 #include "CpuBase.h"
 #include "MemoryMapper.h"
@@ -114,6 +113,4 @@ private:
 	AluOp armDataProcOps[16];
 	AluOp thumbAluOps[16];
 };
-
-#endif	/* ARM7TDMI_H_ */
 
