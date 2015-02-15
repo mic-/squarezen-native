@@ -18,11 +18,10 @@
  * limitations under the License.
  */
 
-#ifndef HUC62802_H_
-#define HUC62802_H_
+#pragma once
 
 #include <string>
-#include <stdint.h>
+#include <cstdint>
 #include "MemoryMapper.h"
 #include "Oscillator.h"
 
@@ -34,7 +33,7 @@ class HuC6280Mapper;
 class HuC6280Timer : public Oscillator
 {
 public:
-	HuC6280Timer() { mPeriod = 512; }
+	HuC6280Timer() : m6280(nullptr), mCtrl(0), mCycles(0) { mPeriod = 512; }
 	virtual ~HuC6280Timer() {}
 
 	virtual void Reset();
@@ -204,5 +203,4 @@ private:
 	uint16_t mBrkVector;
 };
 
-#endif
 
